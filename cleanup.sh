@@ -35,3 +35,6 @@ neutron security-group-list -c id -f value | while read secgroup; do
 done
 
 
+nova keypair-list | while read a b c; do
+  nova keypair-delete "$b"
+done
