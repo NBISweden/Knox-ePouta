@@ -66,6 +66,8 @@ neutron dhcp-agent-network-add "$dhcpagent" "${tenant}-net"
 
 #
 
+nova keypair-add --pub-key "$HOME"/.ssh/id_rsa.pub "$tenant"-key
+
 neutron security-group-create "$tenant"-sg
 neutron security-group-rule-create "$tenant"-sg --direction ingress --ethertype ipv4 --protocol icmp 
 neutron security-group-rule-create "$tenant"-sg --direction ingress --ethertype ipv4 --protocol tcp --port-range-min 22 --port-range-max 22
@@ -73,13 +75,17 @@ neutron security-group-rule-create "$tenant"-sg --direction ingress --ethertype 
 
 
 
-nova boot --flavor m1.small --image ubuntu1404 --nic net-id="$nid",v4-fixed-ip=172.25.8.3 --key-name "$tenant"-key --security-group "$tenant"-sg filsluss
-nova boot --flavor m1.small --image ubuntu1404 --nic net-id="$nid",v4-fixed-ip=172.25.8.4 --key-name "$tenant"-key --security-group "$tenant"-sg thinlinc-master
-nova boot --flavor m1.small --image ubuntu1404 --nic net-id="$nid",v4-fixed-ip=172.25.8.5 --key-name "$tenant"-key --security-group "$tenant"-sg tos1
+
+
+nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.3 --key-name "$tenant"-key --security-group "$tenant"-sg filsluss
+nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.4 --key-name "$tenant"-key --security-group "$tenant"-sg thinlinc-master
+nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.5 --key-name "$tenant"-key --security-group "$tenant"-sg tos1
 
 nova floating-ip-associate filsluss "$ipprefix""$baseip"
 nova floating-ip-associate thinlinc-master "$ipprefix""$((baseip+1))"
 nova floating-ip-associate tos1 "$ipprefix""$((baseip+2))"
 
-
-
+# Here because in cleanup we don't care about IPs (we don't care enough to pick up the information)
+for p in {0..10}; do 
+  ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$ipprefix""$((baseip+1))"
+done
