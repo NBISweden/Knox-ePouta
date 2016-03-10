@@ -81,9 +81,9 @@ nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.
 nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.4 --key-name "$tenant"-key --security-group "$tenant"-sg thinlinc-master
 nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.5 --key-name "$tenant"-key --security-group "$tenant"-sg openstack-controller
 nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.6 --key-name "$tenant"-key --security-group "$tenant"-sg supernode
-nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.7 --key-name "$tenant"-key --security-group "$tenant"-sg compute1
-nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.8 --key-name "$tenant"-key --security-group "$tenant"-sg compute2
-nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.9 --key-name "$tenant"-key --security-group "$tenant"-sg compute3
+nova boot --flavor m1.large --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.7 --key-name "$tenant"-key --security-group "$tenant"-sg compute1
+nova boot --flavor m1.large --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.8 --key-name "$tenant"-key --security-group "$tenant"-sg compute2
+nova boot --flavor m1.large --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.9 --key-name "$tenant"-key --security-group "$tenant"-sg compute3
 nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.10 --key-name "$tenant"-key --security-group "$tenant"-sg hnas-emulation
 
 
@@ -132,7 +132,9 @@ $ipprefix$((baseip+7))
 
 EOF
 
+sleep 60
 # Here because in cleanup we don't care about IPs (we don't care enough to pick up the information)
 for p in {0..10}; do 
   ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$ipprefix""$((baseip+p))"
+  ssh -oStrictHostKeyChecking=no "$ipprefix""$((baseip+p))"
 done
