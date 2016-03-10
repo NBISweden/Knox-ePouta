@@ -1,0 +1,42 @@
+
+- name: Set up yum to use proxy and various packages we always want
+  hosts: all
+  sudo: true
+
+  tasks:
+    - lineinfile: dest=/etc/yum.conf       create=no state=present line=proxy=http://130.238.7.178:3128/
+    - yum: state=latest name=lsof
+    - yum: state=latest name=strace
+    - yum: state=present name=https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
+    - yum: state=latest name=jq
+
+
+- name: OpenStack packages
+  hosts: openstackcontroller:supernode:compute
+  sudo: true
+  tasks:
+    - yum: state=present name=https://repos.fedorapeople.org/repos/openstack/EOL/openstack-icehouse/rdo-release-icehouse-4.noarch.rpm
+    - lineinfile: dest=/etc/yum.repos.d/rdo-release.repo regexp='^(.*)openstack/openstack-icehouse/(.*)$' line='\1openstack/EOL/openstack-icehouse/\2' backrefs=yes
+    - name: upgrade all packages
+      yum: name=* state=latest
+      yum: name=python-novaclient state=latest
+      yum: name=python-keystoneclient state=latest
+      yum: name=python-neutronclient state=latest
+      yum: name=python-glanceclient state=latest
+      yum: name=python-heatclient state=latest
+
+
+- name: ThinLinc
+  hosts: thinlinc-master
+  sudo: true
+  tasks:
+    - copy:  src={{ lookup('env','HOME') }}/thinlinc/ dest=/tmp/tl/
+    - copy:  src=tl_answers dest=/tmp/tl/
+
+    - action: shell yum -y install /tmp/tl/*x86_64.rpm /tmp/tl/*noarch.rpm || true
+
+    - action: shell /opt/thinlinc/sbin/tl-setup -a /tmp/tl/tl_answers
+
+ 
+
+
