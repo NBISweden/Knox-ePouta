@@ -79,13 +79,60 @@ neutron security-group-rule-create "$tenant"-sg --direction ingress --ethertype 
 
 nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.3 --key-name "$tenant"-key --security-group "$tenant"-sg filsluss
 nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.4 --key-name "$tenant"-key --security-group "$tenant"-sg thinlinc-master
-nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.5 --key-name "$tenant"-key --security-group "$tenant"-sg tos1
+nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.5 --key-name "$tenant"-key --security-group "$tenant"-sg openstack-controller
+nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.6 --key-name "$tenant"-key --security-group "$tenant"-sg supernode
+nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.7 --key-name "$tenant"-key --security-group "$tenant"-sg compute1
+nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.8 --key-name "$tenant"-key --security-group "$tenant"-sg compute2
+nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.9 --key-name "$tenant"-key --security-group "$tenant"-sg compute3
+nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.10 --key-name "$tenant"-key --security-group "$tenant"-sg hnas-emulation
+
+
 
 nova floating-ip-associate filsluss "$ipprefix""$baseip"
 nova floating-ip-associate thinlinc-master "$ipprefix""$((baseip+1))"
-nova floating-ip-associate tos1 "$ipprefix""$((baseip+2))"
+nova floating-ip-associate openstack-controller "$ipprefix""$((baseip+2))"
+nova floating-ip-associate supernode "$ipprefix""$((baseip+3))"
+nova floating-ip-associate compute1 "$ipprefix""$((baseip+4))"
+nova floating-ip-associate compute2 "$ipprefix""$((baseip+5))"
+nova floating-ip-associate compute3 "$ipprefix""$((baseip+6))"
+nova floating-ip-associate hnas-emulation "$ipprefix""$((baseip+7))"
+
+
+cat - > /tmp/inventory-"$tenant" <<EOF
+[all]
+$ipprefix$((baseip))     
+$ipprefix$((baseip+1))     
+$ipprefix$((baseip+2))     
+$ipprefix$((baseip+3))     
+$ipprefix$((baseip+4))     
+$ipprefix$((baseip+5))     
+$ipprefix$((baseip+6))     
+$ipprefix$((baseip+7))     
+                                                                                  
+[filsluss]
+$ipprefix$((baseip))     
+
+[thinlinc-master]
+$ipprefix$((baseip+1))     
+
+[openstack-controller]
+$ipprefix$((baseip+2))     
+
+[supernode]
+$ipprefix$((baseip+3))     
+
+[compute]
+$ipprefix$((baseip+4))
+$ipprefix$((baseip+5))
+$ipprefix$((baseip+6))
+
+[hnas-emulation]
+$ipprefix$((baseip+7))
+
+
+EOF
 
 # Here because in cleanup we don't care about IPs (we don't care enough to pick up the information)
 for p in {0..10}; do 
-  ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$ipprefix""$((baseip+1))"
+  ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$ipprefix""$((baseip+p))"
 done
