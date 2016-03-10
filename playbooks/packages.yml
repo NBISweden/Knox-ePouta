@@ -11,6 +11,12 @@
     - yum: state=latest name=jq
 
 
+- name: NFS Support
+  hosts: supernode:filsluss:hnas-emulation
+  sudo: true
+  tasks:
+     -yum state=latest name=nfs-utils
+
 - name: OpenStack packages
   hosts: openstackcontroller:supernode:compute
   sudo: true
@@ -19,12 +25,20 @@
     - lineinfile: dest=/etc/yum.repos.d/rdo-release.repo regexp='^(.*)openstack/openstack-icehouse/(.*)$' line='\1openstack/EOL/openstack-icehouse/\2' backrefs=yes
     - name: upgrade all packages
       yum: name=* state=latest
-      yum: name=python-novaclient state=latest
-      yum: name=python-keystoneclient state=latest
-      yum: name=python-neutronclient state=latest
-      yum: name=python-glanceclient state=latest
-      yum: name=python-heatclient state=latest
+    - yum: name=python-novaclient state=latest
+    - yum: name=python-keystoneclient state=latest
+    - yum: name=python-neutronclient state=latest
+    - yum: name=python-glanceclient state=latest
+    - yum: name=python-heatclient state=latest
 
+
+- name: Controller specials
+  hosts: openstackcontroller
+  sudo: true
+  tasks:
+    - yum: state=present http://nginx.org/packages/rhel/6/x86_64/RPMS/nginx-1.8.1-1.el6.ngx.x86_64.rpm
+    - copy:   src={{ lookup('env','HOME') }}/misc/ dest=/tmp/misc/
+    - yum: state=present /tmp/misc/mosler-dashboard-2-5.i386.rpm
 
 - name: ThinLinc
   hosts: thinlinc-master
