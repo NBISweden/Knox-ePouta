@@ -11,6 +11,12 @@ fi
 
 sed -i -e 's/ by dn.base="cn[^"]"/by dn.base="cn=Manager,dc=mosler,dc=bils,dc=se"/' '/etc/openldap/slapd.d/cn=config/olcDatabase={2}bdb.ldif'
 
+/sbin/service slapd restart
+chkconfig slapd on
+
+# Reload iptables rules.
+/sbin/service iptables restart
+
 ldapadd -c -D cn=Manager,dc=mosler,dc=bils,dc=se -w ldap <<EOF
 
 
