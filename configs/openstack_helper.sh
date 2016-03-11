@@ -4,7 +4,7 @@ if [  -f /root/openstack_setup ]; then
   exit 0
 fi
 
-OS_SERVICE_TOKEN=0123456789abcdef
+OS_SERVICE_TOKEN=0123456789abcdef0123456789abcdef
 OS_SERVICE_ENDPOINT=http://openstack-controller:35357/v2.0
 
 export OS_SERVICE_TOKEN
@@ -38,20 +38,27 @@ rabbitmqctl add_user openstack rabbit || true
 /usr/bin/mysql -u root -pmysql -e "grant all privileges on keystone.* to keystone@'%' identified by 'keystone';"
 /usr/bin/mysql -u root -pmysql -e "grant all privileges on glance.* to glance@'%' identified by 'glance';"
 /usr/bin/mysql -u root -pmysql -e "grant all privileges on heat.* to heat@'%' identified by 'heat';"
+/usr/bin/mysql -u root -pmysql mysql -e "delete from user where user='';"
+
+sleep 3
+
+/sbin/service mysqld restart
 
 su -s /bin/sh -c "keystone-manage db_sync" keystone
 su -s /bin/sh -c "glance-manage db_sync" glance
-su -s /bin/sh -c "nova-manage db_sync" nova
-su -s /bin/sh -c "neutron-manage db_sync" neutron
+#su -s /bin/sh -c "nova-manage db sync" nova
+
 su -s /bin/sh -c "heat-manage db_sync" heat
 
+su -s /bin/sh -c "neutron-db-manage --config-file /etc/neutron/neutron.conf  --config-file /etc/neutron/plugin.ini upgrade head" neutron
 
 chkconfig openstack-keystone on || true
 
-/sbin/service openstack-keystone start || true
+/sbin/service openstack-keystone restart || true
 
-keystone user-create --name=admin --pass=admin
 keystone role-create --name=admin
+keystone role-create --name=_member_
+
 keystone tenant-create --name=admin --description="Admin Tenant"
 keystone user-role-add --user=admin --tenant=admin --role=admin
 keystone user-role-add --user=admin --role=_member_ --tenant=admin
@@ -79,8 +86,7 @@ keystone endpoint-create \
 
 
 keystone service-create --name=nova --type=compute \
-  --description="OpenStack Compute"
-keystone endpoint-create \
+  --description="OpenStack Compute" keystone endpoint-create \
   --service-id=$(keystone service-list | awk '/ compute / {print $2}') \
   --publicurl=http:/openstack-controller:8774/v2/%\(tenant_id\)s \
   --internalurl=http:/openstack-controller:8774/v2/%\(tenant_id\)s \
@@ -102,7 +108,7 @@ done
 for p in server openvswitch-agent dhcp-agent l3-agent ovs-cleanup metadata-agent; do
     chkconfig neutron-$p on 
     /sbin/service neutron-$p start
-exit 0
+done
 
 chkconfig httpd on
 /sbin/service httpd start
