@@ -88,7 +88,7 @@ keystone service-create --name=glance --type=image \
 
 keystone endpoint-create \
   --service-id=$(keystone service-list | awk '/ image / {print $2}') \
-  --publicurl=http:/openstack-controller:9292 \
+  --publicurl=http://openstack-controller:9292 \
   --internalurl=http://openstack-controller:9292 \
   --adminurl=http://openstack-controller:9292
 
@@ -106,9 +106,9 @@ keystone service-create --name neutron --type network --description "OpenStack N
 
 keystone endpoint-create \
   --service-id $(keystone service-list | awk '/ network / {print $2}') \
-  --publicurl http:/openstack-controller:9696 \
-  --adminurl http:/openstack-controller:9696 \
-  --internalurl http:/openstack-controller:9696
+  --publicurl http://openstack-controller:9696 \
+  --adminurl http://openstack-controller:9696 \
+  --internalurl http://openstack-controller:9696
 
 keystone service-create --name=heat --type=orchestration \
   --description="Orchestration"
