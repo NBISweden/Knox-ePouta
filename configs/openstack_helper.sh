@@ -10,6 +10,13 @@ OS_SERVICE_ENDPOINT=http://openstack-controller:35357/v2.0
 export OS_SERVICE_TOKEN
 export OS_SERVICE_ENDPOINT
 
+cat - > /root/.keystonerc <<EOF
+export OS_USERNAME=admin 
+export OS_TENANT_NAME=admin
+export OS_PASSWORD=admin
+export OS_AUTH_URL=http://openstack-controller:35357/v2.0/
+EOF
+
 /sbin/service mysqld start
 /sbin/service rabbitmq-server start
 rabbitmqctl add_user openstack rabbit || true
@@ -33,7 +40,14 @@ rabbitmqctl add_user openstack rabbit || true
 /usr/bin/mysql -u root -pmysql -e "grant all privileges on heat.* to heat@'%' identified by 'heat';"
 
 su -s /bin/sh -c "keystone-manage db_sync" keystone
+su -s /bin/sh -c "glance-manage db_sync" glance
+su -s /bin/sh -c "nova-manage db_sync" nova
+su -s /bin/sh -c "neutron-manage db_sync" neutron
+su -s /bin/sh -c "heat-manage db_sync" heat
+
+
 chkconfig openstack-keystone on || true
+
 /sbin/service openstack-keystone start || true
 
 keystone user-create --name=admin --pass=admin
@@ -42,6 +56,53 @@ keystone tenant-create --name=admin --description="Admin Tenant"
 keystone user-role-add --user=admin --tenant=admin --role=admin
 keystone user-role-add --user=admin --role=_member_ --tenant=admin
 
+keystone tenant-create --name=service --description="Service Tenant"
+
+keystone service-create --name=keystone --type=identity \
+  --description="OpenStack Identity"
+
+keystone endpoint-create \
+  --service-id=$(keystone service-list | awk '/ identity / {print $2}') \
+  --publicurl=http://oepnstack-controller:5000/v2.0 \
+  --internalurl=http://openstack-controller:5000/v2.0 \
+  --adminurl=http://openstack-controller:35357/v2.0
 
 
-touch /root/openstack_setup
+keystone service-create --name=glance --type=image \
+  --description="OpenStack Image Service"
+
+keystone endpoint-create \
+  --service-id=$(keystone service-list | awk '/ image / {print $2}') \
+  --publicurl=http:/openstack-controller:9292 \
+  --internalurl=http:/openstack-controller:9292 \
+  --adminurl=http:/openstack-controller:9292
+
+
+keystone service-create --name=nova --type=compute \
+  --description="OpenStack Compute"
+keystone endpoint-create \
+  --service-id=$(keystone service-list | awk '/ compute / {print $2}') \
+  --publicurl=http:/openstack-controller:8774/v2/%\(tenant_id\)s \
+  --internalurl=http:/openstack-controller:8774/v2/%\(tenant_id\)s \
+  --adminurl=http:/openstack-controller:8774/v2/%\(tenant_id\)s
+
+keystone endpoint-create \
+  --service-id $(keystone service-list | awk '/ network / {print $2}') \
+  --publicurl http:/openstack-controller:9696 \
+  --adminurl http:/openstack-controller:9696 \
+  --internalurl http:/openstack-controller:9696
+
+
+# Start services and make sure they are enabled at reboots.
+for p in heat-api heat-engine nova-api nova-scheduler nova-conductor glance-api glance-registry ; do
+    chkconfig openstack-$p on 
+    /sbin/service openstack-$p start
+done
+
+for p in server openvswitch-agent dhcp-agent l3-agent ovs-cleanup metadata-agent; do
+    chkconfig neutron-$p on 
+    /sbin/service neutron-$p start
+exit 0
+
+chkconfig httpd on
+/sbin/service httpd start
