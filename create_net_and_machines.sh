@@ -72,6 +72,8 @@ neutron security-group-create "$tenant"-sg
 neutron security-group-rule-create "$tenant"-sg --direction ingress --ethertype ipv4 --protocol icmp 
 neutron security-group-rule-create "$tenant"-sg --direction ingress --ethertype ipv4 --protocol tcp --port-range-min 22 --port-range-max 22
 neutron security-group-rule-create "$tenant"-sg --direction ingress --ethertype ipv4 --protocol tcp --port-range-min 443 --port-range-max 443
+neutron security-group-rule-create mmosler1-sg --ethertype ipv4 --direction ingress --remote-group-id mmosler1-sg
+neutron security-group-rule-create mmosler1-sg --ethertype ipv4 --direction egress --remote-group-id mmosler1-sg
 
 
 
