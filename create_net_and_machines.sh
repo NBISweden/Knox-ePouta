@@ -85,6 +85,7 @@ nova boot --flavor m1.large --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.
 nova boot --flavor m1.large --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.8 --key-name "$tenant"-key --security-group "$tenant"-sg compute2
 nova boot --flavor m1.large --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.9 --key-name "$tenant"-key --security-group "$tenant"-sg compute3
 nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.10 --key-name "$tenant"-key --security-group "$tenant"-sg hnas-emulation
+nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.11 --key-name "$tenant"-key --security-group "$tenant"-sg ldap
 
 
 
@@ -96,6 +97,7 @@ nova floating-ip-associate compute1 "$ipprefix""$((baseip+4))"
 nova floating-ip-associate compute2 "$ipprefix""$((baseip+5))"
 nova floating-ip-associate compute3 "$ipprefix""$((baseip+6))"
 nova floating-ip-associate hnas-emulation "$ipprefix""$((baseip+7))"
+nova floating-ip-associate ldap "$ipprefix""$((baseip+8))"
 
 
 cat - > /tmp/inventory-"$tenant" <<EOF
@@ -108,9 +110,13 @@ $ipprefix$((baseip+4))
 $ipprefix$((baseip+5))     
 $ipprefix$((baseip+6))     
 $ipprefix$((baseip+7))     
+$ipprefix$((baseip+8))     
                                                                                   
 [filsluss]
 $ipprefix$((baseip))     
+
+[ldap]
+$ipprefix$((baseip+8))     
 
 [thinlinc-master]
 $ipprefix$((baseip+1))     
@@ -136,5 +142,5 @@ sleep 60
 # Here because in cleanup we don't care about IPs (we don't care enough to pick up the information)
 for p in {0..10}; do 
   ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$ipprefix""$((baseip+p))"
-  ssh -oStrictHostKeyChecking=no "$ipprefix""$((baseip+p))"
+  ssh -oStrictHostKeyChecking=no centos@"$ipprefix""$((baseip+p))" exit
 done
