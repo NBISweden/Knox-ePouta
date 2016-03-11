@@ -44,6 +44,7 @@
     - yum: name=python-neutronclient state=latest
     - yum: name=python-glanceclient state=latest
     - yum: name=python-heatclient state=latest
+    - yum: name=python-neutronclient state=latest
 
 - name: Controller specials
   hosts: openstack-controller
@@ -52,15 +53,53 @@
     - copy:   src={{ lookup('env','HOME') }}/misc/ dest=/tmp/misc/
     - yum: state=present name=/tmp/misc/Django14-1.4.21-1.el6.noarch.rpm
     - yum: state=present name=openstack-dashboard
+    - yum: state=present name=openstack-neutron
+    - yum: state=present name=openstack-keystone
+    - yum: state=present name=openstack-heat-engine
+    - yum: state=present name=openstack-heat-api
+    - yum: state=present name=openstack-nova
+    - yum: state=present name=openstack-glance
+    - yum: state=present name=openstack-neutron-ml2
+    - yum: state=present name=openstack-neutron-openvswitch
+    - yum: state=present name=mysql-server
+    - yum: state=present name=rabbitmq-server
+    - action: shell /sbin/service mysqld start
+    - action: shell /sbin/service rabbitmq-server start
+    - action: shell rabbitmqctl add_user openstack rabbit || true
+    - action: shell /usr/bin/mysqladmin -u root password mysql || true
+    - action: shell /usr/bin/mysqladmin -u root -h openstack-controller password mysql || true
+    - action: shell /usr/bin/mysqladmin -u root -pmysql create nova || true
+    - action: shell /usr/bin/mysqladmin -u root -pmysql create keystone || true
+    - action: shell /usr/bin/mysqladmin -u root -pmysql create glance  || true
+    - action: shell /usr/bin/mysqladmin -u root -pmysql create neutron || true
+    - action: shell /usr/bin/mysqladmin -u root -pmysql create heat || true
+    - action: shell /usr/bin/mysql -u root -pmysql -e "grant all privileges on nova.* to nova;"
+    - action: shell /usr/bin/mysql -u root -pmysql -e "grant all privileges on neutron.* to neutron;"
+    - action: shell /usr/bin/mysql -u root -pmysql -e "grant all privileges on keystone.* to keystone;"
+    - action: shell /usr/bin/mysql -u root -pmysql -e "grant all privileges on glance.* to glance;"
+    - action: shell /usr/bin/mysql -u root -pmysql -e "grant all privileges on heat.* to heat;"
+    
+
     - yum: state=present name=/tmp/misc/mosler-dashboard-2-5.i386.rpm
     - yum: state=present name=/tmp/misc/nginx-1.8.1-1.el6.ngx.x86_64.rpm
+    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/neutron.conf dest=/etc/neutron/neutron.conf
+    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/plugin.ini dest=/etc/neutron/plugin.ini
+    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/ml2.ini dest=/etc/neutron/plugins/ml2/ml2.ini
+    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/ovs_neutron_plugin.ini dest=/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
+    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/nova.conf dest=/etc/nova/nova.conf
+    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/glance-api.conf dest=/etc/glance/glance-api.conf
+    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/glance-registry.conf dest=/etc/glance/glance-registry.conf
+    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/heat.conf dest=/etc/heat/heat.conf
+    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/local_settings dest=/etc/openstack-dashboard/local_settings
+
+
 
 - name: ThinLinc
   hosts: thinlinc-master
   sudo: true
   tasks:
     - copy:  src={{ lookup('env','HOME') }}/thinlinc/ dest=/tmp/tl/
-    - copy:  src=tl_answers dest=/tmp/tl/
+    - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/tl_answers dest=/tmp/tl/
     - action: shell yum -y install /tmp/tl/*x86_64.rpm /tmp/tl/*noarch.rpm || true
     - action: shell /opt/thinlinc/sbin/tl-setup -a /tmp/tl/tl_answers
     - lineinfile: dest=/opt/thinlinc/etc/conf.d/webaccess.hconf regexp='^listen=.*$' line='listen=443'
