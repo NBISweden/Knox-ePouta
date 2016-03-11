@@ -146,3 +146,8 @@ for p in {0..10}; do
   ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$ipprefix""$((baseip+p))"
   ssh -oStrictHostKeyChecking=no centos@"$ipprefix""$((baseip+p))" exit
 done
+
+# We want to set up right away.
+
+ansible-playbook -u centos -i /tmp/inventory-"$tenant" $HOME/mosler-micro-mosler/playbooks/micromosler.yml
+
