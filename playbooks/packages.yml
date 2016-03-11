@@ -63,23 +63,7 @@
     - yum: state=present name=openstack-neutron-openvswitch
     - yum: state=present name=mysql-server
     - yum: state=present name=rabbitmq-server
-    - action: shell /sbin/service mysqld start
-    - action: shell /sbin/service rabbitmq-server start
-    - action: shell rabbitmqctl add_user openstack rabbit || true
-    - action: shell /usr/bin/mysqladmin -u root password mysql || true
-    - action: shell /usr/bin/mysqladmin -u root -h openstack-controller password mysql || true
-    - action: shell /usr/bin/mysqladmin -u root -pmysql create nova || true
-    - action: shell /usr/bin/mysqladmin -u root -pmysql create keystone || true
-    - action: shell /usr/bin/mysqladmin -u root -pmysql create glance  || true
-    - action: shell /usr/bin/mysqladmin -u root -pmysql create neutron || true
-    - action: shell /usr/bin/mysqladmin -u root -pmysql create heat || true
-    - action: shell /usr/bin/mysql -u root -pmysql -e "grant all privileges on nova.* to nova;"
-    - action: shell /usr/bin/mysql -u root -pmysql -e "grant all privileges on neutron.* to neutron;"
-    - action: shell /usr/bin/mysql -u root -pmysql -e "grant all privileges on keystone.* to keystone;"
-    - action: shell /usr/bin/mysql -u root -pmysql -e "grant all privileges on glance.* to glance;"
-    - action: shell /usr/bin/mysql -u root -pmysql -e "grant all privileges on heat.* to heat;"
     
-
     - yum: state=present name=/tmp/misc/mosler-dashboard-2-5.i386.rpm
     - yum: state=present name=/tmp/misc/nginx-1.8.1-1.el6.ngx.x86_64.rpm
     - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/neutron.conf dest=/etc/neutron/neutron.conf
@@ -91,8 +75,16 @@
     - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/glance-registry.conf dest=/etc/glance/glance-registry.conf
     - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/heat.conf dest=/etc/heat/heat.conf
     - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/local_settings dest=/etc/openstack-dashboard/local_settings
+    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/openstack_helper.sh dest=/root/openstack_helper.sh
+   
+    - action: shell /root/openstack_helper.sh
 
-
+- name LDAP
+  hosts: ldap
+  sudo: true
+  tasks:
+    - yum: state=present name=openldap-server
+    - yum: state=present name=openldap-clients
 
 - name: ThinLinc
   hosts: thinlinc-master
