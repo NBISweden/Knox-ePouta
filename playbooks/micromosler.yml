@@ -31,6 +31,19 @@
   tasks:
      -yum state=latest name=nfs-utils
 
+- name: LDAP
+  hosts: ldap
+  sudo: true
+  tasks:
+    - yum: state=present name=openldap-servers
+    - yum: state=present name=openldap-clients
+    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/ldap_helper.sh dest=/root/ldap_helper.sh
+   
+    - action: shell chmod a+x /root/ldap_helper.sh
+    - action: shell /root/ldap_helper.sh
+     
+
+
 - name: OpenStack packages
   hosts: openstack-controller:supernode:compute
   sudo: true
@@ -77,14 +90,9 @@
     - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/local_settings dest=/etc/openstack-dashboard/local_settings
     - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/openstack_helper.sh dest=/root/openstack_helper.sh
    
+    - action: shell chmod a+x /root/openstack_helper.sh
     - action: shell /root/openstack_helper.sh
 
-- name LDAP
-  hosts: ldap
-  sudo: true
-  tasks:
-    - yum: state=present name=openldap-server
-    - yum: state=present name=openldap-clients
 
 - name: ThinLinc
   hosts: thinlinc-master
