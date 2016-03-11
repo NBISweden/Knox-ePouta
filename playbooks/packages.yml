@@ -10,6 +10,20 @@
     - yum: state=present name=https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
     - yum: state=latest name=jq
 
+- name: Set up hosts info
+  hosts: all
+  sudo: true
+
+  tasks:
+    - lineinfile: dest=/etc/hosts      create=no state=present line='172.25.8.3 filsluss'
+    - lineinfile: dest=/etc/hosts      create=no state=present line='172.25.8.4 thinlinc-master'
+    - lineinfile: dest=/etc/hosts      create=no state=present line='172.25.8.5 openstack-controller tos1'
+    - lineinfile: dest=/etc/hosts      create=no state=present line='172.25.8.6 supernode tsn'
+    - lineinfile: dest=/etc/hosts      create=no state=present line='172.25.8.7 compute1'
+    - lineinfile: dest=/etc/hosts      create=no state=present line='172.25.8.8 compute2'
+    - lineinfile: dest=/etc/hosts      create=no state=present line='172.25.8.9 compute3'
+    - lineinfile: dest=/etc/hosts      create=no state=present line='172.25.8.10 hnas-emulation'
+    - lineinfile: dest=/etc/hosts      create=no state=present line='172.25.8.11 ldap'
 
 - name: NFS Support
   hosts: supernode:filsluss:hnas-emulation
@@ -18,7 +32,7 @@
      -yum state=latest name=nfs-utils
 
 - name: OpenStack packages
-  hosts: openstackcontroller:supernode:compute
+  hosts: openstack-controller:supernode:compute
   sudo: true
   tasks:
     - yum: state=present name=https://repos.fedorapeople.org/repos/openstack/EOL/openstack-icehouse/rdo-release-icehouse-4.noarch.rpm
@@ -31,14 +45,15 @@
     - yum: name=python-glanceclient state=latest
     - yum: name=python-heatclient state=latest
 
-
 - name: Controller specials
-  hosts: openstackcontroller
+  hosts: openstack-controller
   sudo: true
   tasks:
-    - yum: state=present http://nginx.org/packages/rhel/6/x86_64/RPMS/nginx-1.8.1-1.el6.ngx.x86_64.rpm
     - copy:   src={{ lookup('env','HOME') }}/misc/ dest=/tmp/misc/
-    - yum: state=present /tmp/misc/mosler-dashboard-2-5.i386.rpm
+    - yum: state=present name=/tmp/misc/Django14-1.4.21-1.el6.noarch.rpm
+    - yum: state=present name=openstack-dashboard
+    - yum: state=present name=/tmp/misc/mosler-dashboard-2-5.i386.rpm
+    - yum: state=present name=/tmp/misc/nginx-1.8.1-1.el6.ngx.x86_64.rpm
 
 - name: ThinLinc
   hosts: thinlinc-master
@@ -46,10 +61,9 @@
   tasks:
     - copy:  src={{ lookup('env','HOME') }}/thinlinc/ dest=/tmp/tl/
     - copy:  src=tl_answers dest=/tmp/tl/
-
     - action: shell yum -y install /tmp/tl/*x86_64.rpm /tmp/tl/*noarch.rpm || true
-
     - action: shell /opt/thinlinc/sbin/tl-setup -a /tmp/tl/tl_answers
+    - lineinfile: dest=/opt/thinlinc/etc/conf.d/webaccess.hconf regexp='^listen=.*$' line='listen=443'
 
  
 
