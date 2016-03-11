@@ -72,6 +72,7 @@
     - yum: state=present name=openstack-keystone
     - yum: state=present name=openstack-heat-engine
     - yum: state=present name=openstack-heat-api
+    - yum: state=present name=openstack-heat-api-cfn
     - yum: state=present name=openstack-nova
     - yum: state=present name=openstack-glance
     - yum: state=present name=openstack-neutron-ml2
