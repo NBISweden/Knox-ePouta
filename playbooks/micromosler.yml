@@ -9,6 +9,7 @@
     - yum: state=latest name=strace
     - yum: state=present name=https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
     - yum: state=latest name=jq
+    - yum: state=latest name=tcpdump
 
 - name: Set up hosts info
   hosts: all
@@ -37,6 +38,7 @@
   tasks:
     - yum: state=present name=openldap-servers
     - yum: state=present name=openldap-clients
+    - lineinfile: dest=/etc/sysconfig/iptables state=present line='-A INPUT -m state --state NEW -m tcp -p tcp --dport 389 -j ACCEPT' insertbefore='^-A INPUT -m state --state NEW .*'
     - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/ldap_helper.sh dest=/root/ldap_helper.sh
    
     - action: shell chmod a+x /root/ldap_helper.sh
@@ -80,6 +82,7 @@
     - yum: state=present name=/tmp/misc/mosler-dashboard-2-5.i386.rpm
     - yum: state=present name=/tmp/misc/nginx-1.8.1-1.el6.ngx.x86_64.rpm
     - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/neutron.conf dest=/etc/neutron/neutron.conf
+    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/keystone.conf dest=/etc/keystone/keystone.conf
     - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/plugin.ini dest=/etc/neutron/plugin.ini
     - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/ml2.ini dest=/etc/neutron/plugins/ml2/ml2.ini
     - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/ovs_neutron_plugin.ini dest=/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
