@@ -53,11 +53,14 @@ su -s /bin/sh -c "heat-manage db_sync" heat
 
 su -s /bin/sh -c "neutron-db-manage --config-file /etc/neutron/neutron.conf  --config-file /etc/neutron/plugin.ini upgrade head" neutron
 
-chkconfig openstack-keystone on || true
+chkconfig memcached on  || true
+/sbin/service memcached restart || true
 
+chkconfig openstack-keystone on || true
 /sbin/service openstack-keystone restart || true
 
 keystone role-create --name=admin
+keystone role-create --name=service
 keystone role-create --name=_member_
 
 keystone tenant-create --name=admin --description="Admin Tenant"
@@ -66,11 +69,13 @@ keystone user-role-add --user=admin --role=_member_ --tenant=admin
 
 keystone tenant-create --name=services --description="Service Tenant"
 
-keystone user-role-add --user=glance --role=_member_ --tenant=services
-keystone user-role-add --user=nova --role=_member_ --tenant=services
-keystone user-role-add --user=heat --role=_member_ --tenant=services
-keystone user-role-add --user=neutron --role=_member_ --tenant=services
-keystone user-role-add --user=keystone --role=_member_ --tenant=services
+keystone user-role-add --user=glance --role=admin --tenant=services
+keystone user-role-add --user=nova --role=admin --tenant=services
+keystone user-role-add --user=heat --role=admin --tenant=services
+keystone user-role-add --user=neutron --role=admin --tenant=services
+keystone user-role-add --user=keystone --role=admin --tenant=services
+
+
 
 
 keystone service-create --name=keystone --type=identity \
