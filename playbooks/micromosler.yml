@@ -78,6 +78,7 @@
     - yum: state=present name=openstack-neutron-ml2
     - yum: state=present name=openstack-neutron-openvswitch
     - yum: state=present name=mysql-server
+    - yum: state=present name=memcached
     - yum: state=present name=rabbitmq-server
     
     - yum: state=present name=/tmp/misc/mosler-dashboard-2-5.i386.rpm
