@@ -24,11 +24,13 @@ rabbitmqctl set_permissions openstack ".*" ".*" ".*"
 
 /usr/bin/mysqladmin -u root password mysql || true
 /usr/bin/mysqladmin -u root -h openstack-controller password mysql || true
-/usr/bin/mysqladmin -u root -pmysql create nova || true
-/usr/bin/mysqladmin -u root -pmysql create keystone || true
-/usr/bin/mysqladmin -u root -pmysql create glance  || true
-/usr/bin/mysqladmin -u root -pmysql create neutron || true
-/usr/bin/mysqladmin -u root -pmysql create heat || true
+
+/usr/bin/mysql -u root -pmysql -e "create database nova  DEFAULT CHARACTER SET = 'utf8' DEFAULT COLLATE 'utf8_general_ci";
+/usr/bin/mysql -u root -pmysql -e "create database keystone  DEFAULT CHARACTER SET = 'utf8' DEFAULT COLLATE 'utf8_general_ci";
+/usr/bin/mysql -u root -pmysql -e "create database glance  DEFAULT CHARACTER SET = 'utf8' DEFAULT COLLATE 'utf8_general_ci";
+/usr/bin/mysql -u root -pmysql -e "create database heat  DEFAULT CHARACTER SET = 'utf8' DEFAULT COLLATE 'utf8_general_ci";
+/usr/bin/mysql -u root -pmysql -e "create database neutron  DEFAULT CHARACTER SET = 'utf8' DEFAULT COLLATE 'utf8_general_ci";
+
 /usr/bin/mysql -u root -pmysql -e "grant all privileges on nova.* to nova@localhost identified by 'nova';"
 /usr/bin/mysql -u root -pmysql -e "grant all privileges on neutron.* to neutron@localhost  identified by 'neutron';"
 /usr/bin/mysql -u root -pmysql -e "grant all privileges on keystone.* to keystone@localhost identified by 'keystone';"
