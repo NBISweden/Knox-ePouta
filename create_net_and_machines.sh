@@ -150,8 +150,10 @@ sleep 60
 # Here because in cleanup we don't care about IPs (we don't care enough to pick up the information)
 for p in {0..10}; do 
   ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$ipprefix""$((baseip+p))"
-  ssh -oStrictHostKeyChecking=no centos@"$ipprefix""$((baseip+p))" exit
+  ssh -oStrictHostKeyChecking=no -t centos@"$ipprefix""$((baseip+p))"  'sudo yum -y install cloud-utils-growpart && sudo growpart /dev/vda 1 && sudo shutdown -r now'
 done
+
+sleep 40
 
 # We want to set up right away.
 
