@@ -23,6 +23,10 @@ fi
 . ~/"$tenant"-openrc.sh
 
 
+for p in 1 2 3; do
+  ./cleanup.sh
+done
+
 dhcpagent=a3edfcfa-c91b-4e24-98d0-51b79d1ee38d
 
 
@@ -146,14 +150,31 @@ $ipprefix$((baseip+7))
 
 EOF
 
-sleep 60
-# Here because in cleanup we don't care about IPs (we don't care enough to pick up the information)
-for p in {0..10}; do 
-  ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$ipprefix""$((baseip+p))"
-  ssh -oStrictHostKeyChecking=no -t centos@"$ipprefix""$((baseip+p))"  'sudo yum -y install cloud-utils-growpart && sudo growpart /dev/vda 1 && sudo shutdown -r now'
+# Wait for all hosts
+while true; do
+  for p in {0..9}; do
+    ssh -oStrictHostKeyChecking=no -tt centos@"$ipprefix""$((baseip+p))" echo finished 
+  done | grep -c finished | grep -q 10 && break
 done
 
-sleep 40
+
+# Here because in cleanup we don't care about IPs (we don't care enough to pick up the information)
+for p in {0..9}; do 
+  ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$ipprefix""$((baseip+p))"
+  
+  ssh -oStrictHostKeyChecking=no -tt centos@"$ipprefix""$((baseip+p))" 'echo proxy=http://130.238.7.178:3128/ | sudo tee -a /etc/yum.conf' </dev/null
+  ssh -oStrictHostKeyChecking=no -tt centos@"$ipprefix""$((baseip+p))"  'sudo yum -y install epel-release'  < /dev/null
+ ssh -oStrictHostKeyChecking=no -tt centos@"$ipprefix""$((baseip+p))"  'sudo yum -y install cloud-utils-growpart && sudo growpart /dev/vda 1 && sudo shutdown -r now'  < /dev/null
+done
+
+# Wait for all hosts
+while true; do
+  for p in {0..9}; do
+    ssh -oStrictHostKeyChecking=no -tt centos@"$ipprefix""$((baseip+p))" echo finished 
+  done | grep -c finished | grep -q 10 && break
+done
+
+
 
 # We want to set up right away.
 
