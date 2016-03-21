@@ -156,4 +156,13 @@ neutron net-create public-net --shared --router:external=True
 
 neutron subnet-create public-net --name public-subnet   --allocation-pool start=172.18.0.30,end=172.18.0.200  --disable-dhcp --gateway 172.18.0.1  172.18.0.0/24
 
+nova flavor-create mosler.1core auto 500 10 1
+nova flavor-create mosler.2cores auto 500 10 1
+nova flavor-create mosler.4cores auto 500 10 1
+nova flavor-create mosler.8cores auto 500 10 1
+nova flavor-create mosler.16cores auto 500 10 1
+
+nova aggregate-create service-and-login serv-login
+nova aggregate-add-host  service-and-login compute1.novalocal^C
+
 exit 0

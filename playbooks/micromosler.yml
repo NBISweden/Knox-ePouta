@@ -131,17 +131,33 @@
       yum: state=present name=openstack-neutron
     - yum: state=present name=openstack-neutron-ml2
     - yum: state=present name=openstack-neutron-openvswitch
+    - lineinfile: dest=/etc/sysctl.conf regexp='^\s*net.ipv4.ip_forward\s*=.*$' line='net.ipv4.ip_forward=1'
+    - lineinfile: dest=/etc/sysctl.conf regexp='^\s*net.ipv4.conf.all.rp_filter\s*=.*$' line='net.ipv4.conf.all.rp_filter=0'
+    - lineinfile: dest=/etc/sysctl.conf regexp='^\s*net.ipv4.conf.default.rp_filter\s*=.*$' line='net.ipv4.conf.default.rp_filter=0'
+    - lineinfile: dest=/etc/sysctl.conf regexp='^\s*net.bridge.bridge-nf-call-arptables\s*=.*$' line='net.bridge.bridge-nf-call-arptables=1'
+    - lineinfile: dest=/etc/sysctl.conf regexp='^\s*net.bridge.bridge-nf-call-iptables\s*=.*$' line='net.bridge.bridge-nf-call-iptables=1'
+    - lineinfile: dest=/etc/sysctl.conf regexp='^\s*net.bridge.bridge-nf-call-ip6tables\s*=.*$' line='net.bridge.bridge-nf-call-ip6tables=1'
     - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/neutron.conf dest=/etc/neutron/neutron.conf
     - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/plugin.ini dest=/etc/neutron/plugin.ini
     - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/ml2.ini dest=/etc/neutron/plugins/ml2/ml2.ini
     - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/ovs_neutron_plugin.ini dest=/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
+    - service: name=openvswitch enabled=yes state=started
+    - shell: ovs-vsctl add-br br-eth1 || true
+    - shell: ovs-vsctl add-port br-eth1 eth1|| true
     - service: name=neutron-dhcp-agent enabled=yes state=started
     - service: name=neutron-l3-agent enabled=yes state=started
     - service: name=neutron-openvswitch-agent enabled=yes state=started
     - service: name=neutron-metadata-agent enabled=yes state=started
     - service: name=neutron-ovs-cleanup enabled=yes state=started
-
-
+    - name: restart machine
+      command: shutdown -r now "Ansible updates triggered"
+      async: 0
+      poll: 0
+      ignore_errors: true
+    - name: waiting for server to come back
+      local_action: wait_for host={{ inventory_hostname }}
+        state=started
+      sudo: false
 
 - name: OpenStack compute
   hosts: compute
@@ -152,13 +168,31 @@
     - yum: state=present name=openstack-neutron-ml2
     - yum: state=present name=openstack-neutron-openvswitch
     - yum: state=present name=openstack-nova
+    - lineinfile: dest=/etc/sysctl.conf regexp='^\s*net.ipv4.ip_forward\s*=.*$' line='net.ipv4.ip_forward=1'
+    - lineinfile: dest=/etc/sysctl.conf regexp='^\s*net.ipv4.conf.all.rp_filter\s*=.*$' line='net.ipv4.conf.all.rp_filter=0'
+    - lineinfile: dest=/etc/sysctl.conf regexp='^\s*net.ipv4.conf.default.rp_filter\s*=.*$' line='net.ipv4.conf.default.rp_filter=0'
+    - lineinfile: dest=/etc/sysctl.conf regexp='^\s*net.bridge.bridge-nf-call-arptables\s*=.*$' line='net.bridge.bridge-nf-call-arptables=1'
+    - lineinfile: dest=/etc/sysctl.conf regexp='^\s*net.bridge.bridge-nf-call-iptables\s*=.*$' line='net.bridge.bridge-nf-call-iptables=1'
+    - lineinfile: dest=/etc/sysctl.conf regexp='^\s*net.bridge.bridge-nf-call-ip6tables\s*=.*$' line='net.bridge.bridge-nf-call-ip6tables=1'
+    - shell: ovs-vsctl add-br br-eth1 || true
+    - shell: ovs-vsctl add-port br-eth1 eth1|| true
     - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/neutron.conf dest=/etc/neutron/neutron.conf
     - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/plugin.ini dest=/etc/neutron/plugin.ini
     - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/ml2.ini dest=/etc/neutron/plugins/ml2/ml2.ini
     - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/ovs_neutron_plugin.ini dest=/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
     - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/nova.conf dest=/etc/nova/nova.conf
-    - service: name=neutron-openvswitch-agent enabled=yes state=started
-    - service: name=openstack-nova-compute enabled=yes state=started
+    - service: name=openvswitch enabled=yes
+    - service: name=neutron-openvswitch-agent enabled=yes 
+    - service: name=openstack-nova-compute enabled=yes
+    - name: restart machine
+      command: shutdown -r now "Ansible updates triggered"
+      async: 0
+      poll: 0
+      ignore_errors: true
+    - name: waiting for server to come back
+      local_action: wait_for host={{ inventory_hostname }}
+        state=started
+      sudo: false
 
 
 
@@ -167,7 +201,8 @@
   hosts: supernode
   sudo: true
   tasks:
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/fix_proj.sh dest=/usr/local/bin/
+    - name: Copy files to supernode
+      copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/fix_proj.sh dest=/usr/local/bin/
     - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/import_user dest=/usr/local/bin/
     - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/passwd_line dest=/usr/local/bin/
     - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/queue_responder dest=/usr/local/bin/
@@ -178,16 +213,32 @@
     - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/uppmax-links.sh dest=/usr/local/bin/
     - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/uppmax-sync.sh dest=/usr/local/bin/
 
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/project_gid dest=/usr/local/sbin/
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/project_ips dest=/usr/local/sbin/
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/project_members dest=/usr/local/sbin/
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/refreshimage dest=/usr/local/sbin/
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/setup_homedir.sh dest=/usr/local/sbin/
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/thinlinc_proj_setup dest=/usr/local/sbin/
+    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/project_gid dest=/usr/local/sbin/ mode=0755
+    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/project_ips dest=/usr/local/sbin/ mode=0755
+    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/project_members dest=/usr/local/sbin/ mode=0755
+    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/refreshimage dest=/usr/local/sbin/ mode=0755
+    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/setup_homedir.sh dest=/usr/local/sbin/ mode=0755
+    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/thinlinc_proj_setup dest=/usr/local/sbin/ mode=0755
 
+    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/create_project.sh dest=/usr/local/bin/ mode=0755
+    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/create_heat_template.sh dest=/usr/local/bin/ mode=0755
+    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/create_omd_config.sh dest=/usr/local/bin/ mode=0755
+    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/get_vlan.sh dest=/usr/local/bin/ mode=0755
+    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/heat_add_compute.sh dest=/usr/local/bin/ mode=0755
 
+    - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/create_nfs_share.sh dest=/usr/local/bin/ mode=0755
+    - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/nfs_san_check.sh dest=/usr/local/bin/ mode=0755
 
+    - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/public-net-helper.sh dest=/root/bin/ mode=0755
 
+    - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/mosler-template-resources-private_net-only dest=/usr/local/heat/ mode=0755
+    - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/mosler-template-resources-network dest=/usr/local/heat/ mode=0755
+    - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/mosler-template-resources-secgroups dest=/usr/local/heat/ mode=0755
+    - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/mosler-template-resources-loginnode dest=/usr/local/heat/ mode=0755
+    - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/mosler-template-resources-servicenode dest=/usr/local/heat/ mode=0755
+    - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/mosler-template-parameters dest=/usr/local/heat/ mode=0755
+
+    - shell: /root/bin/public-net-helper.sh
 
 - name: ThinLinc
   hosts: thinlinc-master
@@ -195,8 +246,8 @@
   tasks:
     - copy:  src={{ lookup('env','HOME') }}/thinlinc/ dest=/tmp/tl/
     - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/tl_answers dest=/tmp/tl/
-    - action: shell yum -y install /tmp/tl/*x86_64.rpm /tmp/tl/*noarch.rpm || true
-    - action: shell /opt/thinlinc/sbin/tl-setup -a /tmp/tl/tl_answers || true
+    - shell: yum -y install /tmp/tl/*x86_64.rpm /tmp/tl/*noarch.rpm || true
+    - shell: /opt/thinlinc/sbin/tl-setup -a /tmp/tl/tl_answers || true
     - lineinfile: dest=/opt/thinlinc/etc/conf.d/webaccess.hconf regexp='^listen=.*$' line='listen=443'
 
  

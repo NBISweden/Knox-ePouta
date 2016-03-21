@@ -25,10 +25,11 @@ done
 
 
 
-neutron router-interface-delete  "$proj"-router "$proj"-subnet
+neutron router-interface-delete  "$proj"-router "$proj"-mgmt-subnet
 
 neutron router-delete "$proj"-router
-neutron subnet-delete "$proj"-subnet
+neutron subnet-delete "$proj"-mgmt-subnet
+neutron subnet-delete "$proj"-data-subnet
 
 neutron security-group-list -c id -f value | while read secgroup; do
   neutron security-group-delete "$secgroup"

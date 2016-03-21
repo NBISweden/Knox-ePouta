@@ -32,8 +32,8 @@ dhcpagent=a3edfcfa-c91b-4e24-98d0-51b79d1ee38d
 
 extnet=`neutron net-show "public" | sed -ne '/\sid\s/ s/.*\s\([-0-9a-f][-0-9a-f]*\)\s.*/\1/ p'`
 
-if neutron net-show "$tenant"-net 2>&1 | fgrep -q "Unable to find network"; then
- neutron net-create --vlan-transparent=True "$tenant"-net
+if neutron net-show "$tenant"-data-net 2>&1 | fgrep -q "Unable to find network"; then
+ neutron net-create --vlan-transparent=True "$tenant"-data-net
 fi
 
 if neutron router-show "${tenant}-router" 2>&1 | fgrep -q "Unable to find router"; then
@@ -48,25 +48,36 @@ else
     neutron router-gateway-set "$rid" "$extnet"
 fi
 
-if neutron net-show "${tenant}-net" 2>&1 | fgrep -q "Unable to find network"; then
-  neutron net-create  "${tenant}-net"
+if neutron net-show "${tenant}-mgmt-net" 2>&1 | fgrep -q "Unable to find network"; then
+  neutron net-create  "${tenant}-mgmt-net"
 fi
 
-if neutron subnet-show "${tenant}-subnet" 2>&1 | fgrep -q "Unable to find subnet"; then
-  neutron subnet-create --name "${tenant}-subnet" "${tenant}-net" 172.25.8.0/22 --gateway 172.25.8.1
+if neutron subnet-show "${tenant}-mgmt-subnet" 2>&1 | fgrep -q "Unable to find subnet"; then
+  neutron subnet-create --name "${tenant}-mgmt-subnet" "${tenant}-mgmt-net" 172.25.8.0/22 --gateway 172.25.8.1
 fi
 
-sid=`neutron subnet-show "${tenant}-subnet" | sed -ne '/\sid\s/ s/.*\s\([-0-9a-f][-0-9a-f]*\)\s.*/\1/ p'`
-nid=`neutron net-show "${tenant}-net" | sed -ne '/\sid\s/ s/.*\s\([-0-9a-f][-0-9a-f]*\)\s.*/\1/ p'`
+if neutron net-show "${tenant}-data-net" 2>&1 | fgrep -q "Unable to find network"; then
+  neutron net-create  "${tenant}-data-net"
+fi
+
+if neutron subnet-show "${tenant}-data-subnet" 2>&1 | fgrep -q "Unable to find subnet"; then
+  neutron subnet-create --name "${tenant}-data-subnet" "${tenant}-data-net" 10.10.10.0/24 
+fi
+
+msid=`neutron subnet-show "${tenant}-mgmt-subnet" | sed -ne '/\sid\s/ s/.*\s\([-0-9a-f][-0-9a-f]*\)\s.*/\1/ p'`
+mnid=`neutron net-show "${tenant}-mgmt-net" | sed -ne '/\sid\s/ s/.*\s\([-0-9a-f][-0-9a-f]*\)\s.*/\1/ p'`
+
+dsid=`neutron subnet-show "${tenant}-data-subnet" | sed -ne '/\sid\s/ s/.*\s\([-0-9a-f][-0-9a-f]*\)\s.*/\1/ p'`
+dnid=`neutron net-show "${tenant}-data-net" | sed -ne '/\sid\s/ s/.*\s\([-0-9a-f][-0-9a-f]*\)\s.*/\1/ p'`
 
 
-if [ x = "x$sid" -o x = "x$rid" -o x = "x$nid"  ]; then
+if [ x = "x$msid" -o x = "x$rid" -o x = "x$mnid"  ]; then
     echo "Subnet, network or router issues for $proj, skipping."
 else
-    neutron router-interface-add "$rid" "$sid"
+    neutron router-interface-add "$rid" "$msid"
 fi
 
-neutron dhcp-agent-network-add "$dhcpagent" "${tenant}-net"
+neutron dhcp-agent-network-add "$dhcpagent" "${tenant}-mgmt-net"
 
 #
 
@@ -83,16 +94,16 @@ neutron security-group-rule-create mmosler1-sg --ethertype ipv4 --direction egre
 
 
 
-nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.3 --key-name "$tenant"-key --security-group "$tenant"-sg openstack-controller
-nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.4 --key-name "$tenant"-key --security-group "$tenant"-sg thinlinc-master
-nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.5 --key-name "$tenant"-key --security-group "$tenant"-sg filsluss
-nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.6 --key-name "$tenant"-key --security-group "$tenant"-sg supernode
-nova boot --flavor m1.large --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.7 --key-name "$tenant"-key --security-group "$tenant"-sg compute1
-nova boot --flavor m1.large --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.8 --key-name "$tenant"-key --security-group "$tenant"-sg compute2
-nova boot --flavor m1.large --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.9 --key-name "$tenant"-key --security-group "$tenant"-sg compute3
-nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.10 --key-name "$tenant"-key --security-group "$tenant"-sg hnas-emulation
-nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.11 --key-name "$tenant"-key --security-group "$tenant"-sg ldap
-nova boot --flavor m1.small --image CentOS6 --nic net-id="$nid",v4-fixed-ip=172.25.8.12 --key-name "$tenant"-key --security-group "$tenant"-sg networking-node
+nova boot --flavor m1.small --image CentOS6 --nic net-id="$mnid",v4-fixed-ip=172.25.8.3 --key-name "$tenant"-key --security-group "$tenant"-sg openstack-controller
+nova boot --flavor m1.small --image CentOS6 --nic net-id="$mnid",v4-fixed-ip=172.25.8.4 --key-name "$tenant"-key --security-group "$tenant"-sg thinlinc-master
+nova boot --flavor m1.small --image CentOS6 --nic net-id="$mnid",v4-fixed-ip=172.25.8.5 --key-name "$tenant"-key --security-group "$tenant"-sg filsluss
+nova boot --flavor m1.small --image CentOS6 --nic net-id="$mnid",v4-fixed-ip=172.25.8.6 --key-name "$tenant"-key --security-group "$tenant"-sg supernode
+nova boot --flavor m1.large --image CentOS6 --nic net-id="$mnid",v4-fixed-ip=172.25.8.7 --key-name "$tenant"-key --security-group "$tenant"-sg compute1
+nova boot --flavor m1.large --image CentOS6 --nic net-id="$mnid",v4-fixed-ip=172.25.8.8 --nic net-id="$dnid",v4-fixed-ip=10.10.10.111 --key-name "$tenant"-key --security-group "$tenant"-sg compute2
+nova boot --flavor m1.large --image CentOS6 --nic net-id="$mnid",v4-fixed-ip=172.25.8.9 --nic net-id="$dnid",v4-fixed-ip=10.10.10.112 --key-name "$tenant"-key --security-group "$tenant"-sg compute3
+nova boot --flavor m1.small --image CentOS6 --nic net-id="$mnid",v4-fixed-ip=172.25.8.10 --key-name "$tenant"-key --security-group "$tenant"-sg hnas-emulation
+nova boot --flavor m1.small --image CentOS6 --nic net-id="$mnid",v4-fixed-ip=172.25.8.11 --key-name "$tenant"-key --security-group "$tenant"-sg ldap
+nova boot --flavor m1.small --image CentOS6 --nic net-id="$mnid",v4-fixed-ip=172.25.8.12 --nic net-id="$dnid",v4-fixed-ip=10.10.10.101 --key-name "$tenant"-key --security-group "$tenant"-sg networking-node
 
 
 
