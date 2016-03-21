@@ -24,11 +24,13 @@ rabbitmqctl set_permissions openstack ".*" ".*" ".*"
 
 /usr/bin/mysqladmin -u root password mysql || true
 /usr/bin/mysqladmin -u root -h openstack-controller password mysql || true
-/usr/bin/mysqladmin -u root -pmysql create nova || true
-/usr/bin/mysqladmin -u root -pmysql create keystone || true
-/usr/bin/mysqladmin -u root -pmysql create glance  || true
-/usr/bin/mysqladmin -u root -pmysql create neutron || true
-/usr/bin/mysqladmin -u root -pmysql create heat || true
+
+/usr/bin/mysql -u root -pmysql -e "create database nova  DEFAULT CHARACTER SET = 'utf8' DEFAULT COLLATE 'utf8_general_ci';"
+/usr/bin/mysql -u root -pmysql -e "create database keystone  DEFAULT CHARACTER SET = 'utf8' DEFAULT COLLATE 'utf8_general_ci';"
+/usr/bin/mysql -u root -pmysql -e "create database glance  DEFAULT CHARACTER SET = 'utf8' DEFAULT COLLATE 'utf8_general_ci';"
+/usr/bin/mysql -u root -pmysql -e "create database heat  DEFAULT CHARACTER SET = 'utf8' DEFAULT COLLATE 'utf8_general_ci';"
+/usr/bin/mysql -u root -pmysql -e "create database neutron;"
+
 /usr/bin/mysql -u root -pmysql -e "grant all privileges on nova.* to nova@localhost identified by 'nova';"
 /usr/bin/mysql -u root -pmysql -e "grant all privileges on neutron.* to neutron@localhost  identified by 'neutron';"
 /usr/bin/mysql -u root -pmysql -e "grant all privileges on keystone.* to keystone@localhost identified by 'keystone';"
@@ -51,13 +53,16 @@ su -s /bin/sh -c "nova-manage db sync" nova
 
 su -s /bin/sh -c "heat-manage db_sync" heat
 
-su -s /bin/sh -c "neutron-db-manage --config-file /etc/neutron/neutron.conf  --config-file /etc/neutron/plugin.ini upgrade head" neutron
+su -s /bin/sh -c "neutron-db-manage --config-file /etc/neutron/neutron.conf  --config-file /etc/neutron/plugin.ini upgrade 5ac1c354a051" neutron
+
+chkconfig memcached on  || true
+/sbin/service memcached restart || true
 
 chkconfig openstack-keystone on || true
-
 /sbin/service openstack-keystone restart || true
 
 keystone role-create --name=admin
+keystone role-create --name=service
 keystone role-create --name=_member_
 
 keystone tenant-create --name=admin --description="Admin Tenant"
@@ -66,11 +71,13 @@ keystone user-role-add --user=admin --role=_member_ --tenant=admin
 
 keystone tenant-create --name=services --description="Service Tenant"
 
-keystone user-role-add --user=glance --role=_member_ --tenant=services
-keystone user-role-add --user=nova --role=_member_ --tenant=services
-keystone user-role-add --user=heat --role=_member_ --tenant=services
-keystone user-role-add --user=neutron --role=_member_ --tenant=services
-keystone user-role-add --user=keystone --role=_member_ --tenant=services
+keystone user-role-add --user=glance --role=admin --tenant=services
+keystone user-role-add --user=nova --role=admin --tenant=services
+keystone user-role-add --user=heat --role=admin --tenant=services
+keystone user-role-add --user=neutron --role=admin --tenant=services
+keystone user-role-add --user=keystone --role=admin --tenant=services
+
+
 
 
 keystone service-create --name=keystone --type=identity \
@@ -135,10 +142,27 @@ for p in heat-api heat-api-cfn heat-engine nova-api nova-scheduler nova-conducto
     /sbin/service openstack-$p restart
 done
 
-for p in server openvswitch-agent dhcp-agent l3-agent ovs-cleanup metadata-agent; do
-    chkconfig neutron-$p on 
-    /sbin/service neutron-$p restart
-done
+chkconfig neutron-server on
+/sbin/service neutron-server restart
+
 
 chkconfig httpd on
 /sbin/service httpd restart
+
+
+. /root/.keystonerc
+#
+neutron net-create public-net --shared --router:external=True
+
+neutron subnet-create public-net --name public-subnet   --allocation-pool start=172.18.0.30,end=172.18.0.200  --disable-dhcp --gateway 172.18.0.1  172.18.0.0/24
+
+nova flavor-create mosler.1core auto 500 10 1
+nova flavor-create mosler.2cores auto 500 10 1
+nova flavor-create mosler.4cores auto 500 10 1
+nova flavor-create mosler.8cores auto 500 10 1
+nova flavor-create mosler.16cores auto 500 10 1
+
+nova aggregate-create service-and-login serv-login
+nova aggregate-add-host  service-and-login compute1.novalocal^C
+
+exit 0
