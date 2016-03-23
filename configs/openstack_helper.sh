@@ -151,6 +151,18 @@ chkconfig httpd on
 
 
 . /root/.keystonerc
+
+# Wait for neutron and nova to be ready.
+
+until neutron net-list; do
+  sleep 1
+done
+
+until nova list; do
+  sleep 1
+done
+
+
 #
 neutron net-create public-net --shared --router:external=True
 
@@ -163,6 +175,7 @@ nova flavor-create mosler.8cores auto 500 10 1
 nova flavor-create mosler.16cores auto 500 10 1
 
 nova aggregate-create service-and-login serv-login
-nova aggregate-add-host  service-and-login compute1.novalocal^C
+nova aggregate-add-host  service-and-login compute1.novalocal
+
 
 exit 0
