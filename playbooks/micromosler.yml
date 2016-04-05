@@ -81,6 +81,7 @@
   sudo: true
   tasks:
     - copy:   src={{ lookup('env','HOME') }}/misc/ dest=/tmp/misc/
+    - file: path=/root/bin state=directory
     - yum: state=present name=/tmp/misc/Django14-1.4.21-1.el6.noarch.rpm
     - yum: state=present name=openstack-dashboard
     - yum: state=present name=openstack-neutron
@@ -108,10 +109,9 @@
     - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/glance-registry.conf dest=/etc/glance/glance-registry.conf
     - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/heat.conf dest=/etc/heat/heat.conf
     - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/local_settings dest=/etc/openstack-dashboard/local_settings
-    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/openstack_helper.sh dest=/root/openstack_helper.sh
+    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/openstack_helper.sh dest=/root/bin/openstack_helper.sh mode=0755
    
-    - shell: chmod a+x /root/openstack_helper.sh
-    - shell: /root/openstack_helper.sh
+    - shell: /root/bin/openstack_helper.sh  2>/tmp/oserr >/tmp/osout
     - copy:   src={{ lookup('env','HOME') }}/mosler-images/project-computenode-stable dest=/tmp/mosler-images/
     - shell: . /root/.keystonerc && glance image-create --file /tmp/mosler-images/project-computenode-stable --disk-format qcow2 --container-format bare  --name "project-computenode-stable" --is-public True  
     - shell: rm /tmp/mosler-images/project-computenode-stable
@@ -229,8 +229,12 @@
     - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/create_nfs_share.sh dest=/usr/local/bin/ mode=0755
     - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/nfs_san_check.sh dest=/usr/local/bin/ mode=0755
 
+    - file: path=/root/bin state=directory
+ 
     - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/public-net-helper.sh dest=/root/bin/ mode=0755
 
+    - file: path=/usr/local/heat state=directory
+ 
     - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/mosler-template-resources-private_net-only dest=/usr/local/heat/ mode=0755
     - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/mosler-template-resources-network dest=/usr/local/heat/ mode=0755
     - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/mosler-template-resources-secgroups dest=/usr/local/heat/ mode=0755
