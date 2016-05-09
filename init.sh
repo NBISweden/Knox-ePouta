@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Default values
 ipprefix=10.254.0.
@@ -75,10 +75,10 @@ DATA_NET=$(neutron net-list --tenant_id=$TENANT_ID | awk '/ '${OS_TENANT_NAME}-d
 #ROUTER_ID=$(neutron router-list -F id -F name | awk '/'${OS_TENANT_NAME}-router'/ {print $2}')
 
 
-function boot_machine(){
+function boot_machine {
 local name=$1
-local id=$2
-local flavor=$3
+local id=${MACHINE_IPs[$name]}
+local flavor=${FLAVORS[$machine]}
 
 cat > vm_init-$id.yml <<ENDCLOUDINIT
 #cloud-config
@@ -138,7 +138,8 @@ final_message: "The system is finally up, after $UPTIME seconds"
 
 ENDCLOUDINIT
 
-if [ -z "$4" ]; then
+# If Data IP is not zero-length
+if [ -z ${DATA_IPs[$machine]} ]; then
     DN=--nic net-id=$DATA_NET,v4-fixed-ip=10.10.10.$id
     cat >> vm_init-$id.yml <<ENDCLOUDINIT
 write_files:
@@ -206,18 +207,8 @@ $name
 
 } # End boot function
 
-
-boot_machine openstack-controller 3 'm1.small'
-boot_machine thinlinc-master      4 'm1.small'
-boot_machine filsluss             5 'm1.small'
-boot_machine supernode            6 'm1.small'
-boot_machine compute1             7 'm1.large'
-boot_machine compute2             8 'm1.large' 111
-boot_machine compute2             9 'm1.large' 112
-boot_machine hnas-emulation      10 'm1.small'
-boot_machine ldap                11 'm1.small'
-boot_machine networking-node     12 'm1.small' 101
-
+# Let's go
+for machine in "${MACHINES[@]}"; do boot_machine $machine; done
 
 
 # nova floating-ip-associate filsluss "$IPPREFIX""$BASE_IP"

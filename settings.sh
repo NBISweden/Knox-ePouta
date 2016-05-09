@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 export OS_PROJECT_DOMAIN_ID=default
 export OS_USER_DOMAIN_ID=default
@@ -16,31 +16,47 @@ else
     exit 1;
 fi
 
-TENANT_ID=$(openstack project list | awk '/'${OS_TENANT_NAME}'/ {print $2}')
+#TENANT_ID=$(openstack project list | awk '/'${OS_TENANT_NAME}'/ {print $2}')
+TENANT_ID=qsdfqdsf-qsdfqsdf
 
-# Declaring the machines names
-
+# Declaring the machines
+# Arrays are one-dimensional only. Tyvärr!
 declare -a MACHINES
-MACHINES[0]=(openstack-controller 3 'm1.small')
-MACHINES[1]=(thinlinc-master      4 'm1.small')
-MACHINES[2]=(filsluss             5 'm1.small')
-MACHINES[3]=(supernode            6 'm1.small')
-MACHINES[4]=(compute1             7 'm1.large')
-MACHINES[5]=(compute2             8 'm1.large' 111)
-MACHINES[6]=(compute2             9 'm1.large' 112)
-MACHINES[7]=(hnas-emulation      10 'm1.small')
-MACHINES[8]=(ldap                11 'm1.small')
-MACHINES[9]=(networking-node     12 'm1.small' 101)
+declare -A FLAVORS
+declare -A MACHINE_IPs
+declare -A DATA_IPs
 
-# MACHINES=(\
-#     (openstack-controller 3 'm1.small') \
-#     (thinlinc-master      4 'm1.small') \
-#     (filsluss             5 'm1.small') \
-#     (supernode            6 'm1.small') \
-#     (compute1             7 'm1.large') \
-#     (compute2             8 'm1.large' 111) \
-#     (compute2             9 'm1.large' 112) \
-#     (hnas-emulation      10 'm1.small') \
-#     (ldap                11 'm1.small') \
-#     (networking-node     12 'm1.small' 101) \
-# )
+MACHINES=('openstack-controller' 'thinlinc-master' 'filsluss' 'supernode' 'compute1' 'compute2' 'compute3' 'hnas-emulation' 'ldap' 'networking-node')
+
+FLAVORS=(\
+    [openstack-controller]=m1.small \
+    [thinlinc-master]=m1.small \
+    [filsluss]=m1.small \
+    [supernode]=m1.small \
+    [compute1]=m1.large \
+    [compute2]=m1.large \
+    [compute3]=m1.large \
+    [hnas-emulation]=m1.small \
+    [ldap]=m1.small \
+    [networking-node]=m1.small \
+)
+
+MACHINE_IPs=(\
+    [openstack-controller]=3 \
+    [thinlinc-master]=4 \
+    [filsluss]=5 \
+    [supernode]=6 \
+    [compute1]=7 \
+    [compute2]=8 \
+    [compute3]=9 \
+    [hnas-emulation]=10 \
+    [ldap]=11 \
+    [networking-node]=12 \
+)
+
+DATA_IPs=(\
+    [compute1]=110 \
+    [compute2]=111 \
+    [compute3]=112 \
+    [networking-node]=101 \
+)

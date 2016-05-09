@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Default values
 NETWORKS=yes
@@ -31,12 +31,17 @@ echo "Cleaning running machines"
 #     echo "Deleting VM: $machine"
 #     nova delete $machine
 # done
-for $machine in "${MACHINES[@]}"
-do
+function delete_machine {
+    local machine=$1
     echo "Deleting VM: $machine"
-    nova delete $machine[0]
-done
-#boot_machine openstack-controller 3 'm1.small'
+    echo -e "\tFlavor: " ${FLAVORS[$machine] }
+    echo -e "\tMachine IP: " ${MACHINE_IPs[$machine]}
+    local d=${DATA_IPs[$machine]};
+    [[ -z $d ]] || echo -e "\tData IP: $d"
+    nova delete $machine
+}
+
+for machine in "${MACHINES[@]}"; do delete_machine $machine; done
 
 
 # Cleaning the network information
