@@ -16,8 +16,7 @@ else
     exit 1;
 fi
 
-#TENANT_ID=$(openstack project list | awk '/'${OS_TENANT_NAME}'/ {print $2}')
-TENANT_ID=qsdfqdsf-qsdfqsdf
+TENANT_ID=$(openstack project list | awk '/'${OS_TENANT_NAME}'/ {print $2}')
 
 # Declaring the machines
 # Arrays are one-dimensional only. Tyvärr!
