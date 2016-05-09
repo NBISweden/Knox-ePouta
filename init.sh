@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 
 # Default values
+VERBOSE=no
 ipprefix=10.254.0.
 baseip=51
 NETWORK=no
 SG=no
 
 function usage(){
-    echo "Usage: $0 [--ipprefix <aaa.bbb.ccc.>] [--baseip <num>] --with-network --with-sg"
+    echo "Usage: $0 [--verbose|-v] [--ipprefix <aaa.bbb.ccc.>] [--baseip <num>] --with-network --with-sg"
 }
 
 # While there are arguments or '--' is reached
@@ -17,6 +18,7 @@ while [ $# -gt 0 ]; do
         --baseip) BASEIP=$2; shift ;;
         --with-network) NETWORK=yes;;
         --with-sg) SG=yes;;
+        --verbose|-v) VERBOSE=yes;;
         --help|-h) usage; exit 0;;
         --) shift; break;;
         *) echo "$0: error - unrecognized option $1" 1>&2; usage; exit 1;;
@@ -33,7 +35,9 @@ source ./settings.sh
 DHCPAGENT_ID=a3edfcfa-c91b-4e24-98d0-51b79d1ee38d
 EXTNET_ID=$(neutron net-list | awk '/ public /{print $2}')
 
-if [ $NETWORK = "yes"]; then
+if [ $NETWORK = "yes" ]; then
+
+    [ $VERBOSE = "yes" ] && echo "Creating router and networks"
 
     neutron router-create ${OS_TENANT_NAME}-router
     ROUTER_ID=$(neutron router-list -F id -F name | awk '/'${OS_TENANT_NAME}-router'/ {print $2}')
@@ -58,8 +62,10 @@ fi # End network config
 
 # Using Cloudinit instead to include several keys at boot time
 #nova keypair-add --pub-key "$HOME"/.ssh/id_rsa.pub "${OS_TENANT_NAME}"-key
+# Note: nova boot will not use the --key-name flag
 
 if [ $SG = "yes" ]; then
+    [ $VERBOSE = "yes" ] && echo "Creating the Security Group: ${OS_TENANT_NAME}-sg"
     neutron security-group-create ${OS_TENANT_NAME}-sg
     neutron security-group-rule-create ${OS_TENANT_NAME}-sg --direction ingress --ethertype ipv4 --protocol icmp 
     neutron security-group-rule-create ${OS_TENANT_NAME}-sg --direction ingress --ethertype ipv4 --protocol tcp --port-range-min 22 --port-range-max 22
@@ -71,6 +77,14 @@ fi
 # TENANT_ID is defined in credentials.sh
 MGMT_NET=$(neutron net-list --tenant_id=$TENANT_ID | awk '/ '${OS_TENANT_NAME}-mgmt-net' /{print $2}')
 DATA_NET=$(neutron net-list --tenant_id=$TENANT_ID | awk '/ '${OS_TENANT_NAME}-data-net' /{print $2}')
+
+[ $VERBOSE = "yes" ] && echo -e "Management Net: $MGMT_NET\nData Net: $DATA_NET"
+
+if [ -z $MGMT_NET -o -z $DATA_NET ]; then
+    echo "Error: Could not find the Management or Data network"
+    echo -e "\tMaybe you should re-run with the --with-network --with-sg flags?"
+    exit 1
+fi
 
 #ROUTER_ID=$(neutron router-list -F id -F name | awk '/'${OS_TENANT_NAME}-router'/ {print $2}')
 
@@ -139,8 +153,8 @@ final_message: "The system is finally up, after $UPTIME seconds"
 ENDCLOUDINIT
 
 # If Data IP is not zero-length
-if [ -z ${DATA_IPs[$machine]} ]; then
-    DN=--nic net-id=$DATA_NET,v4-fixed-ip=10.10.10.$id
+if [ ! -z ${DATA_IPs[$machine]} ]; then
+    local DN="--nic net-id=$DATA_NET,v4-fixed-ip=10.10.10.${DATA_IPs[$machine]}"
     cat >> vm_init-$id.yml <<ENDCLOUDINIT
 write_files:
   - sudo: true
@@ -203,9 +217,7 @@ $DN \
 --user-data vm_init-$id.yml \
 $name
 
-#--key-name "<ssh-key-pair>" \
-
-} # End boot function
+} # End boot_machine function
 
 # Let's go
 for machine in "${MACHINES[@]}"; do boot_machine $machine; done
