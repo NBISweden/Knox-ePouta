@@ -3,9 +3,10 @@
 # Default values
 NETWORKS=yes
 SG=yes
+VERBOSE=no
 
 function usage(){
-    echo "Usage: $0 [--skip-networks] [--skip-sg]"
+    echo "Usage: $0 [--verbose|-v] [--skip-networks] [--skip-sg]"
 }
 
 # While there are arguments or '--' is reached
@@ -13,6 +14,7 @@ while [ $# -gt 0 ]; do
     case "$1" in
         --skip-networks) NETWORKS=no;;
         --skip-sg) SG=no;;
+        --verbose|-v) VERBOSE=yes;;
         --help|-h) usage; exit 0;;
         --) shift; break;;
         *) echo "$0: error - unrecognized option $1" 1>&2; usage; exit 1;;
@@ -27,26 +29,17 @@ source ./settings.sh
 
 # Cleaning all the running machines
 echo "Cleaning running machines"
-# nova  list  --fields id  | while read a machine c; do
-#     echo "Deleting VM: $machine"
-#     nova delete $machine
-# done
 function delete_machine {
     local machine=$1
-    echo "Deleting VM: $machine"
-    echo -e "\tFlavor: " ${FLAVORS[$machine] }
-    echo -e "\tMachine IP: " ${MACHINE_IPs[$machine]}
-    local d=${DATA_IPs[$machine]};
-    [[ -z $d ]] || echo -e "\tData IP: $d"
+    [ $VERBOSE = "yes" ] && echo "Deleting VM: $machine"
     nova delete $machine
 }
 
 for machine in "${MACHINES[@]}"; do delete_machine $machine; done
 
-
 # Cleaning the network information
 if [ $NETWORKS = "yes" ]; then
-    echo "Cleaning the network information"
+    [ $VERBOSE = "yes" ] && echo "Cleaning the network information"
 
     neutron router-interface-delete ${OS_TENANT_NAME}-router ${OS_TENANT_NAME}-mgmt-subnet
 
@@ -61,7 +54,7 @@ fi # End cleaning the networks
 
 # Cleaning the security group
 if [ $SG = "yes" ]; then
-    echo "Cleaning security group: ${OS_TENANT_NAME}-sg"
+    [ $VERBOSE = "yes" ] && echo "Cleaning security group: ${OS_TENANT_NAME}-sg"
     neutron security-group-delete ${OS_TENANT_NAME}-sg
 fi
 

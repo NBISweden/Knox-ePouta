@@ -2,8 +2,8 @@
 
 # Default values
 VERBOSE=no
-ipprefix=10.254.0.
-baseip=51
+IPPREFIX=10.254.0.
+BASEIP=51
 NETWORK=no
 SG=no
 
@@ -222,17 +222,13 @@ $name
 # Let's go
 for machine in "${MACHINES[@]}"; do boot_machine $machine; done
 
+# Associate floating IPs (Looping through the keys)
+for i in "${!MACHINES[@]}"
+do
+    [ $VERBOSE = "yes" ] && echo -e "Associating $IPPREFIX$((BASEIP + i)) to ${MACHINES[$i]}"
+    nova floating-ip-associate $machine "$IPPREFIX"$((BASEIP + i))
+done
 
-# nova floating-ip-associate filsluss "$IPPREFIX""$BASE_IP"
-# nova floating-ip-associate thinlinc-master "$IPPREFIX""$((BASE_IP+1))"
-# nova floating-ip-associate openstack-controller "$IPPREFIX""$((BASE_IP+2))"
-# nova floating-ip-associate supernode "$IPPREFIX""$((BASE_IP+3))"
-# nova floating-ip-associate compute1 "$IPPREFIX""$((BASE_IP+4))"
-# nova floating-ip-associate compute2 "$IPPREFIX""$((BASE_IP+5))"
-# nova floating-ip-associate compute3 "$IPPREFIX""$((BASE_IP+6))"
-# nova floating-ip-associate hnas-emulation "$IPPREFIX""$((BASE_IP+7))"
-# nova floating-ip-associate ldap "$IPPREFIX""$((BASE_IP+8))"
-# nova floating-ip-associate networking-node "$IPPREFIX""$((BASE_IP+9))"
 
 
 # cat - > /tmp/inventory-"${OS_TENANT_NAME}" <<EOF
