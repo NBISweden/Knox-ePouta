@@ -21,15 +21,26 @@ TENANT_ID=$(openstack project list | awk '/'${OS_TENANT_NAME}'/ {print $2}')
 # Declaring the machines names
 
 declare -a MACHINES
-MACHINES=(\
-    (openstack-controller 3 'm1.small') \
-    (thinlinc-master      4 'm1.small') \
-    (filsluss             5 'm1.small') \
-    (supernode            6 'm1.small') \
-    (compute1             7 'm1.large') \
-    (compute2             8 'm1.large' 111) \
-    (compute2             9 'm1.large' 112) \
-    (hnas-emulation      10 'm1.small') \
-    (ldap                11 'm1.small') \
-    (networking-node     12 'm1.small' 101) \
-)
+MACHINES[0]=(openstack-controller 3 'm1.small')
+MACHINES[1]=(thinlinc-master      4 'm1.small')
+MACHINES[2]=(filsluss             5 'm1.small')
+MACHINES[3]=(supernode            6 'm1.small')
+MACHINES[4]=(compute1             7 'm1.large')
+MACHINES[5]=(compute2             8 'm1.large' 111)
+MACHINES[6]=(compute2             9 'm1.large' 112)
+MACHINES[7]=(hnas-emulation      10 'm1.small')
+MACHINES[8]=(ldap                11 'm1.small')
+MACHINES[9]=(networking-node     12 'm1.small' 101)
+
+# MACHINES=(\
+#     (openstack-controller 3 'm1.small') \
+#     (thinlinc-master      4 'm1.small') \
+#     (filsluss             5 'm1.small') \
+#     (supernode            6 'm1.small') \
+#     (compute1             7 'm1.large') \
+#     (compute2             8 'm1.large' 111) \
+#     (compute2             9 'm1.large' 112) \
+#     (hnas-emulation      10 'm1.small') \
+#     (ldap                11 'm1.small') \
+#     (networking-node     12 'm1.small' 101) \
+# )
