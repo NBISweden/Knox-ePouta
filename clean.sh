@@ -27,6 +27,9 @@ source ./settings.sh
 
 #######################################################################
 
+[ $VERBOSE = "yes" ] && echo "Removing the Cloudinit folder"
+rm -rf $CLOUDINIT_FOLDER
+
 # Cleaning all the running machines
 echo "Cleaning running machines"
 function delete_machine {

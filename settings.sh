@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-export OS_PROJECT_DOMAIN_ID=default
-export OS_USER_DOMAIN_ID=default
-export OS_PROJECT_NAME=mmosler1
-export OS_TENANT_NAME=mmosler1
-export OS_AUTH_URL=http://controller:5000/v3
-export OS_IDENTITY_API_VERSION=3
-export OS_IMAGE_API_VERSION=2
-export OS_ENDPOINT_TYPE=internalURL # User internal URLs
+OS_PROJECT_DOMAIN_ID=default
+OS_USER_DOMAIN_ID=default
+OS_PROJECT_NAME=mmosler1
+OS_TENANT_NAME=mmosler1
+OS_AUTH_URL=http://controller:5000/v3
+OS_IDENTITY_API_VERSION=3
+OS_IMAGE_API_VERSION=2
+OS_ENDPOINT_TYPE=internalURL # User internal URLs
     
 if [ -f user.rc ]; then
     source user.rc
@@ -15,6 +15,8 @@ else
     echo "Error: User credentials not found [user.rc]"
     exit 1;
 fi
+
+CLOUDINIT_FOLDER=./cloudinit
 
 TENANT_ID=$(openstack project list | awk '/'${OS_TENANT_NAME}'/ {print $2}')
 

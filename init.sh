@@ -94,7 +94,8 @@ local name=$1
 local id=${MACHINE_IPs[$name]}
 local flavor=${FLAVORS[$machine]}
 
-cat > vm_init-$id.yml <<ENDCLOUDINIT
+mkdir -p ${CLOUDINIT_FOLDER}
+cat > ${CLOUDINIT_FOLDER}/vm_init-$id.yml <<ENDCLOUDINIT
 #cloud-config
 disable_root: true
 system_info:
@@ -114,6 +115,7 @@ ssh_authorized_keys:
 
 runcmd:
   - [ sudo, "sed -i -e '/^PermitRootLogin/s/^.*$/PermitRootLogin no/' /etc/ssh/sshd_config" ]
+  - 'echo proxy=http://130.238.7.178:3128/ | sudo tee -a /etc/yum.conf' </dev/null'
 
 write_files:
   - sudo: true
@@ -137,11 +139,13 @@ write_files:
 
 # Yum packages
 packages:
+    - epel-release
     - lsof
     - strace
     - https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
     - jq
     - tcpdump
+    - cloud-utils-growpart
 
 # Yum update
 repo_update: true
@@ -155,7 +159,7 @@ ENDCLOUDINIT
 # If Data IP is not zero-length
 if [ ! -z ${DATA_IPs[$machine]} ]; then
     local DN="--nic net-id=$DATA_NET,v4-fixed-ip=10.10.10.${DATA_IPs[$machine]}"
-    cat >> vm_init-$id.yml <<ENDCLOUDINIT
+    cat >> ${CLOUDINIT_FOLDER}/vm_init-$id.yml <<ENDCLOUDINIT
 write_files:
   - sudo: true
   - path: /etc/sysconfig/network-scripts/ifcfg-eth0
@@ -214,7 +218,7 @@ nova boot \
 --nic net-id=${MGMT_NET},v4-fixed-ip=172.25.8.$id \
 $DN \
 --security-group ${OS_TENANT_NAME}-sg \
---user-data vm_init-$id.yml \
+--user-data ${CLOUDINIT_FOLDER}/vm_init-$id.yml \
 $name
 
 } # End boot_machine function
@@ -229,49 +233,35 @@ do
     nova floating-ip-associate $machine "$IPPREFIX"$((BASEIP + i))
 done
 
+#INVENTORY=/tmp/inventory-${OS_TENANT_NAME}
+INVENTORY=./inventory-${OS_TENANT_NAME}
+echo "[all]" > $INVENTORY
+for i in "${!MACHINES[@]}"; do echo "$IPPREFIX$((BASE_IP + i))" >> $INVENTORY; done
 
+echo -e "\n[filsluss]" >> $INVENTORY
+echo $IPPREFIX$BASE_IP >> $INVENTORY
 
-# cat - > /tmp/inventory-"${OS_TENANT_NAME}" <<EOF
-# [all]
-# $IPPREFIX$((BASE_IP))     
-# $IPPREFIX$((BASE_IP+1))     
-# $IPPREFIX$((BASE_IP+2))     
-# $IPPREFIX$((BASE_IP+3))     
-# $IPPREFIX$((BASE_IP+4))     
-# $IPPREFIX$((BASE_IP+5))     
-# $IPPREFIX$((BASE_IP+6))     
-# $IPPREFIX$((BASE_IP+7))     
-# $IPPREFIX$((BASE_IP+8))     
-# $IPPREFIX$((BASE_IP+9))     
-                                                                                  
-# [filsluss]
-# $IPPREFIX$((BASE_IP))     
+echo -e "\n[networking-node]" >> $INVENTORY
+echo $IPPREFIX$((BASE_IP + ${MACHINE_IPs[networking-node]})) >> $INVENTORY
 
-# [networking-node]
-# $IPPREFIX$((BASE_IP+9))     
+echo -e "\n[ldap]" >> $INVENTORY
+echo $IPPREFIX$((BASE_IP + ${MACHINE_IPs[ldap]})) >> $INVENTORY
 
-# [ldap]
-# $IPPREFIX$((BASE_IP+8))     
+echo -e "\n[thinlinc-master]" >> $INVENTORY
+echo $IPPREFIX$((BASE_IP + ${MACHINE_IPs[thinlinc-master]})) >> $INVENTORY
 
-# [thinlinc-master]
-# $IPPREFIX$((BASE_IP+1))     
+echo -e "\n[openstack-controller]" >> $INVENTORY
+echo $IPPREFIX$((BASE_IP + ${MACHINE_IPs[openstack-controller]})) >> $INVENTORY
 
-# [openstack-controller]
-# $IPPREFIX$((BASE_IP+2))     
+echo -e "\n[supernode]" >> $INVENTORY
+echo $IPPREFIX$((BASE_IP + ${MACHINE_IPs[supernode]})) >> $INVENTORY
 
-# [supernode]
-# $IPPREFIX$((BASE_IP+3))     
+echo -e "\n[compute]" >> $INVENTORY
+for i in {1..3}; do echo $IPPREFIX$((BASE_IP + ${MACHINE_IPs[compute$i]})) >> $INVENTORY; done
 
-# [compute]
-# $IPPREFIX$((BASE_IP+4))
-# $IPPREFIX$((BASE_IP+5))
-# $IPPREFIX$((BASE_IP+6))
+echo -e "\n[hnas-emulation]" >> $INVENTORY
+echo $IPPREFIX$((BASE_IP + ${MACHINE_IPs[hnas-emulation]})) >> $INVENTORY
 
-# [hnas-emulation]
-# $IPPREFIX$((BASE_IP+7))
-
-
-# EOF
 
 # # Wait for all hosts
 # while true; do
@@ -301,5 +291,5 @@ done
 
 # # We want to set up right away.
 
-# ansible-playbook -u centos -i /tmp/inventory-"${OS_TENANT_NAME}" $HOME/mosler-micro-mosler/playbooks/micromosler.yml
+# ansible-playbook -u centos -i /tmp/inventory-"${OS_TENANT_NAME}" ./playbooks/micromosler.yml
 
