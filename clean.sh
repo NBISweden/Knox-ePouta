@@ -1,19 +1,17 @@
 #!/usr/bin/env bash
 
 # Default values
-NETWORKS=no
-SG=no
+ALL=no
 VERBOSE=no
 
 function usage(){
-    echo "Usage: $0 [--verbose|-v] [--with-networks] [--with-sg]"
+    echo "Usage: $0 [--verbose|-v] [--all]"
 }
 
 # While there are arguments or '--' is reached
 while [ $# -gt 0 ]; do
     case "$1" in
-        --with-networks) NETWORKS=yes;;
-        --with-sg) SG=yes;;
+        --all|-a) ALL=yes;;
         --verbose|-v) VERBOSE=yes;;
         --help|-h) usage; exit 0;;
         --) shift; break;;
@@ -47,7 +45,7 @@ nova list --minimal --tenant ${TENANT_ID} | awk '{print $4}' | while read machin
 done
 
 # Cleaning the network information
-if [ $NETWORKS = "yes" ]; then
+if [ $ALL = "yes" ]; then
     [ $VERBOSE = "yes" ] && echo "Cleaning the network information"
 
     [ $VERBOSE = "yes" ] && echo "Disconnecting the router from the management subnet"
@@ -66,13 +64,11 @@ if [ $NETWORKS = "yes" ]; then
     [ $VERBOSE = "yes" ] && echo "Deleting floating IPs"
     for machine in "${MACHINES[@]}"; do echo neutron floatingip-delete $IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET)); done
 
-fi # End cleaning the networks
-
-# Cleaning the security group
-if [ $SG = "yes" ]; then
+    # Cleaning the security group
     [ $VERBOSE = "yes" ] && echo "Cleaning security group: ${OS_TENANT_NAME}-sg"
     neutron security-group-delete ${OS_TENANT_NAME}-sg
-fi
+
+fi # End cleaning if ALL
 
 echo "Cleaning done"
 exit 0

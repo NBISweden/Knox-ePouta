@@ -2,19 +2,17 @@
 
 # Default values
 VERBOSE=no
-NETWORK=no
-SG=no
+ALL=no
 
 function usage(){
-    echo "Usage: $0 [--verbose|-v] [--ipprefix <aaa.bbb.ccc.>] [--with-network] [--with-sg]"
+    echo "Usage: $0 [--verbose|-v] [--ipprefix <aaa.bbb.ccc.>] [--all]"
 }
 
 # While there are arguments or '--' is reached
 while [ $# -gt 0 ]; do
     case "$1" in
         --ipprefix) IPPREFIX=$2; shift ;;
-        --with-network) NETWORK=yes;;
-        --with-sg) SG=yes;;
+        --all|-a) ALL=yes;;
         --verbose|-v) VERBOSE=yes;;
         --help|-h) usage; exit 0;;
         --) shift; break;;
@@ -31,7 +29,7 @@ source ./settings.sh
 
 EXTNET_ID=$(neutron net-list | awk '/ public /{print $2}')
 
-if [ $NETWORK = "yes" ]; then
+if [ $ALL = "no" ]; then
 
     [ $VERBOSE = "yes" ] && echo "Creating routers and networks"
 
@@ -65,13 +63,7 @@ if [ $NETWORK = "yes" ]; then
 	neutron floatingip-create --tenant-id ${TENANT_ID} --floating-ip-address $IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET)) public
     done
 
-fi # End network config
 
-# Using Cloudinit instead to include several keys at boot time
-#nova keypair-add --pub-key "$HOME"/.ssh/id_rsa.pub "${OS_TENANT_NAME}"-key
-# Note: nova boot will not use the --key-name flag
-
-if [ $SG = "yes" ]; then
     [ $VERBOSE = "yes" ] && echo "Creating the Security Group: ${OS_TENANT_NAME}-sg"
     neutron security-group-create ${OS_TENANT_NAME}-sg
     neutron security-group-rule-create ${OS_TENANT_NAME}-sg --direction ingress --ethertype ipv4 --protocol icmp 
@@ -79,7 +71,12 @@ if [ $SG = "yes" ]; then
     neutron security-group-rule-create ${OS_TENANT_NAME}-sg --direction ingress --ethertype ipv4 --protocol tcp --port-range-min 443 --port-range-max 443
     neutron security-group-rule-create ${OS_TENANT_NAME}-sg --ethertype ipv4 --direction ingress --remote-group-id ${OS_TENANT_NAME}-sg
     neutron security-group-rule-create ${OS_TENANT_NAME}-sg --ethertype ipv4 --direction egress --remote-group-id ${OS_TENANT_NAME}-sg
-fi
+
+fi # End ALL config
+
+# Using Cloudinit instead to include several keys at boot time
+#nova keypair-add --pub-key "$HOME"/.ssh/id_rsa.pub "${OS_TENANT_NAME}"-key
+# Note: nova boot will not use the --key-name flag
 
 # TENANT_ID is defined in credentials.sh
 MGMT_NET=$(neutron net-list --tenant_id=$TENANT_ID | awk '/ '${OS_TENANT_NAME}-mgmt-net' /{print $2}')
@@ -92,9 +89,6 @@ if [ -z $MGMT_NET ] || [ -z $DATA_NET ]; then
     echo -e "\tMaybe you should re-run with the --with-network --with-sg flags?"
     exit 1
 fi
-
-#ROUTER_ID=$(neutron router-list -F id -F name | awk '/ '${OS_TENANT_NAME}-router' / {print $2}')
-
 
 function boot_machine {
 local name=$1
