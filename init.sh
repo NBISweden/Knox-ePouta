@@ -29,7 +29,7 @@ source ./settings.sh
 
 EXTNET_ID=$(neutron net-list | awk '/ public /{print $2}')
 
-if [ $ALL = "no" ]; then
+if [ $ALL = "yes" ]; then
 
     [ $VERBOSE = "yes" ] && echo "Creating routers and networks"
 
@@ -86,7 +86,7 @@ DATA_NET=$(neutron net-list --tenant_id=$TENANT_ID | awk '/ '${OS_TENANT_NAME}-d
 
 if [ -z $MGMT_NET ] || [ -z $DATA_NET ]; then
     echo "Error: Could not find the Management or Data network"
-    echo -e "\tMaybe you should re-run with the --with-network --with-sg flags?"
+    echo -e "\tMaybe you should re-run with the --all flags?"
     exit 1
 fi
 
