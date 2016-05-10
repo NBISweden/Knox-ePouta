@@ -31,27 +31,39 @@ source ./settings.sh
 rm -rf $CLOUDINIT_FOLDER
 
 # Cleaning all the running machines
-echo "Cleaning running machines"
 function delete_machine {
     local machine=$1
     [ $VERBOSE = "yes" ] && echo "Deleting VM: $machine"
     nova delete $machine
 }
 
-for machine in "${MACHINES[@]}"; do delete_machine $machine; done
+echo "Cleaning running machines"
+#for machine in "${MACHINES[@]}"; do delete_machine $machine; done
+nova list --minimal --tenant ${TENANT_ID} | awk '{print $4}' | while read machine; do
+    # If I find the server in the MACHINES list. Otherwise, don't touch! Might not be your server
+    for m in "${MACHINES[@]}"; do
+	[ "$m" = "$machine" ] && delete_machine $m;
+    done
+done
 
 # Cleaning the network information
 if [ $NETWORKS = "yes" ]; then
     [ $VERBOSE = "yes" ] && echo "Cleaning the network information"
 
+    [ $VERBOSE = "yes" ] && echo "Disconnecting the router from the management subnet"
     neutron router-interface-delete ${OS_TENANT_NAME}-router ${OS_TENANT_NAME}-mgmt-subnet
 
+    [ $VERBOSE = "yes" ] && echo "Deleting networks and subnets"
     neutron subnet-delete ${OS_TENANT_NAME}-mgmt-subnet
     neutron subnet-delete ${OS_TENANT_NAME}-data-subnet
     neutron net-delete ${OS_TENANT_NAME}-mgmt-net
     neutron net-delete ${OS_TENANT_NAME}-data-net
 
+    [ $VERBOSE = "yes" ] && echo "Deleting router"
     neutron router-delete ${OS_TENANT_NAME}-router
+
+    [ $VERBOSE = "yes" ] && echo "Deleting floating IPs"
+    for machine in "${MACHINES[@]}"; do echo neutron floatingip-delete $IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET)); done
 
 fi # End cleaning the networks
 

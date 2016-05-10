@@ -17,6 +17,8 @@ else
 fi
 
 CLOUDINIT_FOLDER=./cloudinit
+IPPREFIX=10.254.0.
+OFFSET=51
 
 TENANT_ID=$(openstack project list | awk '/'${OS_TENANT_NAME}'/ {print $2}')
 

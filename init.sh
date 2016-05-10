@@ -2,20 +2,17 @@
 
 # Default values
 VERBOSE=no
-IPPREFIX=10.254.0.
-BASEIP=51
 NETWORK=no
 SG=no
 
 function usage(){
-    echo "Usage: $0 [--verbose|-v] [--ipprefix <aaa.bbb.ccc.>] [--baseip <num>] --with-network --with-sg"
+    echo "Usage: $0 [--verbose|-v] [--ipprefix <aaa.bbb.ccc.>] --with-network --with-sg"
 }
 
 # While there are arguments or '--' is reached
 while [ $# -gt 0 ]; do
     case "$1" in
         --ipprefix) IPPREFIX=$2; shift ;;
-        --baseip) BASEIP=$2; shift ;;
         --with-network) NETWORK=yes;;
         --with-sg) SG=yes;;
         --verbose|-v) VERBOSE=yes;;
@@ -40,7 +37,7 @@ if [ $NETWORK = "yes" ]; then
     [ $VERBOSE = "yes" ] && echo "Creating router and networks"
 
     neutron router-create ${OS_TENANT_NAME}-router
-    ROUTER_ID=$(neutron router-list -F id -F name | awk '/'${OS_TENANT_NAME}-router'/ {print $2}')
+    ROUTER_ID=$(neutron router-list -F id -F name | awk '/ '${OS_TENANT_NAME}-router' / {print $2}')
     
     if [ -z "$ROUTER_ID" ]; then
 	echo "Router issues for $proj, skipping."
@@ -55,8 +52,11 @@ if [ $NETWORK = "yes" ]; then
     neutron net-create --vlan-transparent=True ${OS_TENANT_NAME}-data-net
     neutron subnet-create --name ${OS_TENANT_NAME}-data-subnet ${OS_TENANT_NAME}-data-net 10.10.10.0/24
     
-    neutron router-interface-add $ROUTER_ID $(neutron subnet-list | awk '/'${OS_TENANT_NAME}'-mgmt-subnet/ {print $2}/')
+    neutron router-interface-add $ROUTER_ID $(neutron subnet-list | awk '/ '${OS_TENANT_NAME}'-mgmt-subnet / {print $2}')
     neutron dhcp-agent-network-add $DHCPAGENT_ID ${OS_TENANT_NAME}-mgmt-net
+
+    [ $VERBOSE = "yes" ] && echo "Creating the floating IPs"
+    for machine in "${MACHINES[@]}"; do echo neutron floatingip-create --floating-ip-address $IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET)); done
 
 fi # End network config
 
@@ -80,13 +80,13 @@ DATA_NET=$(neutron net-list --tenant_id=$TENANT_ID | awk '/ '${OS_TENANT_NAME}-d
 
 [ $VERBOSE = "yes" ] && echo -e "Management Net: $MGMT_NET\nData Net: $DATA_NET"
 
-if [ -z $MGMT_NET -o -z $DATA_NET ]; then
+if [ -z $MGMT_NET ] || [ -z $DATA_NET ]; then
     echo "Error: Could not find the Management or Data network"
     echo -e "\tMaybe you should re-run with the --with-network --with-sg flags?"
     exit 1
 fi
 
-#ROUTER_ID=$(neutron router-list -F id -F name | awk '/'${OS_TENANT_NAME}-router'/ {print $2}')
+#ROUTER_ID=$(neutron router-list -F id -F name | awk '/ '${OS_TENANT_NAME}-router' / {print $2}')
 
 
 function boot_machine {
@@ -229,61 +229,61 @@ for machine in "${MACHINES[@]}"; do boot_machine $machine; done
 # Associate floating IPs (Looping through the keys)
 for i in "${!MACHINES[@]}"
 do
-    [ $VERBOSE = "yes" ] && echo -e "Associating $IPPREFIX$((BASEIP + i)) to ${MACHINES[$i]}"
-    nova floating-ip-associate $machine "$IPPREFIX"$((BASEIP + i))
+    [ $VERBOSE = "yes" ] && echo -e "Associating $IPPREFIX$((i + OFFSET)) to ${MACHINES[$i]}"
+    nova floating-ip-associate $machine "$IPPREFIX"$((i + OFFSET))
 done
 
 #INVENTORY=/tmp/inventory-${OS_TENANT_NAME}
 INVENTORY=./inventory-${OS_TENANT_NAME}
 echo "[all]" > $INVENTORY
-for i in "${!MACHINES[@]}"; do echo "$IPPREFIX$((BASE_IP + i))" >> $INVENTORY; done
+for i in "${!MACHINES[@]}"; do echo "$IPPREFIX$((OFFSET + i))" >> $INVENTORY; done
 
 echo -e "\n[filsluss]" >> $INVENTORY
-echo $IPPREFIX$BASE_IP >> $INVENTORY
+echo $IPPREFIX$OFFSET >> $INVENTORY
 
 echo -e "\n[networking-node]" >> $INVENTORY
-echo $IPPREFIX$((BASE_IP + ${MACHINE_IPs[networking-node]})) >> $INVENTORY
+echo $IPPREFIX$((OFFSET + ${MACHINE_IPs[networking-node]})) >> $INVENTORY
 
 echo -e "\n[ldap]" >> $INVENTORY
-echo $IPPREFIX$((BASE_IP + ${MACHINE_IPs[ldap]})) >> $INVENTORY
+echo $IPPREFIX$((OFFSET + ${MACHINE_IPs[ldap]})) >> $INVENTORY
 
 echo -e "\n[thinlinc-master]" >> $INVENTORY
-echo $IPPREFIX$((BASE_IP + ${MACHINE_IPs[thinlinc-master]})) >> $INVENTORY
+echo $IPPREFIX$((OFFSET + ${MACHINE_IPs[thinlinc-master]})) >> $INVENTORY
 
 echo -e "\n[openstack-controller]" >> $INVENTORY
-echo $IPPREFIX$((BASE_IP + ${MACHINE_IPs[openstack-controller]})) >> $INVENTORY
+echo $IPPREFIX$((OFFSET + ${MACHINE_IPs[openstack-controller]})) >> $INVENTORY
 
 echo -e "\n[supernode]" >> $INVENTORY
-echo $IPPREFIX$((BASE_IP + ${MACHINE_IPs[supernode]})) >> $INVENTORY
+echo $IPPREFIX$((OFFSET + ${MACHINE_IPs[supernode]})) >> $INVENTORY
 
 echo -e "\n[compute]" >> $INVENTORY
-for i in {1..3}; do echo $IPPREFIX$((BASE_IP + ${MACHINE_IPs[compute$i]})) >> $INVENTORY; done
+for i in {1..3}; do echo $IPPREFIX$((OFFSET + ${MACHINE_IPs[compute$i]})) >> $INVENTORY; done
 
 echo -e "\n[hnas-emulation]" >> $INVENTORY
-echo $IPPREFIX$((BASE_IP + ${MACHINE_IPs[hnas-emulation]})) >> $INVENTORY
+echo $IPPREFIX$((OFFSET + ${MACHINE_IPs[hnas-emulation]})) >> $INVENTORY
 
 
 # # Wait for all hosts
 # while true; do
 #   for p in {0..9}; do
-#     ssh -oStrictHostKeyChecking=no -tt centos@"$IPPREFIX""$((BASE_IP+p))" echo finished 
+#     ssh -oStrictHostKeyChecking=no -tt centos@"$IPPREFIX""$((OFFSET+p))" echo finished 
 #   done | grep -c finished | grep -q 10 && break
 # done
 
 
 # # Here because in cleanup we don't care about IPs (we don't care enough to pick up the information)
 # for p in {0..9}; do 
-#   ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$IPPREFIX""$((BASE_IP+p))"
+#   ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$IPPREFIX""$((OFFSET+p))"
   
-#   ssh -oStrictHostKeyChecking=no -tt centos@"$IPPREFIX""$((BASE_IP+p))" 'echo proxy=http://130.238.7.178:3128/ | sudo tee -a /etc/yum.conf' </dev/null
-#   ssh -oStrictHostKeyChecking=no -tt centos@"$IPPREFIX""$((BASE_IP+p))"  'sudo yum -y install epel-release'  < /dev/null
-#  ssh -oStrictHostKeyChecking=no -tt centos@"$IPPREFIX""$((BASE_IP+p))"  'sudo yum -y install cloud-utils-growpart && sudo growpart /dev/vda 1 && sudo shutdown -r now'  < /dev/null
+#   ssh -oStrictHostKeyChecking=no -tt centos@"$IPPREFIX""$((OFFSET+p))" 'echo proxy=http://130.238.7.178:3128/ | sudo tee -a /etc/yum.conf' </dev/null
+#   ssh -oStrictHostKeyChecking=no -tt centos@"$IPPREFIX""$((OFFSET+p))"  'sudo yum -y install epel-release'  < /dev/null
+#  ssh -oStrictHostKeyChecking=no -tt centos@"$IPPREFIX""$((OFFSET+p))"  'sudo yum -y install cloud-utils-growpart && sudo growpart /dev/vda 1 && sudo shutdown -r now'  < /dev/null
 # done
 
 # # Wait for all hosts
 # while true; do
 #   for p in {0..9}; do
-#     ssh -oStrictHostKeyChecking=no -tt centos@"$IPPREFIX""$((BASE_IP+p))" echo finished 
+#     ssh -oStrictHostKeyChecking=no -tt centos@"$IPPREFIX""$((OFFSET+p))" echo finished 
 #   done | grep -c finished | grep -q 10 && break
 # done
 
