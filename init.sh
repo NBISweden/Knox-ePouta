@@ -29,31 +29,36 @@ source ./settings.sh
 #######################################################################
 
 
-DHCPAGENT_ID=a3edfcfa-c91b-4e24-98d0-51b79d1ee38d
 EXTNET_ID=$(neutron net-list | awk '/ public /{print $2}')
 
 if [ $NETWORK = "yes" ]; then
 
-    [ $VERBOSE = "yes" ] && echo "Creating router and networks"
+    [ $VERBOSE = "yes" ] && echo "Creating routers and networks"
 
-    neutron router-create ${OS_TENANT_NAME}-router
-    ROUTER_ID=$(neutron router-list -F id -F name | awk '/ '${OS_TENANT_NAME}-router' / {print $2}')
+    MGMT_ROUTER_ID=$(neutron router-create ${OS_TENANT_NAME}-mgmt-router | awk '/ id / { print $4 }')
+    DATA_ROUTER_ID=$(neutron router-create ${OS_TENANT_NAME}-data-router | awk '/ id / { print $4 }')
     
-    if [ -z "$ROUTER_ID" ]; then
-	echo "Router issues for $proj, skipping."
+    if [ -z "$MGMT_ROUTER_ID" ] || [ -z "$DATA_ROUTER_ID" ]; then
+	echo "Router issues, skipping."
     else
-	neutron router-gateway-set $ROUTER_ID $EXTNET_ID
+	[ $VERBOSE = "yes" ] && echo -e "Attaching Management router to the External \"public\" network"
+	neutron router-gateway-set $MGMT_ROUTER_ID $EXTNET_ID
     fi
     
     # Creating the management and data networks
     neutron net-create ${OS_TENANT_NAME}-mgmt-net
-    neutron subnet-create --name ${OS_TENANT_NAME}-mgmt-subnet ${OS_TENANT_NAME}-mgmt-net 172.25.8.0/22 --gateway 172.25.8.1
+    neutron subnet-create --name ${OS_TENANT_NAME}-mgmt-subnet ${OS_TENANT_NAME}-mgmt-net --gateway 172.25.8.1 172.25.8.0/22
+    neutron router-interface-add ${OS_TENANT_NAME}-mgmt-router ${OS_TENANT_NAME}-mgmt-subnet
+
+    # Get the DHCP that host the public network and add an interface for the management network
+    neutron dhcp-agent-network-add $(neutron dhcp-agent-list-hosting-net -c id -f value public) ${OS_TENANT_NAME}-mgmt-net
+    # Note: Not sure why Pontus wanted it like that. I'd create the mgmt-subnet with --enable-dhcp and that's it
+
     # should we have the vlan-transparent flag?
     neutron net-create --vlan-transparent=True ${OS_TENANT_NAME}-data-net
-    neutron subnet-create --name ${OS_TENANT_NAME}-data-subnet ${OS_TENANT_NAME}-data-net 10.10.10.0/24
+    neutron subnet-create --name ${OS_TENANT_NAME}-data-subnet ${OS_TENANT_NAME}-data-net --gateway 10.10.10.1 10.10.10.0/24 #--enable-dhcp 
+    neutron router-interface-add ${OS_TENANT_NAME}-data-router ${OS_TENANT_NAME}-data-subnet
     
-    neutron router-interface-add $ROUTER_ID $(neutron subnet-list | awk '/ '${OS_TENANT_NAME}'-mgmt-subnet / {print $2}')
-    neutron dhcp-agent-network-add $DHCPAGENT_ID ${OS_TENANT_NAME}-mgmt-net
 
     [ $VERBOSE = "yes" ] && echo "Creating the floating IPs"
     for machine in "${MACHINES[@]}"; do
@@ -174,9 +179,9 @@ write_files:
       NAME=eth0
       DEVICE=eth0
       ONBOOT=yes
-      IPADDR=192.168.20.<number>
+      IPADDR=172.25.8.11.$id
       PREFIX=24
-      GATEWAY=192.168.20.1
+      GATEWAY=172.25.8.11.1
       NM_CONTROLLED=no
 
   - path: /etc/sysconfig/network-scripts/ifcfg-eth1
@@ -189,23 +194,26 @@ write_files:
       NAME=eth1
       DEVICE=eth1
       ONBOOT=yes
-      IPADDR=192.168.21.<number>
+      IPADDR=10.10.10.${DATA_IPs[$machine]}
       PREFIX=24
-      #GATEWAY=192.168.21.1
+      GATEWAY=10.10.10.1
       NM_CONTROLLED=no
 
   - path: /etc/sysconfig/network-scripts/rule-eth1
     owner: root:root
     permissions: '0644'
     content: |
-      to 192.168.21.0/24 lookup thinlink
-      from 192.168.21.0/24 lookup thinlink
+      to 10.10.10.0/24 lookup data
+      from 10.10.10.0/24 lookup data
 
   - path: /etc/sysconfig/network-scripts/route-eth1
     owner: root:root
     permissions: '0644'
     content: |
-      default via 192.168.21.1 dev eth1 table thinlink
+      default via 10.10.10.1 dev eth1 table data
+
+bootcmd:
+  - echo 200 data >> /etc/iproute2/rt_tables
 
 runcmd:
   - echo 'Restarting network'
@@ -224,6 +232,7 @@ $DN \
 $name
 
 [ $VERBOSE = "yes" ] && echo -e "\tAssociating floating IP: $IPPREFIX$((id + OFFSET)) to $name"
+local fip=$(nova floating-ip-list | awk '/ '$IPPREFIX$((id + OFFSET))' / {print $2}')
 nova floating-ip-associate $name $IPPREFIX$((id + OFFSET))
 
 } # End boot_machine function

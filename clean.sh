@@ -60,7 +60,8 @@ if [ $NETWORKS = "yes" ]; then
     neutron net-delete ${OS_TENANT_NAME}-data-net
 
     [ $VERBOSE = "yes" ] && echo "Deleting router"
-    neutron router-delete ${OS_TENANT_NAME}-router
+    neutron router-delete ${OS_TENANT_NAME}-mgmt-router
+    neutron router-delete ${OS_TENANT_NAME}-data-router
 
     [ $VERBOSE = "yes" ] && echo "Deleting floating IPs"
     for machine in "${MACHINES[@]}"; do echo neutron floatingip-delete $IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET)); done
