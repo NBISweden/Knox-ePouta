@@ -223,7 +223,7 @@ $DN \
 --user-data ${CLOUDINIT_FOLDER}/vm_init-$id.yml \
 $name
 
-[ $VERBOSE = "yes" ] && echo -e "\tAssociating floating IP: $IPPREFIX$((id + OFFSET))"
+[ $VERBOSE = "yes" ] && echo -e "\tAssociating floating IP: $IPPREFIX$((id + OFFSET)) to $name"
 nova floating-ip-associate $name $IPPREFIX$((id + OFFSET))
 
 } # End boot_machine function

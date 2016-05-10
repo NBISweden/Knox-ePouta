@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 
 # Default values
-NETWORKS=yes
-SG=yes
+NETWORKS=no
+SG=no
 VERBOSE=no
 
 function usage(){
-    echo "Usage: $0 [--verbose|-v] [--skip-networks] [--skip-sg]"
+    echo "Usage: $0 [--verbose|-v] [--with-networks] [--with-sg]"
 }
 
 # While there are arguments or '--' is reached
 while [ $# -gt 0 ]; do
     case "$1" in
-        --skip-networks) NETWORKS=no;;
-        --skip-sg) SG=no;;
+        --with-networks) NETWORKS=yes;;
+        --with-sg) SG=yes;;
         --verbose|-v) VERBOSE=yes;;
         --help|-h) usage; exit 0;;
         --) shift; break;;
