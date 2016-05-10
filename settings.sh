@@ -18,7 +18,7 @@ fi
 
 CLOUDINIT_FOLDER=./cloudinit
 IPPREFIX=10.254.0.
-OFFSET=51
+OFFSET=51 # I don't know why Pontus wants to offset the IPs
 
 TENANT_ID=$(openstack project list | awk '/'${OS_TENANT_NAME}'/ {print $2}')
 

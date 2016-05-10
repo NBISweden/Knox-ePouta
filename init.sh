@@ -6,7 +6,7 @@ NETWORK=no
 SG=no
 
 function usage(){
-    echo "Usage: $0 [--verbose|-v] [--ipprefix <aaa.bbb.ccc.>] --with-network --with-sg"
+    echo "Usage: $0 [--verbose|-v] [--ipprefix <aaa.bbb.ccc.>] [--with-network] [--with-sg]"
 }
 
 # While there are arguments or '--' is reached
@@ -56,7 +56,9 @@ if [ $NETWORK = "yes" ]; then
     neutron dhcp-agent-network-add $DHCPAGENT_ID ${OS_TENANT_NAME}-mgmt-net
 
     [ $VERBOSE = "yes" ] && echo "Creating the floating IPs"
-    for machine in "${MACHINES[@]}"; do echo neutron floatingip-create --floating-ip-address $IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET)); done
+    for machine in "${MACHINES[@]}"; do
+	neutron floatingip-create --tenant-id ${TENANT_ID} --floating-ip-address $IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET)) public
+    done
 
 fi # End network config
 
@@ -221,17 +223,20 @@ $DN \
 --user-data ${CLOUDINIT_FOLDER}/vm_init-$id.yml \
 $name
 
+[ $VERBOSE = "yes" ] && echo -e "\tAssociating floating IP: $IPPREFIX$((id + OFFSET))"
+nova floating-ip-associate $name $IPPREFIX$((id + OFFSET))
+
 } # End boot_machine function
 
 # Let's go
 for machine in "${MACHINES[@]}"; do boot_machine $machine; done
 
-# Associate floating IPs (Looping through the keys)
-for i in "${!MACHINES[@]}"
-do
-    [ $VERBOSE = "yes" ] && echo -e "Associating $IPPREFIX$((i + OFFSET)) to ${MACHINES[$i]}"
-    nova floating-ip-associate $machine "$IPPREFIX"$((i + OFFSET))
-done
+# # Associate floating IPs (Looping through the keys)
+# for i in "${!MACHINES[@]}"
+# do
+#     [ $VERBOSE = "yes" ] && echo -e "Associating $IPPREFIX$((i + OFFSET)) to ${MACHINES[$i]}"
+#     nova floating-ip-associate $machine "$IPPREFIX"$((i + OFFSET))
+# done
 
 #INVENTORY=/tmp/inventory-${OS_TENANT_NAME}
 INVENTORY=./inventory-${OS_TENANT_NAME}
