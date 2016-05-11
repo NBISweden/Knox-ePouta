@@ -24,7 +24,7 @@ done
 # Get credentials and machines settings
 source ./settings.sh
 
-[ $VERBOSE = "no" ] && REDIRECT='> /dev/null'
+[ $VERBOSE = "no" ] && REDIRECT="> /dev/null"
 
 #######################################################################
 
@@ -194,22 +194,18 @@ ENDCLOUDINIT
 fi
 
 # Booting a machine
-local CMD=nova boot
-CMD+= --flavor $flavor
-CMD+= --image 'CentOS6-micromosler'
-CMD+= --nic net-id=${MGMT_NET},v4-fixed-ip=172.25.8.$id
-CMD+= $DN
-CMD+= --security-group ${OS_TENANT_NAME}-sg
-CMD+= --user-data ${CLOUDINIT_FOLDER}/vm_init-$id.yml
-CMD+= $name
-CMD+= $REDIRECT
-eval $CMD
+nova boot \
+--flavor $flavor \
+--image 'CentOS6-micromosler' \
+--nic net-id=${MGMT_NET},v4-fixed-ip=172.25.8.$id \
+$DN \
+--security-group ${OS_TENANT_NAME}-sg \
+--user-data ${CLOUDINIT_FOLDER}/vm_init-$id.yml \
+$name
 
 [ $VERBOSE = "yes" ] && echo -e "\tAssociating floating IP: $IPPREFIX$((id + OFFSET)) to $name"
 local fip=$(nova floating-ip-list | awk '/ '$IPPREFIX$((id + OFFSET))' / {print $2}')
-local CMD=nova floating-ip-associate $name $IPPREFIX$((id + OFFSET))
-CMD+= $REDIRECT
-eval $CMD
+nova floating-ip-associate $name $IPPREFIX$((id + OFFSET))
 } # End boot_machine function
 
 # Let's go
