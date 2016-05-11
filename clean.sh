@@ -66,16 +66,21 @@ if [ $ALL = "yes" ]; then
     neutron floatingip-list -F id -F floating_ip_address | awk '{print $2$3$4}' | while read floating; do
 	# If I find the server in the MACHINES list. Otherwise, don't touch! Might not be your server
 	for machine in "${MACHINES[@]}"; do
-	    [ "${floating##*|}" = "$IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET))" ] && neutron floatingip-delete "${floating%|*}"
+	    [ "${floating##*|}" = "$IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET))" ] && neutron floatingip-delete ${floating%|*} && ssh-keygen -R ${floating%|*}
 	    #neutron floatingip-delete $IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET));
 	done
     done
+    [ -f ~/.ssh/config.${OS_TENANT_NAME} ] && mv ~/.ssh/config.${OS_TENANT_NAME} ~/.ssh/config
 
     # Cleaning the security group
     [ $VERBOSE = "yes" ] && echo "Cleaning security group: ${OS_TENANT_NAME}-sg"
     neutron security-group-delete ${OS_TENANT_NAME}-sg
 
 fi # End cleaning if ALL
+
+[ $VERBOSE = "yes" ] && echo "Cleaning cloudinit folder and ansible inventory"
+rm -rf ${CLOUDINIT_FOLDER}
+rm -f ${INVENTORY}
 
 echo "Cleaning done"
 exit 0

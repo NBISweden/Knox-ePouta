@@ -17,6 +17,7 @@ else
 fi
 
 CLOUDINIT_FOLDER=./cloudinit
+INVENTORY=./inventory-${OS_TENANT_NAME}
 IPPREFIX=10.254.0.
 OFFSET=51 # I don't know why Pontus wants to offset the IPs
 
