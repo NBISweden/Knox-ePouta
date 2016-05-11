@@ -62,9 +62,8 @@ if [ $ALL = "yes" ]; then
 
     [ $VERBOSE = "yes" ] && echo "Creating the floating IPs"
     for machine in "${MACHINES[@]}"; do
-	neutron floatingip-create --tenant-id ${TENANT_ID} --floating-ip-address $IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET)) public
+	neutron floatingip-create --tenant-id ${TENANT_ID} --floating-ip-address $IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET)) public $REDIRECT
     done
-
 
     [ $VERBOSE = "yes" ] && echo "Creating the Security Group: ${OS_TENANT_NAME}-sg"
     neutron security-group-create ${OS_TENANT_NAME}-sg
@@ -195,19 +194,22 @@ ENDCLOUDINIT
 fi
 
 # Booting a machine
-nova boot \
---flavor $flavor \
---image 'CentOS6-micromosler' \
---nic net-id=${MGMT_NET},v4-fixed-ip=172.25.8.$id \
-$DN \
---security-group ${OS_TENANT_NAME}-sg \
---user-data ${CLOUDINIT_FOLDER}/vm_init-$id.yml \
-$name $REDIRECT
+local CMD=nova boot
+CMD+= --flavor $flavor
+CMD+= --image 'CentOS6-micromosler'
+CMD+= --nic net-id=${MGMT_NET},v4-fixed-ip=172.25.8.$id
+CMD+= $DN
+CMD+= --security-group ${OS_TENANT_NAME}-sg
+CMD+= --user-data ${CLOUDINIT_FOLDER}/vm_init-$id.yml
+CMD+= $name
+CMD+= $REDIRECT
+eval $CMD
 
 [ $VERBOSE = "yes" ] && echo -e "\tAssociating floating IP: $IPPREFIX$((id + OFFSET)) to $name"
 local fip=$(nova floating-ip-list | awk '/ '$IPPREFIX$((id + OFFSET))' / {print $2}')
-nova floating-ip-associate $name $IPPREFIX$((id + OFFSET)) $REDIRECT
-
+local CMD=nova floating-ip-associate $name $IPPREFIX$((id + OFFSET))
+CMD+= $REDIRECT
+eval $CMD
 } # End boot_machine function
 
 # Let's go
