@@ -98,14 +98,21 @@ local flavor=${FLAVORS[$machine]}
 mkdir -p ${CLOUDINIT_FOLDER}
 cat > ${CLOUDINIT_FOLDER}/vm_init-$id.yml <<ENDCLOUDINIT
 #cloud-config
-disable_root: true
+debug: 1
+# disable_root: 0
+# password: hello
+# chpasswd: { expire : False }
+# ssh_pwauth: True
+# system_info:
+#   default_user:
+#     name: root
+disable_root: 1
 system_info:
   default_user:
     name: centos
     lock_passwd: true
-# Centos is already sudoer
-#    sudo: ["ALL=(ALL) NOPASSWD:ALL"]
-#    groups: sudo
+    sudo: ["ALL=(ALL) NOPASSWD:ALL"]
+    shell: /bin/bash
 
 timezone: Europe/Stockholm
 
@@ -114,12 +121,7 @@ ssh_authorized_keys:
   - ssh-dss AAAAB3NzaC1kc3MAAACBAPS8NmjvC0XVOxumjmB8qEzp/Ywz0a1ArVQy0R5KmC0OfF4jLwQlf06G5oxsyx/PhOHyMHcQN8pxoWPfkfjKA8ES8jwveDTN4sprP9wRFKHZvl+DyLvTULcIciw14afHKHx5VvG7gx8Jp9+hcuEyZXO/zP8vrFAFoTf7mU7XYsNFAAAAFQC0cdoL/Wv26mZsoOMO97w5RrV0TwAAAIEAhmijgzvzxHeN0os2vw12ycSn0FyGRWtEPclOfABuDZemX+3wCBle6G/HqO8umZ6OH+oZtcm+b5HAHYx2QXsL9ZG2VvN8hVhZlexa6z9xbYGujD+UHdbA1DKpLnHf7NEeXyyx0uD7vBKj6aPLx1btWNxCtuWRAt9A6VoJ1+ndvboAAACBALRqEh2JZqbMBuUxmVg9QDBG2BYbq+FWd64f0b+lC8kuQuBjPG0htIdrB0LdMZVaAokvA5p5XFckhouvcjECTT/6U+R+oghnN/kFztODKLJScPWPYl0zJkLrAbSQuab7cilLzRA8EZm2DtHu0+Bgvz4v9irVjjU7zIrANtjzjEt3 daz@bils.se
   - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCj6D2GkvSf47cKP9s/pdwGD5+2VH/xmBhEnDQfxVi9zZ/uEBWdx/7m5fDj7btcRxGgxlbBExu8uwi8rL4ua7VOtUY9TNjlh8fr2GCstFHI3JvnKif4i0zjBRYZI5dXwkC70hZeHAjMhKO4Nlf6SNP8ZIM+SljA8q4E0eAig25+Zdag5oUkbvReKl1H8E6KQOrwzNwKIxYvil+x9mo49qTLqI7Q4xgizxX8i44TRfO0NVS/XhLvNigShEmtQG2Y74qH/cFGe+m6/u17ewfDrxPtoE2ZnQWC7EN9WbFR/hPjrDauMNNCOedHXMZUJ5TSdsyjTPNXVHcgxaXfzHoruQBH jonas@chornholio
 
-runcmd:
-  - sudo sed -i -e '/^PermitRootLogin/s/^.*$/PermitRootLogin no/' /etc/ssh/sshd_config
-  - echo 'proxy=http://130.238.7.178:3128/' | sudo tee -a /etc/yum.conf </dev/null
-
 write_files:
-  - sudo: true
   - owner: root:root
   - path: /etc/hosts
     owner: root:root
@@ -137,24 +139,6 @@ write_files:
       172.25.8.9 compute3
       172.25.8.10 hnas-emulation
       172.25.8.11 ldap
-
-# Yum packages
-packages:
-    - epel-release
-    - lsof
-    - strace
-    - https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
-    - jq
-    - tcpdump
-    - cloud-utils-growpart
-
-# Yum update
-repo_update: true
-repo_upgrade: all
-package_upgrade: true
-
-final_message: "The system is finally up, after $UPTIME seconds"
-
 ENDCLOUDINIT
 
 # If Data IP is not zero-length
@@ -162,7 +146,6 @@ if [ ! -z ${DATA_IPs[$machine]} ]; then
     local DN="--nic net-id=$DATA_NET,v4-fixed-ip=10.10.10.${DATA_IPs[$machine]}"
     cat >> ${CLOUDINIT_FOLDER}/vm_init-$id.yml <<ENDCLOUDINIT
 write_files:
-  - sudo: true
   - path: /etc/sysconfig/network-scripts/ifcfg-eth0
     owner: root:root
     permissions: '0644'
@@ -173,9 +156,9 @@ write_files:
       NAME=eth0
       DEVICE=eth0
       ONBOOT=yes
-      IPADDR=172.25.8.11.$id
+      IPADDR=172.25.8.$id
       PREFIX=24
-      GATEWAY=172.25.8.11.1
+      GATEWAY=172.25.8.1
       NM_CONTROLLED=no
 
   - path: /etc/sysconfig/network-scripts/ifcfg-eth1
@@ -206,19 +189,16 @@ write_files:
     content: |
       default via 10.10.10.1 dev eth1 table data
 
-bootcmd:
-  - echo 200 data >> /etc/iproute2/rt_tables
-
 runcmd:
   - echo 'Restarting network'
-  - systemctl restart network 
+  - service network restart
 ENDCLOUDINIT
 fi
 
 # Booting a machine
 nova boot \
 --flavor $flavor \
---image 'CentOS6' \
+--image 'CentOS6-micromosler' \
 --nic net-id=${MGMT_NET},v4-fixed-ip=172.25.8.$id \
 $DN \
 --security-group ${OS_TENANT_NAME}-sg \
