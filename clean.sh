@@ -49,7 +49,12 @@ if [ $ALL = "yes" ]; then
     [ $VERBOSE = "yes" ] && echo "Cleaning the network information"
 
     [ $VERBOSE = "yes" ] && echo "Disconnecting the router from the management subnet"
-    neutron router-interface-delete ${OS_TENANT_NAME}-router ${OS_TENANT_NAME}-mgmt-subnet
+    neutron router-interface-delete ${OS_TENANT_NAME}-mgmt-router ${OS_TENANT_NAME}-mgmt-subnet
+    neutron router-interface-delete ${OS_TENANT_NAME}-data-router ${OS_TENANT_NAME}-data-subnet
+
+    [ $VERBOSE = "yes" ] && echo "Deleting router"
+    neutron router-delete ${OS_TENANT_NAME}-mgmt-router
+    neutron router-delete ${OS_TENANT_NAME}-data-router
 
     [ $VERBOSE = "yes" ] && echo "Deleting networks and subnets"
     neutron subnet-delete ${OS_TENANT_NAME}-mgmt-subnet
@@ -57,12 +62,14 @@ if [ $ALL = "yes" ]; then
     neutron net-delete ${OS_TENANT_NAME}-mgmt-net
     neutron net-delete ${OS_TENANT_NAME}-data-net
 
-    [ $VERBOSE = "yes" ] && echo "Deleting router"
-    neutron router-delete ${OS_TENANT_NAME}-mgmt-router
-    neutron router-delete ${OS_TENANT_NAME}-data-router
-
     [ $VERBOSE = "yes" ] && echo "Deleting floating IPs"
-    for machine in "${MACHINES[@]}"; do echo neutron floatingip-delete $IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET)); done
+    neutron floatingip-list -F id -F floating_ip_address | awk '{print $2$3$4}' | while read floating; do
+	# If I find the server in the MACHINES list. Otherwise, don't touch! Might not be your server
+	for machine in "${MACHINES[@]}"; do
+	    [ "${floating##*|}" = "$IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET))" ] && echo neutron floatingip-delete "${floating%%*|}"
+	    #neutron floatingip-delete $IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET));
+	done
+    done
 
     # Cleaning the security group
     [ $VERBOSE = "yes" ] && echo "Cleaning security group: ${OS_TENANT_NAME}-sg"
