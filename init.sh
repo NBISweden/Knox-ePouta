@@ -24,7 +24,7 @@ done
 # Get credentials and machines settings
 source ./settings.sh
 
-[ $VERBOSE = "no" ] && REDIRECT="> /dev/null"
+#[ $VERBOSE = "no" ] && REDIRECT="> /dev/null"
 
 #######################################################################
 
@@ -62,7 +62,7 @@ if [ $ALL = "yes" ]; then
 
     [ $VERBOSE = "yes" ] && echo "Creating the floating IPs"
     for machine in "${MACHINES[@]}"; do
-	neutron floatingip-create --tenant-id ${TENANT_ID} --floating-ip-address $IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET)) public $REDIRECT
+	neutron floatingip-create --tenant-id ${TENANT_ID} --floating-ip-address $IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET)) public
     done
     touch ~/.ssh/config
     cp ~/.ssh/config ~/.ssh/config.${OS_TENANT_NAME}
