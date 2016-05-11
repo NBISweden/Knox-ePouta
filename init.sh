@@ -24,6 +24,8 @@ done
 # Get credentials and machines settings
 source ./settings.sh
 
+[ $VERBOSE = "no" ] && REDIRECT='> /dev/null'
+
 #######################################################################
 
 
@@ -200,11 +202,11 @@ nova boot \
 $DN \
 --security-group ${OS_TENANT_NAME}-sg \
 --user-data ${CLOUDINIT_FOLDER}/vm_init-$id.yml \
-$name
+$name $REDIRECT
 
 [ $VERBOSE = "yes" ] && echo -e "\tAssociating floating IP: $IPPREFIX$((id + OFFSET)) to $name"
 local fip=$(nova floating-ip-list | awk '/ '$IPPREFIX$((id + OFFSET))' / {print $2}')
-nova floating-ip-associate $name $IPPREFIX$((id + OFFSET))
+nova floating-ip-associate $name $IPPREFIX$((id + OFFSET)) $REDIRECT
 
 } # End boot_machine function
 
