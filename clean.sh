@@ -66,7 +66,7 @@ if [ $ALL = "yes" ]; then
     neutron floatingip-list -F id -F floating_ip_address | awk '{print $2$3$4}' | while read floating; do
 	# If I find the server in the MACHINES list. Otherwise, don't touch! Might not be your server
 	for machine in "${MACHINES[@]}"; do
-	    [ "${floating##*|}" = "$IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET))" ] && echo neutron floatingip-delete "${floating%%*|}"
+	    [ "${floating##*|}" = "$IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET))" ] && neutron floatingip-delete "${floating%|*}"
 	    #neutron floatingip-delete $IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET));
 	done
     done
