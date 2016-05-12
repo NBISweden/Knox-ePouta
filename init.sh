@@ -107,7 +107,7 @@ mkdir -p ${CLOUDINIT_FOLDER}
 # Start the local REST server, to tell when the machines are ready
 echo '#!/usr/bin/env python' > $CLOUDINIT_FOLDER/machines.py
 echo -e "import web\nimport sys\n\nmachines = {" >> $CLOUDINIT_FOLDER/machines.py
-for machine in "${MACHINES[@]}"; do echo -e "'$machine': 'started'," >> $CLOUDINIT_FOLDER/machines.py; done
+for machine in "${MACHINES[@]}"; do echo -e "'$machine': 'booting'," >> $CLOUDINIT_FOLDER/machines.py; done
 cat >> ${CLOUDINIT_FOLDER}/machines.py <<ENDREST
 }
 
@@ -271,7 +271,8 @@ nova floating-ip-associate $name $IPPREFIX$((id + OFFSET))
 } # End boot_machine function
 
 [ $VERBOSE = "yes"] && echo "Starting the REST phone home server"
-python ${CLOUDINIT_FOLDER}/machines.py &
+fuser -k $PORT/tcp
+python ${CLOUDINIT_FOLDER}/machines.py $PORT &
 REST_PID=$!
 
 [ $VERBOSE = "yes"] && echo "Booting the machines"
