@@ -263,11 +263,6 @@ $DN \
 --security-group ${OS_TENANT_NAME}-sg \
 --user-data ${CLOUDINIT_FOLDER}/vm_init-$id.yml \
 $name
-
-[ $VERBOSE = "yes" ] && echo -e "\tAssociating floating IP: $IPPREFIX$((id + OFFSET)) to $name"
-#local fip=$(nova floating-ip-list | awk '/ '$IPPREFIX$((id + OFFSET))' / {print $2}')
-nova floating-ip-associate $name $IPPREFIX$((id + OFFSET))
-
 } # End boot_machine function
 
 [ $VERBOSE = "yes" ] && echo "Starting the REST phone home server"
@@ -315,6 +310,12 @@ $IPPREFIX$((OFFSET + ${MACHINE_IPs[hnas-emulation]}))
 [compute]
 ENDINVENTORY
 for i in {1..3}; do echo $IPPREFIX$((OFFSET + ${MACHINE_IPs[compute$i]})) >> $INVENTORY; done
+
+[ $VERBOSE = "yes" ] && echo -e "\tAssociating floating IPs"
+for machine in "${MACHINES[@]}"
+do
+    nova floating-ip-associate $machine $IPPREFIX$((OFFSET + ${MACHINE_IPs[$machine]}))
+done
 
 # Aaaaannndddd....cue music!
 [ $VERBOSE = "yes" ] && echo "Running ansible playbook"
