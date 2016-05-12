@@ -18,6 +18,8 @@ fi
 
 CLOUDINIT_FOLDER=./cloudinit
 INVENTORY=./inventory-${OS_TENANT_NAME}
+PHONE_HOME=10.254.0.1
+PORT=12345
 IPPREFIX=10.254.0.
 OFFSET=51 # I don't know why Pontus wants to offset the IPs
 
