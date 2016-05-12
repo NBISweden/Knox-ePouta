@@ -107,7 +107,7 @@ mkdir -p ${CLOUDINIT_FOLDER}
 # Start the local REST server, to tell when the machines are ready
 echo '#!/usr/bin/env python' > $CLOUDINIT_FOLDER/machines.py
 echo -e "import web\nimport sys\n\nmachines = {" >> $CLOUDINIT_FOLDER/machines.py
-for machine in "${MACHINES[@]}"; do echo -e "$machine: started," >> $CLOUDINIT_FOLDER/machines.py; done
+for machine in "${MACHINES[@]}"; do echo -e "'$machine': 'started'," >> $CLOUDINIT_FOLDER/machines.py; done
 cat >> ${CLOUDINIT_FOLDER}/machines.py <<ENDREST
 }
 
@@ -243,13 +243,14 @@ write_files:
 runcmd:
   - echo 'Restarting network'
   - service network restart
+
 ENDCLOUDINIT
     fi
 
     # Final part: Phone home
     cat >> ${CLOUDINIT_FOLDER}/vm_init-$id.yml <<ENDCLOUDINIT
 runcmd:
-  - echo 'Restarting network'
+  - echo 'Cloudinit phone home'
   - curl http://${PHONE_HOME}:$PORT/machine/$machine/ready
 ENDCLOUDINIT
 
