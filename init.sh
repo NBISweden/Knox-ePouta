@@ -270,18 +270,18 @@ nova floating-ip-associate $name $IPPREFIX$((id + OFFSET))
 
 } # End boot_machine function
 
-[ $VERBOSE = "yes"] && echo "Starting the REST phone home server"
+[ $VERBOSE = "yes" ] && echo "Starting the REST phone home server"
 fuser -k $PORT/tcp
 python ${CLOUDINIT_FOLDER}/machines.py $PORT &
 REST_PID=$!
 
-[ $VERBOSE = "yes"] && echo "Booting the machines"
+[ $VERBOSE = "yes" ] && echo "Booting the machines"
 # Let's go
 for machine in "${MACHINES[@]}"; do boot_machine $machine; done
 
-[ $VERBOSE = "yes"] && echo "Waiting for the REST phone home server (PID: ${REST_PID})"
+[ $VERBOSE = "yes" ] && echo "Waiting for the REST phone home server (PID: ${REST_PID})"
 wait ${REST_PID}
-[ $VERBOSE = "yes"] && echo "The last machine just phoned home."
+[ $VERBOSE = "yes" ] && echo "The last machine just phoned home."
 
 #############################################
 ## Calling ansible for the MicroMosler setup
@@ -317,5 +317,5 @@ ENDINVENTORY
 for i in {1..3}; do echo $IPPREFIX$((OFFSET + ${MACHINE_IPs[compute$i]})) >> $INVENTORY; done
 
 # Aaaaannndddd....cue music!
-[ $VERBOSE = "yes"] && echo "Running ansible playbook"
+[ $VERBOSE = "yes" ] && echo "Running ansible playbook"
 ansible-playbook -u centos -i $INVENTORY ./playbooks/micromosler.yml
