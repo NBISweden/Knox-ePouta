@@ -106,42 +106,36 @@ mkdir -p ${CLOUDINIT_FOLDER}
 
 # Start the local REST server, to tell when the machines are ready
 echo '#!/usr/bin/env python' > $CLOUDINIT_FOLDER/machines.py
-echo -e "import web\n\nmachines = {\n" >> $CLOUDINIT_FOLDER/machines.py
-for machine in "${MACHINES[@]}"; do echo -e "$machine: started,\n" >> $CLOUDINIT_FOLDER/machines.py; done
-cat >> $CLOUDINIT_FOLDER/machines.py <<ENDREST
+echo -e "import web\nimport sys\n\nmachines = {" >> $CLOUDINIT_FOLDER/machines.py
+for machine in "${MACHINES[@]}"; do echo -e "$machine: started," >> $CLOUDINIT_FOLDER/machines.py; done
+cat >> ${CLOUDINIT_FOLDER}/machines.py <<ENDREST
 }
 
 urls = (
-    '/machines', 'list_machines',
-    '/machine/(?P<name>.+)', 'status',
-    '/ready', 'ready'
+    '/status', 'status',
+    '/machine/(?P<name>.+)/(?P<v>.+)', 'update'
 )
 
-class list_machines:
+class status:
     def GET(self):
         output = ''
         for k, v in machines.items():
-            output += '{0:.20s}: {1}\n'.format(k, v)
+            output += '{0:>20}: {1}\n'.format(k, v)
         return output
 
-class status:
-    def GET(self, name):
-        return machines.get(name, "unknown")
-
-    def POST(self, name):
-        # print(web.data())
-        v = web.data()
+class update:
+    def GET(self, name, v):
         if name in machines:
             machines[name] = v
-        return ''
-
-class ready:
-    def GET(self):
+        else:
+            return 'Ignoring %s' % name
+        # Checking if we should exit
+        # Note: That'll make the server say "Oups, empty reply"
         for k, v in machines.items():
             if v != 'ready':
-                return 'Nope'
-        return 'Yup'
-
+                return 'Still waiting for %s to be ready' % k
+        print('Everybody is ready. Exiting the server')
+        sys.exit(0)
 
 if __name__ == "__main__":
     web.config.debug = False
@@ -149,16 +143,13 @@ if __name__ == "__main__":
     app.run()
 
 ENDREST
-python $CLOUDINIT_FOLDER/machines.py &
-REST_PID=$!
-
 
 function boot_machine {
-local name=$1
-local id=${MACHINE_IPs[$name]}
-local flavor=${FLAVORS[$machine]}
-
-cat > ${CLOUDINIT_FOLDER}/vm_init-$id.yml <<ENDCLOUDINIT
+    local name=$1
+    local id=${MACHINE_IPs[$name]}
+    local flavor=${FLAVORS[$machine]}
+    
+    cat > ${CLOUDINIT_FOLDER}/vm_init-$id.yml <<ENDCLOUDINIT
 #cloud-config
 debug: 1
 # disable_root: 0
@@ -199,15 +190,12 @@ write_files:
       172.25.8.10 hnas-emulation
       172.25.8.11 ldap
 
-phone_home:
-    url: http://${PHONE_HOME}:$PORT/machine/$machine
-    post: [ ready ]
 ENDCLOUDINIT
 
-# If Data IP is not zero-length
-if [ ! -z ${DATA_IPs[$machine]} ]; then
-    local DN="--nic net-id=$DATA_NET,v4-fixed-ip=10.10.10.${DATA_IPs[$machine]}"
-    cat >> ${CLOUDINIT_FOLDER}/vm_init-$id.yml <<ENDCLOUDINIT
+    # If Data IP is not zero-length
+    if [ ! -z ${DATA_IPs[$machine]} ]; then
+	local DN="--nic net-id=$DATA_NET,v4-fixed-ip=10.10.10.${DATA_IPs[$machine]}"
+	cat >> ${CLOUDINIT_FOLDER}/vm_init-$id.yml <<ENDCLOUDINIT
 write_files:
   - path: /etc/sysconfig/network-scripts/ifcfg-eth0
     owner: root:root
@@ -256,7 +244,14 @@ runcmd:
   - echo 'Restarting network'
   - service network restart
 ENDCLOUDINIT
-fi
+    fi
+
+    # Final part: Phone home
+    cat >> ${CLOUDINIT_FOLDER}/vm_init-$id.yml <<ENDCLOUDINIT
+runcmd:
+  - echo 'Restarting network'
+  - curl http://${PHONE_HOME}:$PORT/machine/$machine/ready
+ENDCLOUDINIT
 
 # Booting a machine
 nova boot \
@@ -274,12 +269,16 @@ nova floating-ip-associate $name $IPPREFIX$((id + OFFSET))
 
 } # End boot_machine function
 
+[ $VERBOSE = "yes"] && echo "Starting the REST phone home server"
+python ${CLOUDINIT_FOLDER}/machines.py &
+REST_PID=$!
 
+[ $VERBOSE = "yes"] && echo "Booting the machines"
 # Let's go
-for machine in "${MACHINES[@]}"
-do
-    boot_machine $machine
-done
+for machine in "${MACHINES[@]}"; do boot_machine $machine; done
+
+[ $VERBOSE = "yes"] && echo "Waiting for the REST phone home server (PID: ${REST_PID})"
+wait ${REST_PID}
 
 #############################################
 ## Calling ansible for the MicroMosler setup
@@ -315,7 +314,7 @@ ENDINVENTORY
 for i in {1..3}; do echo $IPPREFIX$((OFFSET + ${MACHINE_IPs[compute$i]})) >> $INVENTORY; done
 
 echo "Waiting for the machines to phone home"
-TRY=10
+TRY=30
 while $TRY > 0; do
     if $(curl http://${PHONE_HOME}:$PORT/ready) == "Yup"; then
 	break;
@@ -325,9 +324,6 @@ while $TRY > 0; do
 	sleep 5000
     fi
 done
-[ $VERBOSE = "yes"] && echo "Killing the REST phone home server"
-pkill -P $REST_PID
 
-echo "They are all ready with cloud-init!"
 # Aaaaannndddd....cue music!
 ansible-playbook -u centos -i $INVENTORY ./playbooks/micromosler.yml
