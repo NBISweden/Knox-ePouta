@@ -281,6 +281,7 @@ for machine in "${MACHINES[@]}"; do boot_machine $machine; done
 
 [ $VERBOSE = "yes"] && echo "Waiting for the REST phone home server (PID: ${REST_PID})"
 wait ${REST_PID}
+[ $VERBOSE = "yes"] && echo "The last machine just phoned home."
 
 #############################################
 ## Calling ansible for the MicroMosler setup
@@ -315,17 +316,6 @@ $IPPREFIX$((OFFSET + ${MACHINE_IPs[hnas-emulation]}))
 ENDINVENTORY
 for i in {1..3}; do echo $IPPREFIX$((OFFSET + ${MACHINE_IPs[compute$i]})) >> $INVENTORY; done
 
-echo "Waiting for the machines to phone home"
-TRY=30
-while $TRY > 0; do
-    if $(curl http://${PHONE_HOME}:$PORT/ready) == "Yup"; then
-	break;
-    else
-	echo -e "\b*"
-	TRY=$((TRY - 1))
-	sleep 5000
-    fi
-done
-
 # Aaaaannndddd....cue music!
+[ $VERBOSE = "yes"] && echo "Running ansible playbook"
 ansible-playbook -u centos -i $INVENTORY ./playbooks/micromosler.yml
