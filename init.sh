@@ -311,9 +311,10 @@ $IPPREFIX$((OFFSET + ${MACHINE_IPs[hnas-emulation]}))
 ENDINVENTORY
 for i in {1..3}; do echo $IPPREFIX$((OFFSET + ${MACHINE_IPs[compute$i]})) >> $INVENTORY; done
 
-[ $VERBOSE = "yes" ] && echo -e "\tAssociating floating IPs"
+[ $VERBOSE = "yes" ] && echo -e "Associating floating IPs"
 for machine in "${MACHINES[@]}"
 do
+    echo -e "\t$IPPREFIX$((OFFSET + ${MACHINE_IPs[$machine]})) to $machine"
     nova floating-ip-associate $machine $IPPREFIX$((OFFSET + ${MACHINE_IPs[$machine]}))
 done
 
