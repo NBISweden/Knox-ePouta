@@ -11,7 +11,7 @@
     - yum: state=present name=openldap-servers
     - yum: state=present name=openldap-clients
     - lineinfile: dest=/etc/sysconfig/iptables state=present line='-A INPUT -m state --state NEW -m tcp -p tcp --dport 389 -j ACCEPT' insertbefore='^-A INPUT -m state --state NEW .*'
-    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/ldap_helper.sh dest=/root/ldap_helper.sh
+    - copy:   src={{ mm_home }}/configs/ldap_helper.sh dest=/root/ldap_helper.sh
    
     - action: shell chmod a+x /root/ldap_helper.sh
     - action: shell /root/ldap_helper.sh
@@ -39,9 +39,9 @@
     - lineinfile: dest=/etc/sysconfig/iptables state=present line='-A INPUT -m state --state NEW -s 172.25.8.0/24 -j ACCEPT' insertbefore='^-A INPUT -m state --state NEW .*'
     - service: name=iptables state=restarted
 
-    - copy: src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/keystonerc dest=/root/.keystonerc
+    - copy: src={{ mm_home }}/configs/keystonerc dest=/root/.keystonerc
 # Supernode needs to reach everywhere
-    - copy: src={{ lookup('env','HOME') }}/.ssh/id_rsa dest=/root/.ssh/id_rsa
+#    - copy: src={{ lookup('env','HOME') }}/.ssh/id_rsa dest=/root/.ssh/id_rsa
 
 
 
@@ -49,7 +49,7 @@
   hosts: openstack-controller
   sudo: true
   tasks:
-    - copy:   src={{ lookup('env','HOME') }}/misc/ dest=/tmp/misc/
+    - copy:   src={{ mosler_misc }}/ dest=/tmp/misc/
     - file: path=/root/bin state=directory
     - yum: state=present name=/tmp/misc/Django14-1.4.21-1.el6.noarch.rpm
     - yum: state=present name=openstack-dashboard
@@ -68,26 +68,26 @@
     
     - yum: state=present name=/tmp/misc/mosler-dashboard-2-5.i386.rpm
     - yum: state=present name=/tmp/misc/nginx-1.8.1-1.el6.ngx.x86_64.rpm
-    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/neutron.conf dest=/etc/neutron/neutron.conf
-    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/keystone.conf dest=/etc/keystone/keystone.conf
-    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/plugin.ini dest=/etc/neutron/plugin.ini
-    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/ml2.ini dest=/etc/neutron/plugins/ml2/ml2.ini
-    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/ovs_neutron_plugin.ini dest=/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
-    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/nova.conf dest=/etc/nova/nova.conf
-    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/glance-api.conf dest=/etc/glance/glance-api.conf
-    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/glance-registry.conf dest=/etc/glance/glance-registry.conf
-    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/heat.conf dest=/etc/heat/heat.conf
-    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/local_settings dest=/etc/openstack-dashboard/local_settings
-    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/openstack_helper.sh dest=/root/bin/openstack_helper.sh mode=0755
+    - copy:   src={{ mm_home }}/configs/neutron.conf dest=/etc/neutron/neutron.conf
+    - copy:   src={{ mm_home }}/configs/keystone.conf dest=/etc/keystone/keystone.conf
+    - copy:   src={{ mm_home }}/configs/plugin.ini dest=/etc/neutron/plugin.ini
+    - copy:   src={{ mm_home }}/configs/ml2.ini dest=/etc/neutron/plugins/ml2/ml2.ini
+    - copy:   src={{ mm_home }}/configs/ovs_neutron_plugin.ini dest=/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
+    - copy:   src={{ mm_home }}/configs/nova.conf dest=/etc/nova/nova.conf
+    - copy:   src={{ mm_home }}/configs/glance-api.conf dest=/etc/glance/glance-api.conf
+    - copy:   src={{ mm_home }}/configs/glance-registry.conf dest=/etc/glance/glance-registry.conf
+    - copy:   src={{ mm_home }}/configs/heat.conf dest=/etc/heat/heat.conf
+    - copy:   src={{ mm_home }}/configs/local_settings dest=/etc/openstack-dashboard/local_settings
+    - copy:   src={{ mm_home }}/configs/openstack_helper.sh dest=/root/bin/openstack_helper.sh mode=0755
    
     - shell: /root/bin/openstack_helper.sh  2>/tmp/oserr >/tmp/osout
-    - copy:   src={{ lookup('env','HOME') }}/mosler-images/project-computenode-stable dest=/tmp/mosler-images/
+    - copy:   src={{ mosler_images }}/project-computenode-stable dest=/tmp/mosler-images/
     - shell: . /root/.keystonerc && glance image-create --file /tmp/mosler-images/project-computenode-stable --disk-format qcow2 --container-format bare  --name "project-computenode-stable" --is-public True  
     - shell: rm /tmp/mosler-images/project-computenode-stable
-    - copy:   src={{ lookup('env','HOME') }}/mosler-images/project-loginnode-stable dest=/tmp/mosler-images/
+    - copy:   src={{ mosler_images }}/project-loginnode-stable dest=/tmp/mosler-images/
     - shell: . /root/.keystonerc && glance image-create --file /tmp/mosler-images/project-loginnode-stable --disk-format qcow2 --container-format bare  --name "project-loginnode-stable" --is-public True  
     - shell: rm /tmp/mosler-images/project-loginnode-stable
-    - copy:   src={{ lookup('env','HOME') }}/mosler-images/topolino-q-stable dest=/tmp/mosler-images/
+    - copy:   src={{ mosler_images }}/topolino-q-stable dest=/tmp/mosler-images/
     - shell: . /root/.keystonerc && glance image-create --file /tmp/mosler-images/topolino-q-stable --disk-format qcow2 --container-format bare  --name "topolino-q-stable" --is-public True  
     - shell: rm /tmp/mosler-images/topolino-q-stable
 
@@ -106,10 +106,10 @@
     - lineinfile: dest=/etc/sysctl.conf regexp='^\s*net.bridge.bridge-nf-call-arptables\s*=.*$' line='net.bridge.bridge-nf-call-arptables=1'
     - lineinfile: dest=/etc/sysctl.conf regexp='^\s*net.bridge.bridge-nf-call-iptables\s*=.*$' line='net.bridge.bridge-nf-call-iptables=1'
     - lineinfile: dest=/etc/sysctl.conf regexp='^\s*net.bridge.bridge-nf-call-ip6tables\s*=.*$' line='net.bridge.bridge-nf-call-ip6tables=1'
-    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/neutron.conf dest=/etc/neutron/neutron.conf
-    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/plugin.ini dest=/etc/neutron/plugin.ini
-    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/ml2.ini dest=/etc/neutron/plugins/ml2/ml2.ini
-    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/ovs_neutron_plugin.ini dest=/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
+    - copy:   src={{ mm_home }}/configs/neutron.conf dest=/etc/neutron/neutron.conf
+    - copy:   src={{ mm_home }}/configs/plugin.ini dest=/etc/neutron/plugin.ini
+    - copy:   src={{ mm_home }}/configs/ml2.ini dest=/etc/neutron/plugins/ml2/ml2.ini
+    - copy:   src={{ mm_home }}/configs/ovs_neutron_plugin.ini dest=/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
     - service: name=openvswitch enabled=yes state=started
     - shell: ovs-vsctl add-br br-eth1 || true
     - shell: ovs-vsctl add-port br-eth1 eth1|| true
@@ -145,11 +145,11 @@
     - lineinfile: dest=/etc/sysctl.conf regexp='^\s*net.bridge.bridge-nf-call-ip6tables\s*=.*$' line='net.bridge.bridge-nf-call-ip6tables=1'
     - shell: ovs-vsctl add-br br-eth1 || true
     - shell: ovs-vsctl add-port br-eth1 eth1|| true
-    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/neutron.conf dest=/etc/neutron/neutron.conf
-    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/plugin.ini dest=/etc/neutron/plugin.ini
-    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/ml2.ini dest=/etc/neutron/plugins/ml2/ml2.ini
-    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/ovs_neutron_plugin.ini dest=/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
-    - copy:   src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/nova.conf dest=/etc/nova/nova.conf
+    - copy:   src={{ mm_home }}/configs/neutron.conf dest=/etc/neutron/neutron.conf
+    - copy:   src={{ mm_home }}/configs/plugin.ini dest=/etc/neutron/plugin.ini
+    - copy:   src={{ mm_home }}/configs/ml2.ini dest=/etc/neutron/plugins/ml2/ml2.ini
+    - copy:   src={{ mm_home }}/configs/ovs_neutron_plugin.ini dest=/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
+    - copy:   src={{ mm_home }}/configs/nova.conf dest=/etc/nova/nova.conf
     - service: name=openvswitch enabled=yes
     - service: name=neutron-openvswitch-agent enabled=yes 
     - service: name=openstack-nova-compute enabled=yes
@@ -171,45 +171,45 @@
   sudo: true
   tasks:
     - name: Copy files to supernode
-      copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/fix_proj.sh dest=/usr/local/bin/
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/import_user dest=/usr/local/bin/
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/passwd_line dest=/usr/local/bin/
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/queue_responder dest=/usr/local/bin/
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/remove_stack.sh dest=/usr/local/bin/
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/sync_exporters dest=/usr/local/bin/
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/sync_grantfile dest=/usr/local/bin/
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/tenant-valid dest=/usr/local/bin/
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/uppmax-links.sh dest=/usr/local/bin/
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/uppmax-sync.sh dest=/usr/local/bin/
+      copy:  src={{ mosler_home }}/supernode/fix_proj.sh dest=/usr/local/bin/
+    - copy:  src={{ mosler_home }}/supernode/import_user dest=/usr/local/bin/
+    - copy:  src={{ mosler_home }}/supernode/passwd_line dest=/usr/local/bin/
+    - copy:  src={{ mosler_home }}/supernode/queue_responder dest=/usr/local/bin/
+    - copy:  src={{ mosler_home }}/supernode/remove_stack.sh dest=/usr/local/bin/
+    - copy:  src={{ mosler_home }}/supernode/sync_exporters dest=/usr/local/bin/
+    - copy:  src={{ mosler_home }}/supernode/sync_grantfile dest=/usr/local/bin/
+    - copy:  src={{ mosler_home }}/supernode/tenant-valid dest=/usr/local/bin/
+    - copy:  src={{ mosler_home }}/supernode/uppmax-links.sh dest=/usr/local/bin/
+    - copy:  src={{ mosler_home }}/supernode/uppmax-sync.sh dest=/usr/local/bin/
 
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/project_gid dest=/usr/local/sbin/ mode=0755
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/project_ips dest=/usr/local/sbin/ mode=0755
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/project_members dest=/usr/local/sbin/ mode=0755
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/refreshimage dest=/usr/local/sbin/ mode=0755
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/setup_homedir.sh dest=/usr/local/sbin/ mode=0755
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/thinlinc_proj_setup dest=/usr/local/sbin/ mode=0755
+    - copy:  src={{ mosler_home }}/supernode/project_gid dest=/usr/local/sbin/ mode=0755
+    - copy:  src={{ mosler_home }}/supernode/project_ips dest=/usr/local/sbin/ mode=0755
+    - copy:  src={{ mosler_home }}/supernode/project_members dest=/usr/local/sbin/ mode=0755
+    - copy:  src={{ mosler_home }}/supernode/refreshimage dest=/usr/local/sbin/ mode=0755
+    - copy:  src={{ mosler_home }}/supernode/setup_homedir.sh dest=/usr/local/sbin/ mode=0755
+    - copy:  src={{ mosler_home }}/supernode/thinlinc_proj_setup dest=/usr/local/sbin/ mode=0755
 
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/create_project.sh dest=/usr/local/bin/ mode=0755
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/create_heat_template.sh dest=/usr/local/bin/ mode=0755
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/create_omd_config.sh dest=/usr/local/bin/ mode=0755
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/get_vlan.sh dest=/usr/local/bin/ mode=0755
-    - copy:  src={{ lookup('env','HOME') }}/mosler-system-scripts/supernode/heat_add_compute.sh dest=/usr/local/bin/ mode=0755
+    - copy:  src={{ mosler_home }}/supernode/create_project.sh dest=/usr/local/bin/ mode=0755
+    - copy:  src={{ mosler_home }}/supernode/create_heat_template.sh dest=/usr/local/bin/ mode=0755
+    - copy:  src={{ mosler_home }}/supernode/create_omd_config.sh dest=/usr/local/bin/ mode=0755
+    - copy:  src={{ mosler_home }}/supernode/get_vlan.sh dest=/usr/local/bin/ mode=0755
+    - copy:  src={{ mosler_home }}/supernode/heat_add_compute.sh dest=/usr/local/bin/ mode=0755
 
-    - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/create_nfs_share.sh dest=/usr/local/bin/ mode=0755
-    - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/nfs_san_check.sh dest=/usr/local/bin/ mode=0755
+    - copy:  src={{ mm_home }}/configs/create_nfs_share.sh dest=/usr/local/bin/ mode=0755
+    - copy:  src={{ mm_home }}/configs/nfs_san_check.sh dest=/usr/local/bin/ mode=0755
 
     - file: path=/root/bin state=directory
  
-    - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/public-net-helper.sh dest=/root/bin/ mode=0755
+    - copy:  src={{ mm_home }}/configs/public-net-helper.sh dest=/root/bin/ mode=0755
 
     - file: path=/usr/local/heat state=directory
  
-    - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/mosler-template-resources-private_net-only dest=/usr/local/heat/ mode=0755
-    - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/mosler-template-resources-network dest=/usr/local/heat/ mode=0755
-    - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/mosler-template-resources-secgroups dest=/usr/local/heat/ mode=0755
-    - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/mosler-template-resources-loginnode dest=/usr/local/heat/ mode=0755
-    - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/mosler-template-resources-servicenode dest=/usr/local/heat/ mode=0755
-    - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/mosler-template-parameters dest=/usr/local/heat/ mode=0755
+    - copy:  src={{ mm_home }}/configs/mosler-template-resources-private_net-only dest=/usr/local/heat/ mode=0755
+    - copy:  src={{ mm_home }}/configs/mosler-template-resources-network dest=/usr/local/heat/ mode=0755
+    - copy:  src={{ mm_home }}/configs/mosler-template-resources-secgroups dest=/usr/local/heat/ mode=0755
+    - copy:  src={{ mm_home }}/configs/mosler-template-resources-loginnode dest=/usr/local/heat/ mode=0755
+    - copy:  src={{ mm_home }}/configs/mosler-template-resources-servicenode dest=/usr/local/heat/ mode=0755
+    - copy:  src={{ mm_home }}/configs/mosler-template-parameters dest=/usr/local/heat/ mode=0755
 
     - shell: /root/bin/public-net-helper.sh
 
@@ -217,8 +217,8 @@
   hosts: thinlinc-master
   sudo: true
   tasks:
-    - copy:  src={{ lookup('env','HOME') }}/thinlinc/ dest=/tmp/tl/
-    - copy:  src={{ lookup('env','HOME') }}/mosler-micro-mosler/configs/tl_answers dest=/tmp/tl/
+    - copy:  src={{ tl_home }} dest=/tmp/tl/
+    - copy:  src={{ mm_home }}/configs/tl_answers dest=/tmp/tl/
     - shell: yum -y install /tmp/tl/*x86_64.rpm /tmp/tl/*noarch.rpm || true
     - shell: /opt/thinlinc/sbin/tl-setup -a /tmp/tl/tl_answers || true
     - lineinfile: dest=/opt/thinlinc/etc/conf.d/webaccess.hconf regexp='^listen=.*$' line='listen=443'
