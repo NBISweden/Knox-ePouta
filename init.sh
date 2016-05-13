@@ -278,39 +278,6 @@ for machine in "${MACHINES[@]}"; do boot_machine $machine; done
 wait ${REST_PID}
 [ $VERBOSE = "yes" ] && echo "The last machine just phoned home."
 
-#############################################
-## Calling ansible for the MicroMosler setup
-#############################################
-
-echo "[all]" > $INVENTORY
-for name in "${MACHINES[@]}"; do echo "$IPPREFIX$((OFFSET + ${MACHINE_IPs[$name]}))" >> $INVENTORY; done
-cat >> $INVENTORY <<ENDINVENTORY
-
-[filsluss]
-$IPPREFIX$((OFFSET + ${MACHINE_IPs[filsluss]}))
-
-[networking-node]
-$IPPREFIX$((OFFSET + ${MACHINE_IPs[networking-node]}))
-
-[ldap]
-$IPPREFIX$((OFFSET + ${MACHINE_IPs[ldap]}))
-
-[thinlinc-master]
-$IPPREFIX$((OFFSET + ${MACHINE_IPs[thinlinc-master]}))
-
-[openstack-controller]
-$IPPREFIX$((OFFSET + ${MACHINE_IPs[openstack-controller]}))
-
-[supernode]
-$IPPREFIX$((OFFSET + ${MACHINE_IPs[supernode]}))
- 
-[hnas-emulation]
-$IPPREFIX$((OFFSET + ${MACHINE_IPs[hnas-emulation]}))
-
-[compute]
-ENDINVENTORY
-for i in {1..3}; do echo $IPPREFIX$((OFFSET + ${MACHINE_IPs[compute$i]})) >> $INVENTORY; done
-
 [ $VERBOSE = "yes" ] && echo -e "Associating floating IPs"
 for machine in "${MACHINES[@]}"
 do
@@ -318,6 +285,4 @@ do
     nova floating-ip-associate $machine $IPPREFIX$((OFFSET + ${MACHINE_IPs[$machine]}))
 done
 
-# Aaaaannndddd....cue music!
-[ $VERBOSE = "yes" ] && echo "Running ansible playbook"
-ansible-playbook -u centos -i $INVENTORY ./playbooks/micromosler.yml
+echo -e "Initialization phase complete. You can go on and provision the machines"
