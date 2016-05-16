@@ -68,22 +68,23 @@ for i in {1..3}; do echo $IPPREFIX$((OFFSET + ${MACHINE_IPs[compute$i]})) >> $IN
 cat >> $INVENTORY <<ENDINVENTORY
 
 [ssh_connection]
-ansible_user = centos
-ansible_ssh_user = centos # for older versions
-#ansible_ssh_common_args
-ansible_ssh_extra_args = "-F ${SSH_CONFIG}"
+ansible_user=centos
+# for older versions
+ansible_ssh_user=centos 
+# ansible_ssh_common_args
+ansible_ssh_extra_args="-F ${SSH_CONFIG}"
 
 [all:vars]
-mm_home: "{{ lookup('env','HOME') }}/mosler-micro-mosler"
-tl_home: "{{ lookup('env','HOME') }}/thinlinc"
-mosler_home: "{{ lookup('env','HOME') }}/mosler-system-scripts"
-mosler_misc: "{{ lookup('env','HOME') }}/misc/"
-mosler_images: "{{ lookup('env','HOME') }}/mosler-images"
+mm_home="{{ lookup('env','HOME') }}/mosler-micro-mosler"
+tl_home="{{ lookup('env','HOME') }}/thinlinc"
+mosler_home="{{ lookup('env','HOME') }}/mosler-system-scripts"
+mosler_misc="{{ lookup('env','HOME') }}/misc/"
+mosler_images="{{ lookup('env','HOME') }}/mosler-images"
 ENDINVENTORY
 
 
 # Aaaaannndddd....cue music!
 [ $VERBOSE = "yes" ] && echo "Running ansible playbook"
-ansible-playbook -s -u centos -i $INVENTORY ./playbooks/micromosler.yml
+ansible-playbook -s -u centos -i $INVENTORY ./ansible/micromosler.yml
 
 # Ansible-playbook options: http://linux.die.net/man/1/ansible-playbook
