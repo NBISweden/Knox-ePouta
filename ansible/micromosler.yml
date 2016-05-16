@@ -19,8 +19,8 @@
 - name: OpenStack packages and more
   hosts: openstack
   tasks:
-    - copy: src={{ mm_home }}/configs/RPM-GPG-KEY-Icehouse-SIG /etc/pki/rpm-gpg/RPM-GPG-KEY-Icehouse-SIG
-    - copy: src={{ mm_home }}/configs/rdo-release.repo /etc/yum.repos.d/rdo-release.repo
+    - copy: src={{ mm_home }}/configs/RPM-GPG-KEY-Icehouse-SIG dest=/etc/pki/rpm-gpg/RPM-GPG-KEY-Icehouse-SIG
+    - copy: src={{ mm_home }}/configs/rdo-release.repo dest=/etc/yum.repos.d/rdo-release.repo
     - yum: name=python-novaclient state=latest
     - yum: name=python-keystoneclient state=latest
     - yum: name=python-neutronclient state=latest
