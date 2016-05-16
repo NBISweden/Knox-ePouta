@@ -70,7 +70,9 @@ if [ $ALL = "yes" ]; then
 	    #neutron floatingip-delete $IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET));
 	done
     done
-    [ -f ~/.ssh/config.${OS_TENANT_NAME} ] && mv ~/.ssh/config.${OS_TENANT_NAME} ~/.ssh/config
+
+    # Removing the ssh config file
+    [ -f ${SSH_CONFIG} ] && rm -f ${SSH_CONFIG}
 
     # Cleaning the security group
     [ $VERBOSE = "yes" ] && echo "Cleaning security group: ${OS_TENANT_NAME}-sg"
