@@ -27,9 +27,9 @@
     - yum: name=python-glanceclient state=latest
     - yum: name=python-heatclient state=latest
     - yum: name=python-neutronclient state=latest
-    - yum: state=present name=openstack-nova
-    - yum: state=present name=openstack-neutron-ml2
-    - yum: state=present name=openstack-neutron-openvswitch
+    - yum: name=openstack-nova state=present 
+    - yum: name=openstack-neutron-ml2 state=present 
+    - yum: name=openstack-neutron-openvswitch state=present 
     - service: name=openvswitch state=started
     - lineinfile: dest=/etc/sysconfig/iptables state=present line='-A INPUT -m state --state NEW -s 172.25.8.0/24 -j ACCEPT' insertbefore='^-A INPUT -m state --state NEW .*'
     - service: name=iptables state=restarted
