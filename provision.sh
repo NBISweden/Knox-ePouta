@@ -73,7 +73,7 @@ mosler_images=$HOME/mosler-images
 ENDINVENTORY
 
 # Aaaaannndddd....cue music!
-[ $VERBOSE = "yes" ] && echo "Running playbook: ansible/micromosler.yml"
+[ $VERBOSE = "yes" ] && echo "Running playbook: ansible/micromosler.yml (using config file: ${ANSIBLE_CFG})"
 ANSIBLE_CONFIG=${ANSIBLE_CFG} ansible-playbook -s ./ansible/micromosler.yml
 # Note: config file overwritten by ANSIBLE_CFG env variable
 
