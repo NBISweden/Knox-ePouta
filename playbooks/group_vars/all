@@ -1,6 +1,0 @@
----
-mm_home: "{{ lookup('env','HOME') }}/mosler-micro-mosler"
-tl_home: "{{ lookup('env','HOME') }}/thinlinc"
-mosler_home: "{{ lookup('env','HOME') }}/mosler-system-scripts"
-mosler_misc: "{{ lookup('env','HOME') }}/misc/"
-mosler_images: "{{ lookup('env','HOME') }}/mosler-images"

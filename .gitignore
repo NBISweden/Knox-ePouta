@@ -1,6 +1,8 @@
 *~
 micromosler.rc
 user.rc
+cloudinit/*
 **/vm_init-*.yml
-inventory-*
 **/machines.py*
+ansible/ssh_config.*
+ansible/inventory.*
