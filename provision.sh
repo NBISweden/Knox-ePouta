@@ -25,66 +25,76 @@ source ./settings.sh
 ## Calling ansible for the MicroMosler setup
 #############################################
 
-[ $VERBOSE = "yes" ] && echo "Creating the SSH config file [in ${SSH_CONFIG}]"
-echo '' > ${SSH_CONFIG}
-for machine in "${MACHINES[@]}"; do
-    cat >> ${SSH_CONFIG} <<EOF
-##################################################
-Host $IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET))
-     User centos
-     StrictHostKeyChecking no
-     UserKnownHostsFile=/dev/null
-EOF
+# [ $VERBOSE = "yes" ] && echo "Creating the SSH config file [in ${SSH_CONFIG}]"
+# echo "#####################" > ${SSH_CONFIG}
+# echo "### MicroMosler hosts" >> ${SSH_CONFIG}
+# echo "#####################" >> ${SSH_CONFIG}
+# for name in "${MACHINES[@]}"
+# do
+#     echo "Host $name $IPPREFIX$((OFFSET + ${MACHINE_IPs[$name]}))" >> ${SSH_CONFIG}
+#     echo "     User centos" >> ${SSH_CONFIG}
+#     echo "     StrictHostKeyChecking no" >> ${SSH_CONFIG}
+#     echo "     UserKnownHostsFile=/dev/null" >> ${SSH_CONFIG}
+#     echo "     ForwardAgent yes" >> ${SSH_CONFIG}
+# done
+
+for name in "${MACHINES[@]}"
+do
+    ssh-keyscan $IPPREFIX$((OFFSET + ${MACHINE_IPs[$name]})) >> ~/.ssh/known_hosts
 done
 
-echo "[all]" > $INVENTORY
-for name in "${MACHINES[@]}"; do echo "$IPPREFIX$((OFFSET + ${MACHINE_IPs[$name]}))" >> $INVENTORY; done
-cat >> $INVENTORY <<ENDINVENTORY
-
-[filsluss]
-$IPPREFIX$((OFFSET + ${MACHINE_IPs[filsluss]}))
-
-[networking-node]
-$IPPREFIX$((OFFSET + ${MACHINE_IPs[networking-node]}))
-
-[ldap]
-$IPPREFIX$((OFFSET + ${MACHINE_IPs[ldap]}))
-
-[thinlinc-master]
-$IPPREFIX$((OFFSET + ${MACHINE_IPs[thinlinc-master]}))
-
-[openstack-controller]
-$IPPREFIX$((OFFSET + ${MACHINE_IPs[openstack-controller]}))
-
-[supernode]
-$IPPREFIX$((OFFSET + ${MACHINE_IPs[supernode]}))
- 
-[hnas-emulation]
-$IPPREFIX$((OFFSET + ${MACHINE_IPs[hnas-emulation]}))
-
-[compute]
-ENDINVENTORY
-for i in {1..3}; do echo $IPPREFIX$((OFFSET + ${MACHINE_IPs[compute$i]})) >> $INVENTORY; done
-cat >> $INVENTORY <<ENDINVENTORY
+[ $VERBOSE = "yes" ] && echo "Creating the ansible config file [in ${ANSIBLE_CFG}]"
+cat > ${ANSIBLE_CFG} <<ENDANSIBLECFG
+[defaults]
+#hostfile       = $INVENTORY
+remote_tmp     = ${ANSIBLE_FOLDER}/tmp
+#sudo_user      = root
+remote_user    = centos
+executable     = /bin/bash
+#hash_behaviour = merge
 
 [ssh_connection]
-ansible_user=centos
-# for older versions
-ansible_ssh_user=centos 
-# ansible_ssh_common_args
-ansible_ssh_extra_args="-F ${SSH_CONFIG}"
+#ssh_args= -o ControlMaster=auto -o ControlPersist=60s -F ${SSH_CONFIG}
+ssh_args= -o ControlMaster=auto -o ControlPersist=60s -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ForwardAgent=yes
+ENDANSIBLECFG
+
+[ $VERBOSE = "yes" ] && echo "Creating the inventory [in $INVENTORY]"
+echo "" > $INVENTORY
+for name in "${MACHINES[@]}"; do echo "$name ansible_ssh_host=$IPPREFIX$((OFFSET + ${MACHINE_IPs[$name]}))" >> $INVENTORY; done
+echo -e "\n[all]" >> $INVENTORY
+for name in "${MACHINES[@]}"; do echo "$name" >> $INVENTORY; done
+cat >> $INVENTORY <<ENDINVENTORY
+
+[nfs]
+supernode
+filsluss
+hnas-emulation
+
+[openstack]
+openstack-controller
+supernode
+networking-node
+compute1
+compute2
+compute3
+
+[openstack-compute]
+compute1
+compute2
+compute3
 
 [all:vars]
-mm_home="{{ lookup('env','HOME') }}/mosler-micro-mosler"
-tl_home="{{ lookup('env','HOME') }}/thinlinc"
-mosler_home="{{ lookup('env','HOME') }}/mosler-system-scripts"
-mosler_misc="{{ lookup('env','HOME') }}/misc/"
-mosler_images="{{ lookup('env','HOME') }}/mosler-images"
+mm_home=$HOME/mosler-micro-mosler
+tl_home=$HOME/thinlinc
+mosler_home=$HOME/mosler-system-scripts
+mosler_misc=$HOME/misc/
+mosler_images=$HOME/mosler-images
 ENDINVENTORY
 
 
 # Aaaaannndddd....cue music!
-[ $VERBOSE = "yes" ] && echo "Running ansible playbook"
-ansible-playbook -s -u centos -i $INVENTORY ./ansible/micromosler.yml
+[ $VERBOSE = "yes" ] && echo "Running playbook: ansible/micromosler.yml"
+ANSIBLE_CONFIG=${ANSIBLE_CFG} ansible-playbook -s -i $INVENTORY ./ansible/micromosler.yml
+# Note: config file overwritten by ANSIBLE_CFG env variable
 
 # Ansible-playbook options: http://linux.die.net/man/1/ansible-playbook
