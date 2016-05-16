@@ -80,9 +80,16 @@ if [ $ALL = "yes" ]; then
 
 fi # End cleaning if ALL
 
-[ $VERBOSE = "yes" ] && echo "Cleaning cloudinit folder and ansible inventory"
+[ $VERBOSE = "yes" ] && echo "Cleaning cloudinit folder and ansible generated files"
 rm -rf ${CLOUDINIT_FOLDER}
-rm -f ${INVENTORY}
+rm -f ${SSH_CONFIG} ${ANSIBLE_CFG} ${INVENTORY}
+
+[ $VERBOSE = "yes" ] && echo "Cleaning the SSH keys"
+if [ -f ~/.ssh/known_hosts ]; then
+    # Cut the matching keys out
+    #for name in "${MACHINES[@]}"; do sed -i "/$IPPREFIX$((OFFSET + ${MACHINE_IPs[$name]}))/d" ~/.ssh/known_hosts; done
+    sed -n -i "/${IPPREFIX}/d" ~/.ssh/known_hosts
+fi
 
 echo "Cleaning done"
 exit 0
