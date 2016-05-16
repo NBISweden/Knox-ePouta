@@ -16,8 +16,11 @@ else
     exit 1;
 fi
 
+# 
+
 CLOUDINIT_FOLDER=./cloudinit
-INVENTORY=./inventory-${OS_TENANT_NAME}
+SSH_CONFIG=./ansible/ssh_config.${OS_TENANT_NAME}
+INVENTORY=./ansible/inventory.${OS_TENANT_NAME}
 PHONE_HOME=10.254.0.1
 PORT=12345
 IPPREFIX=10.254.0.
