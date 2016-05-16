@@ -82,7 +82,8 @@ fi # End cleaning if ALL
 
 [ $VERBOSE = "yes" ] && echo "Cleaning cloudinit folder and ansible generated files"
 rm -rf ${CLOUDINIT_FOLDER}
-rm -f ${SSH_CONFIG} ${ANSIBLE_CFG} ${INVENTORY}
+rm -f ${ANSIBLE_CFG} ${INVENTORY}
+rm -rf ${ANSIBLE_FOLDER}/tmp/
 
 [ $VERBOSE = "yes" ] && echo "Cleaning the SSH keys"
 if [ -f ~/.ssh/known_hosts ]; then

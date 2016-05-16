@@ -25,6 +25,18 @@ source ./settings.sh
 ## Calling ansible for the MicroMosler setup
 #############################################
 
+[ $VERBOSE = "yes" ] && echo -e "Adding the SSH keys to ~/.ssh/known_hosts"
+if [ -f ~/.ssh/known_hosts ]; then
+    # Cut the matching keys out
+    #for name in "${MACHINES[@]}"; do sed -i "/$IPPREFIX$((OFFSET + ${MACHINE_IPs[$name]}))/d" ~/.ssh/known_hosts; done
+    sed -n -i "/${IPPREFIX}/d" ~/.ssh/known_hosts
+else 
+    touch ~/.ssh/known_hosts
+fi
+# Adding the keys to the known_hosts file
+for name in "${MACHINES[@]}"; do ssh-keyscan -4 $IPPREFIX$((OFFSET + ${MACHINE_IPs[$name]})) >> ~/.ssh/known_hosts 2>/dev/null; done
+# Note: I silence the errors from stderr (2) to /dev/null. Don't send them to &1.
+
 [ $VERBOSE = "yes" ] && echo "Creating the ansible config file [in ${ANSIBLE_CFG}]"
 cat > ${ANSIBLE_CFG} <<ENDANSIBLECFG
 [defaults]
@@ -76,5 +88,4 @@ ENDINVENTORY
 [ $VERBOSE = "yes" ] && echo "Running playbook: ansible/micromosler.yml (using config file: ${ANSIBLE_CFG})"
 ANSIBLE_CONFIG=${ANSIBLE_CFG} ansible-playbook -s ./ansible/micromosler.yml
 # Note: config file overwritten by ANSIBLE_CFG env variable
-
 # Ansible-playbook options: http://linux.die.net/man/1/ansible-playbook

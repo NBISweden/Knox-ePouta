@@ -274,17 +274,4 @@ do
     nova floating-ip-associate $machine $IPPREFIX$((OFFSET + ${MACHINE_IPs[$machine]}))
 done
 
-[ $VERBOSE = "yes" ] && echo -e "Adding the SSH keys to ~/.ssh/known_hosts"
-if [ -f ~/.ssh/known_hosts ]; then
-    # Cut the matching keys out
-    #for name in "${MACHINES[@]}"; do sed -i "/$IPPREFIX$((OFFSET + ${MACHINE_IPs[$name]}))/d" ~/.ssh/known_hosts; done
-    sed -n -i "/${IPPREFIX}/d" ~/.ssh/known_hosts
-else 
-    touch ~/.ssh/known_hosts
-fi
-for name in "${MACHINES[@]}"
-do
-    ssh-keyscan $IPPREFIX$((OFFSET + ${MACHINE_IPs[$name]})) >> ~/.ssh/known_hosts
-done
-
 echo -e "Initialization phase complete. You can go on and provision the machines"
