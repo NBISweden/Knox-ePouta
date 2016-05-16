@@ -66,13 +66,12 @@ $IPPREFIX$((OFFSET + ${MACHINE_IPs[hnas-emulation]}))
 ENDINVENTORY
 for i in {1..3}; do echo $IPPREFIX$((OFFSET + ${MACHINE_IPs[compute$i]})) >> $INVENTORY; done
 cat >> $INVENTORY <<ENDINVENTORY
-[ssh_connection]
-ssh_args = -F ${SSH_CONFIG}
 
+[ssh_connection]
 ansible_user = centos
 ansible_ssh_user = centos # for older versions
 #ansible_ssh_common_args
-ansible_ssh_extra_args = -F ${SSH_CONFIG}
+ansible_ssh_extra_args = "-F ${SSH_CONFIG}"
 
 [all:vars]
 mm_home: "{{ lookup('env','HOME') }}/mosler-micro-mosler"
