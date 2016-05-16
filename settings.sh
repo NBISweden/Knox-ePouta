@@ -19,12 +19,15 @@ fi
 # 
 
 CLOUDINIT_FOLDER=./cloudinit
-SSH_CONFIG=./ansible/ssh_config.${OS_TENANT_NAME}
-INVENTORY=./ansible/inventory.${OS_TENANT_NAME}
+ANSIBLE_FOLDER=./ansible
 PHONE_HOME=10.254.0.1
 PORT=12345
 IPPREFIX=10.254.0.
 OFFSET=51 # I don't know why Pontus wants to offset the IPs
+
+SSH_CONFIG=${ANSIBLE_FOLDER}/ssh_config.${OS_TENANT_NAME}
+ANSIBLE_CFG=${ANSIBLE_FOLDER}/config.${OS_TENANT_NAME}
+INVENTORY=${ANSIBLE_FOLDER}/inventory.${OS_TENANT_NAME}
 
 TENANT_ID=$(openstack project list | awk '/'${OS_TENANT_NAME}'/ {print $2}')
 

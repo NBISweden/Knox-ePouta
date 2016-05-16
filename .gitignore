@@ -5,5 +5,4 @@ user.rc
 cloudinit/*
 **/vm_init-*.yml
 **/machines.py*
-ansible/ssh_config.*
-ansible/inventory.*
+!ansible/*.yml
