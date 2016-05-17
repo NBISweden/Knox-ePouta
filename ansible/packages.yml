@@ -35,7 +35,7 @@
 
 
 - name: OpenStack packages
-  hosts: openstack-controller:supernode:compute:networking-node
+  hosts: openstack-controller:supernode:networking-node:compute
   tasks:
     - name: Icehouse EOL repo and signing key
       copy: src={{ mm_home }}/configs/RPM-GPG-KEY-Icehouse-SIG dest=/etc/pki/rpm-gpg/RPM-GPG-KEY-Icehouse-SIG

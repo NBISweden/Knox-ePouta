@@ -27,8 +27,8 @@
 - name: Controller specials
   hosts: openstack-controller
   tasks:
+    - file: path=/root/bin state=directory
     - name: Copying config files
-      file: path=/root/bin state=directory
       copy: src={{ mm_home }}/configs/{{ item.src }} dest={{ item.dst }}
       with_items:
         - { src: 'neutron.conf',           dst: '/etc/neutron/neutron.conf'                               }
@@ -47,8 +47,8 @@
       shell: chmod 0755 /root/bin/openstack_helper.sh
       shell: /root/bin/openstack_helper.sh  2>/tmp/oserr >/tmp/osout
 
+    - file: path=/tmp/mosler-images/ state=directory
     - name: Copying mosler images
-      file: path=/tmp/mosler-images/ state=directory
       copy: src={{ mosler_images }}/{{ item }} dest=/tmp/mosler-images/
       with_items:
         - project-computenode-stable 
@@ -91,10 +91,12 @@
         - { src: 'ml2.ini',                dst: '/etc/neutron/plugins/ml2/ml2.ini'                        }
         - { src: 'ovs_neutron_plugin.ini', dst: '/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini' }
 
-    - name: Starting openstack services
+    - name: Starting OpenVSwitch
       service: name=openvswitch enabled=yes state=started
+    - name: Setting up the OVS bridge
       shell: ovs-vsctl add-br br-eth1 || true
       shell: ovs-vsctl add-port br-eth1 eth1|| true
+    - name: Starting Neutron services
       service: name={{item}} enabled=yes state=started
       with_items:
         - neutron-dhcp-agent
@@ -125,15 +127,14 @@
         - { src: 'ovs_neutron_plugin.ini', dst: '/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini' }
         - { src: 'nova.conf',              dst: '/etc/nova/nova.conf'                                     }
 
-    - name: Starting openstack services
+    - name: Starting OpenVSwitch
+      service: name=openvswitch enabled=yes state=started
+    - name: Setting up the OVS bridge
       shell: ovs-vsctl add-br br-eth1 || true
       shell: ovs-vsctl add-port br-eth1 eth1|| true
-
-
-    - name: Starting openstack services
+    - name: Starting Nova and Neutron agents
       service: name={{item}} enabled=yes
       with_items:
-        - openvswitch
         - neutron-openvswitch-agent
         - openstack-nova-compute
         
