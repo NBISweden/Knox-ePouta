@@ -238,7 +238,7 @@ ENDCLOUDINIT
 # Booting a machine
 nova boot \
 --flavor $flavor \
---image 'CentOS6-micromosler' \
+--image 'CentOS6' \
 --nic net-id=${MGMT_NET},v4-fixed-ip=172.25.8.$id \
 $DN \
 --security-group ${OS_TENANT_NAME}-sg \
