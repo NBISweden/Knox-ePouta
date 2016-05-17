@@ -1,23 +1,38 @@
-# mosler-micro-mosler
+# µ-Mosler setup on Knox
 
-Requirements:
-* Centos6 glance image installed
-* Clone of 
-git@github.com:BILS/mosler-system-scripts.git
-in $HOME
-* Thinlinc packages in $HOME/thinlinc
+This set of scripts allows you to (re)create the Mosler environment in an Openstack cluster.
+This created set set of virtual machines is called µ-Mosler (*micro-mosler*). Our openstack cluster is called Knox.
 
-You also need to create a file 'user.rc' that will set up 2 variables:
+You first need to create a file (named 'user.rc') in order to set up your openstack credentials. That file will contain 2 variables:
 
 	OS_USERNAME=<username>
 	OS_PASSWORD=<password>
 
+The scripts define some variables (in `settings.sh`)
+* `MM_HOME` (currently pointing to `$HOME/mosler-micro-mosler`)
+* `TL_HOME` (currently pointing to `/home/jonas/thinlinc`)
+* `MOSLER_HOME` (currently pointing to `/home/jonas/mosler-system-scripts`)
+* `MOSLER_MISC` (currently pointing to `/home/jonas/misc`)
+* `MOSLER_IMAGES` (currently pointing to `/home/jonas/mosler-images`)
 
-Run the script 'init.sh' with the --all flag if you also wanted to
-create the router, networks and security groups.  It will also start a
-few VMs with proper IP information.  Run it subsequently without the
---all flag if you only want to (re)create the VMs
+The scripts assume that 
+* A CentOS6 glance image is installed
+* The [github.com:BILS/mosler-system-scripts.git](mosler-system-scripts) are available in `$MOSLER_HOME`
+* The Thinlinc packages are available in `$TL_HOME`
+* Some misc packages are available in `$MOSLER_MISC`
+* And the mosler images are available in `$MOSLER_IMAGES`
 
-The clean.sh script runs similarly: with the --all flag, it will
-destroy the router, networks, security groups and floating IPs.
-Without it, it only deletes the running VMs.
+You can run `init.sh --all` in order to create the necessary routers,
+networks and security groups, prior to creating the virtual machines.
+It will start the VMs with proper IP information. In subsequent runs,
+`init.sh` will only create the VMs.
+
+Run the `provision.sh --with-packages` in order to set up the ansible
+environment and play the playbooks. This script is divided in 2
+phases: the first one installs the required packages, and the second
+one configures the VMs. You can run without the --with-packages flag
+in order to subsequently skip the package installation phase.
+
+The `clean.sh` script can be run with the --all flag, to destroy
+routers, networks, security groups and floating IPs.  Otherwise, it
+only deletes the running VMs.
