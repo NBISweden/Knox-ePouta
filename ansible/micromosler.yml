@@ -43,8 +43,8 @@
         - { src: 'local_settings',         dst: '/etc/openstack-dashboard/local_settings'                 }
         - { src: 'openstack_helper.sh',    dst: '/root/bin/openstack_helper.sh'                           }
 
+    - shell: chmod 0755 /root/bin/openstack_helper.sh
     - name: Running the openstack helper
-      shell: chmod 0755 /root/bin/openstack_helper.sh
       shell: /root/bin/openstack_helper.sh  2>/tmp/oserr >/tmp/osout
 
     - file: path=/tmp/mosler-images/ state=directory
@@ -56,7 +56,7 @@
         - topolino-q-stable
         
     - name: Adding the images to Glance
-      shell: . /root/.keystonerc && glance image-create --file /tmp/mosler-images/{{item}} --disk-format qcow2 --container-format bare  --name "project-computenode-stable" --is-public True
+      shell: . /root/.keystonerc && glance image-create --file /tmp/mosler-images/{{ item }} --disk-format qcow2 --container-format bare  --name "project-computenode-stable" --is-public True
       with_items:
         - project-computenode-stable 
         - project-loginnode-stable
@@ -93,11 +93,12 @@
 
     - name: Starting OpenVSwitch
       service: name=openvswitch enabled=yes state=started
-    - name: Setting up the OVS bridge
+    - name: Creating the OVS bridge
       shell: ovs-vsctl add-br br-eth1 || true
+    - name: Adding eth1 to the OVS bridge
       shell: ovs-vsctl add-port br-eth1 eth1|| true
     - name: Starting Neutron services
-      service: name={{item}} enabled=yes state=started
+      service: name={{ item }} enabled=yes state=started
       with_items:
         - neutron-dhcp-agent
         - neutron-l3-agent
@@ -129,11 +130,12 @@
 
     - name: Starting OpenVSwitch
       service: name=openvswitch enabled=yes state=started
-    - name: Setting up the OVS bridge
+    - name: Creating the OVS bridge
       shell: ovs-vsctl add-br br-eth1 || true
+    - name: Adding eth1 to the OVS bridge
       shell: ovs-vsctl add-port br-eth1 eth1|| true
     - name: Starting Nova and Neutron agents
-      service: name={{item}} enabled=yes
+      service: name={{ item }} enabled=yes
       with_items:
         - neutron-openvswitch-agent
         - openstack-nova-compute

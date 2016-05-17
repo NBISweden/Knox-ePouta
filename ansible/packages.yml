@@ -10,7 +10,7 @@
     - name: EPEL repo
       yum: state=present name=https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
     - name: Packages we always want
-      yum: pkg={{item}} state=latest
+      yum: pkg={{ item }} state=latest
       with_items:
         - lsof
         - strace
@@ -19,7 +19,7 @@
 
 
 - name: NFS packages
-  hosts: supernode:filsluss:hnas-emulation
+  hosts: nfs
   tasks:
     - name: Installing NFS utils
       yum: state=latest name=nfs-utils
@@ -28,20 +28,21 @@
   hosts: ldap
   tasks:
     - name: LDAP packages
-      yum: pkg={{item}} state=present
+      yum: pkg={{ item }} state=present
       with_items:
         - openldap-servers
         - openldap-clients
 
 
 - name: OpenStack packages
-  hosts: openstack-controller:supernode:networking-node:compute
+  hosts: openstack-controller:supernode:networking-node:openstack-compute
   tasks:
-    - name: Icehouse EOL repo and signing key
-      copy: src={{ mm_home }}/configs/RPM-GPG-KEY-Icehouse-SIG dest=/etc/pki/rpm-gpg/RPM-GPG-KEY-Icehouse-SIG
+    - name: Icehouse EOL repo
       copy: src={{ mm_home }}/configs/rdo-release.repo dest=/etc/yum.repos.d/rdo-release.repo
+    - name: Icehouse signing key
+      copy: src={{ mm_home }}/configs/RPM-GPG-KEY-Icehouse-SIG dest=/etc/pki/rpm-gpg/RPM-GPG-KEY-Icehouse-SIG
     - name: Openstack python clients
-      yum: pkg={{item}} state=latest
+      yum: pkg={{ item }} state=latest
       with_items:
         - python-novaclient
         - python-keystoneclient
@@ -50,7 +51,7 @@
         - python-heatclient
         - python-neutronclient
     - name: Openstack utils
-      yum: pkg={{item}} state=present
+      yum: pkg={{ item }} state=present
       with_items:
         - openstack-nova
         - openstack-neutron
@@ -63,7 +64,7 @@
     - name: Copying misc packages
       copy: src={{ mosler_misc }} dest=/tmp/misc/
     - name: Openstack utils and more
-      yum: pkg={{item}} state=present
+      yum: pkg={{ item }} state=present
       with_items:
         - openstack-dashboard
         - openstack-keystone
@@ -80,7 +81,7 @@
         # - openstack-neutron-openvswitch
     
     - name: Openstack Mosler dashboard
-      yum: pkg={{item}} state=present
+      yum: pkg={{ item }} state=present
       with_items:
         - /tmp/misc/Django14-1.4.21-1.el6.noarch.rpm
         - /tmp/misc/mosler-dashboard-2-5.i386.rpm
