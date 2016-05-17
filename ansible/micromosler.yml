@@ -47,14 +47,6 @@
     - name: Running the openstack helper
       shell: /root/bin/openstack_helper.sh  2>/tmp/oserr >/tmp/osout
 
-    - file: path=/tmp/mosler-images/ state=directory
-    - name: Copying mosler images
-      copy: src={{ mosler_images }}/{{ item }} dest=/tmp/mosler-images/
-      with_items:
-        - project-computenode-stable 
-        - project-loginnode-stable
-        - topolino-q-stable
-        
     - name: Adding the images to Glance
       shell: . /root/.keystonerc && glance image-create --file /tmp/mosler-images/{{ item }} --disk-format qcow2 --container-format bare  --name "project-computenode-stable" --is-public True
       with_items:
@@ -62,12 +54,12 @@
         - project-loginnode-stable
         - topolino-q-stable
 
-    - name: Removing the image files
-      shell: rm /tmp/mosler-images/{{ item }}
-      with_items:
-        - project-computenode-stable 
-        - project-loginnode-stable
-        - topolino-q-stable
+    # - name: Removing the image files
+    #   shell: rm /tmp/mosler-images/{{ item }}
+    #   with_items:
+    #     - project-computenode-stable 
+    #     - project-loginnode-stable
+    #     - topolino-q-stable
 
 
 - name: OpenStack networking
