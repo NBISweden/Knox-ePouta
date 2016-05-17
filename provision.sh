@@ -25,36 +25,67 @@ source ./settings.sh
 ## Calling ansible for the MicroMosler setup
 #############################################
 
-echo "[all]" > $INVENTORY
-for name in "${MACHINES[@]}"; do echo "$IPPREFIX$((OFFSET + ${MACHINE_IPs[$name]}))" >> $INVENTORY; done
+[ $VERBOSE = "yes" ] && echo -e "Adding the SSH keys to ~/.ssh/known_hosts"
+if [ -f ~/.ssh/known_hosts ]; then
+    # Cut the matching keys out
+    #for name in "${MACHINES[@]}"; do sed -i "/$IPPREFIX$((OFFSET + ${MACHINE_IPs[$name]}))/d" ~/.ssh/known_hosts; done
+    sed -n -i "/${IPPREFIX}/d" ~/.ssh/known_hosts
+else 
+    touch ~/.ssh/known_hosts
+fi
+# Adding the keys to the known_hosts file
+for name in "${MACHINES[@]}"; do ssh-keyscan -4 $IPPREFIX$((OFFSET + ${MACHINE_IPs[$name]})) >> ~/.ssh/known_hosts 2>/dev/null; done
+# Note: I silence the errors from stderr (2) to /dev/null. Don't send them to &1.
+
+[ $VERBOSE = "yes" ] && echo "Creating the ansible config file [in ${ANSIBLE_CFG}]"
+cat > ${ANSIBLE_CFG} <<ENDANSIBLECFG
+[defaults]
+hostfile       = $INVENTORY
+remote_tmp     = ${ANSIBLE_FOLDER}/tmp/
+#sudo_user      = root
+remote_user    = centos
+executable     = /bin/bash
+#hash_behaviour = merge
+
+[ssh_connection]
+ssh_args= -o ControlMaster=auto -o ControlPersist=60s -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ForwardAgent=yes
+ENDANSIBLECFG
+
+[ $VERBOSE = "yes" ] && echo "Creating the inventory [in $INVENTORY]"
+echo "" > $INVENTORY
+for name in "${MACHINES[@]}"; do echo "$name ansible_ssh_host=$IPPREFIX$((OFFSET + ${MACHINE_IPs[$name]}))" >> $INVENTORY; done
+echo -e "\n[all]" >> $INVENTORY
+for name in "${MACHINES[@]}"; do echo "$name" >> $INVENTORY; done
 cat >> $INVENTORY <<ENDINVENTORY
 
-[filsluss]
-$IPPREFIX$((OFFSET + ${MACHINE_IPs[filsluss]}))
+[nfs]
+supernode
+filsluss
+hnas-emulation
 
-[networking-node]
-$IPPREFIX$((OFFSET + ${MACHINE_IPs[networking-node]}))
+[openstack]
+openstack-controller
+supernode
+networking-node
+compute1
+compute2
+compute3
 
-[ldap]
-$IPPREFIX$((OFFSET + ${MACHINE_IPs[ldap]}))
+[openstack-compute]
+compute1
+compute2
+compute3
 
-[thinlinc-master]
-$IPPREFIX$((OFFSET + ${MACHINE_IPs[thinlinc-master]}))
-
-[openstack-controller]
-$IPPREFIX$((OFFSET + ${MACHINE_IPs[openstack-controller]}))
-
-[supernode]
-$IPPREFIX$((OFFSET + ${MACHINE_IPs[supernode]}))
- 
-[hnas-emulation]
-$IPPREFIX$((OFFSET + ${MACHINE_IPs[hnas-emulation]}))
-
-[compute]
+[all:vars]
+mm_home=$HOME/mosler-micro-mosler
+tl_home=$HOME/thinlinc
+mosler_home=$HOME/mosler-system-scripts
+mosler_misc=$HOME/misc/
+mosler_images=$HOME/mosler-images
 ENDINVENTORY
-for i in {1..3}; do echo $IPPREFIX$((OFFSET + ${MACHINE_IPs[compute$i]})) >> $INVENTORY; done
-
 
 # Aaaaannndddd....cue music!
-[ $VERBOSE = "yes" ] && echo "Running ansible playbook"
-ansible-playbook -u centos -i $INVENTORY ./playbooks/micromosler.yml
+[ $VERBOSE = "yes" ] && echo "Running playbook: ansible/micromosler.yml (using config file: ${ANSIBLE_CFG})"
+ANSIBLE_CONFIG=${ANSIBLE_CFG} ansible-playbook -s ./ansible/micromosler.yml
+# Note: config file overwritten by ANSIBLE_CFG env variable
+# Ansible-playbook options: http://linux.die.net/man/1/ansible-playbook

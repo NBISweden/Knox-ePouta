@@ -64,17 +64,6 @@ if [ $ALL = "yes" ]; then
     for machine in "${MACHINES[@]}"; do
 	neutron floatingip-create --tenant-id ${TENANT_ID} --floating-ip-address $IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET)) public
     done
-    touch ~/.ssh/config
-    cp ~/.ssh/config ~/.ssh/config.${OS_TENANT_NAME}
-    for machine in "${MACHINES[@]}"; do
-	cat >> ~/.ssh/config <<EOF
-##################################################
-Host $IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET))
-     User centos
-     StrictHostKeyChecking no
-     UserKnownHostsFile=/dev/null
-EOF
-    done
 
     [ $VERBOSE = "yes" ] && echo "Creating the Security Group: ${OS_TENANT_NAME}-sg"
     neutron security-group-create ${OS_TENANT_NAME}-sg
