@@ -20,6 +20,14 @@ fi
 
 CLOUDINIT_FOLDER=./cloudinit
 ANSIBLE_FOLDER=./ansible
+
+MM_HOME=$HOME/mosler-micro-mosler
+TL_HOME=/home/jonas/thinlinc
+MOSLER_HOME=/home/jonas/mosler-system-scripts
+MOSLER_MISC=/home/jonas/misc/
+MOSLER_IMAGES=/home/jonas/mosler-images
+
+
 PHONE_HOME=10.254.0.1
 PORT=12345
 IPPREFIX=10.254.0.

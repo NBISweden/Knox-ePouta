@@ -79,11 +79,11 @@ compute2
 compute3
 
 [all:vars]
-mm_home=$HOME/mosler-micro-mosler
-tl_home=$HOME/thinlinc
-mosler_home=$HOME/mosler-system-scripts
-mosler_misc=$HOME/misc/
-mosler_images=$HOME/mosler-images
+mm_home=${MM_HOME}
+tl_home=${TL_HOME}
+mosler_home=${MOSLER_HOME}
+mosler_misc=${MOSLER_MISC}
+mosler_images=${MOSLER_IMAGES}
 ENDINVENTORY
 
 # Aaaaannndddd....cue music!
