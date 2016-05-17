@@ -3,6 +3,7 @@
 This set of scripts allows you to (re)create the Mosler environment in an Openstack cluster.
 This created set set of virtual machines is called µ-Mosler (*micro-mosler*). Our openstack cluster is called Knox.
 
+## Requirements
 You first need to create a file (named 'user.rc') in order to set up your openstack credentials. That file will contain 2 variables:
 
 	OS_USERNAME=<username>
@@ -22,6 +23,7 @@ The scripts assume that
 * Some misc packages are available in `$MOSLER_MISC`
 * And the mosler images are available in `$MOSLER_IMAGES`
 
+## Execution
 You can run `init.sh --all` in order to create the necessary routers,
 networks and security groups, prior to creating the virtual machines.
 It will start the VMs with proper IP information. In subsequent runs,
