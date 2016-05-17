@@ -89,6 +89,7 @@ ENDINVENTORY
 # Aaaaannndddd....cue music!
 if [ $PACKAGES = "yes" ]; then
     [ $VERBOSE = "yes" ] && echo "Running playbook: ansible/packages.yml"
+    set -e # exit on erros
     ANSIBLE_CONFIG=${ANSIBLE_CFG} ansible-playbook -s ./ansible/packages.yml
 fi
 
