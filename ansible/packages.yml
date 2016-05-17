@@ -21,16 +21,18 @@
 - name: NFS packages
   hosts: supernode:filsluss:hnas-emulation
   tasks:
-     - yum: state=latest name=nfs-utils
+    - name: Installing NFS utils
+      yum: state=latest name=nfs-utils
 
 - name: LDAP packages
   hosts: ldap
   tasks:
-    - yum: pkg={{item}} state=present
-    with_items:
-      - openldap-servers
-      - openldap-clients
-     
+    - name: LDAP packages
+      yum: pkg={{item}} state=present
+      with_items:
+        - openldap-servers
+        - openldap-clients
+
 
 - name: OpenStack packages
   hosts: openstack-controller:supernode:compute:networking-node
@@ -38,7 +40,7 @@
     - name: Icehouse EOL repo and signing key
       copy: src={{ mm_home }}/configs/RPM-GPG-KEY-Icehouse-SIG dest=/etc/pki/rpm-gpg/RPM-GPG-KEY-Icehouse-SIG
       copy: src={{ mm_home }}/configs/rdo-release.repo dest=/etc/yum.repos.d/rdo-release.repo
-    - name: Openstack python client
+    - name: Openstack python clients
       yum: pkg={{item}} state=latest
       with_items:
         - python-novaclient
@@ -58,32 +60,34 @@
 - name: Controller packages
   hosts: openstack-controller
   tasks:
-    - copy: src={{ mosler_misc }}/misc/ dest=/tmp/misc/
-    - yum: state=present name=/tmp/misc/Django14-1.4.21-1.el6.noarch.rpm
+    - name: Copying misc packages
+      copy: src={{ mosler_misc }} dest=/tmp/misc/
     - name: Openstack utils and more
       yum: pkg={{item}} state=present
       with_items:
         - openstack-dashboard
-        - openstack-neutron
         - openstack-keystone
         - openstack-heat-engine
         - openstack-heat-api
         - openstack-heat-api-cfn
-        - openstack-nova
         - openstack-glance
-        - openstack-neutron-ml2
-        - openstack-neutron-openvswitch
         - mysql-server
         - memcached
         - rabbitmq-server
+        # - openstack-nova
+        # - openstack-neutron
+        # - openstack-neutron-ml2
+        # - openstack-neutron-openvswitch
     
     - name: Openstack Mosler dashboard
       yum: pkg={{item}} state=present
       with_items:
+        - /tmp/misc/Django14-1.4.21-1.el6.noarch.rpm
         - /tmp/misc/mosler-dashboard-2-5.i386.rpm
         - /tmp/misc/nginx-1.8.1-1.el6.ngx.x86_64.rpm
    
 - name: Upgrade all packages
   hosts: all
   tasks:
-    - yum: name=* state=latest update_cache=yes
+    - name: Upgrade all packages
+      yum: name=* state=latest
