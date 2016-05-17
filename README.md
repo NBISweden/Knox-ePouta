@@ -17,7 +17,7 @@ The scripts define some variables (in `settings.sh`)
 
 The scripts assume that 
 * A CentOS6 glance image is installed
-* The [github.com:BILS/mosler-system-scripts.git](mosler-system-scripts) are available in `$MOSLER_HOME`
+* The [mosler-system-scripts](https://github.com/NBISweden/mosler-system-scripts) are available in `$MOSLER_HOME`
 * The Thinlinc packages are available in `$TL_HOME`
 * Some misc packages are available in `$MOSLER_MISC`
 * And the mosler images are available in `$MOSLER_IMAGES`
@@ -36,3 +36,5 @@ in order to subsequently skip the package installation phase.
 The `clean.sh` script can be run with the --all flag, to destroy
 routers, networks, security groups and floating IPs.  Otherwise, it
 only deletes the running VMs.
+
+You can append the `-v` flag to get more verbose output.
