@@ -40,3 +40,15 @@ routers, networks, security groups and floating IPs.  Otherwise, it
 only deletes the running VMs.
 
 You can append the `-v` flag to get more verbose output.
+
+## Example
+	git clone https://github.com/NBISweden/mosler-micro-mosler <some_dir>
+	cd <that_dir>
+	echo -e "OS_USERNAME=fred\nOS_PASSWORD=holala" > user.rc
+	./init.sh --all
+	./provision.sh --with-packages
+	
+	# Later
+	./provision.sh # to just re-configure µ-mosler
+	./clean.sh     # to destroy the VMs
+	./init.sh      # to re-create them, but not the networks, routers, etc...
