@@ -44,7 +44,8 @@ You can append the `-v` flag to get more verbose output.
 ## Example
 	git clone https://github.com/NBISweden/mosler-micro-mosler <some_dir>
 	cd <that_dir>
-	echo -e "OS_USERNAME=fred\nOS_PASSWORD=holala" > user.rc
+	echo "OS_USERNAME=fred" > user.rc
+	echo "OS_PASSWORD=holala" >> user.rc
 	./init.sh --all
 	./provision.sh --with-packages
 	
