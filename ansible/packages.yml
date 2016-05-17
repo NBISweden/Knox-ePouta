@@ -1,0 +1,89 @@
+---
+- name: General setup
+  hosts: all
+
+  tasks:
+    - name: Timezone configuration
+      lineinfile: dest=/etc/timezone  create=yes state=present line=Europe/Stockholm
+    - name: Proxy configuration
+      lineinfile: dest=/etc/yum.conf  create=no state=present line=proxy=http://130.238.7.178:3128/
+    - name: EPEL repo
+      yum: state=present name=https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
+    - name: Packages we always want
+      yum: pkg={{item}} state=latest
+      with_items:
+        - lsof
+        - strace
+        - jq
+        - tcpdump
+
+
+- name: NFS packages
+  hosts: supernode:filsluss:hnas-emulation
+  tasks:
+     - yum: state=latest name=nfs-utils
+
+- name: LDAP packages
+  hosts: ldap
+  tasks:
+    - yum: pkg={{item}} state=present
+    with_items:
+      - openldap-servers
+      - openldap-clients
+     
+
+- name: OpenStack packages
+  hosts: openstack-controller:supernode:compute:networking-node
+  tasks:
+    - name: Icehouse EOL repo and signing key
+      copy: src={{ mm_home }}/configs/RPM-GPG-KEY-Icehouse-SIG dest=/etc/pki/rpm-gpg/RPM-GPG-KEY-Icehouse-SIG
+      copy: src={{ mm_home }}/configs/rdo-release.repo dest=/etc/yum.repos.d/rdo-release.repo
+    - name: Openstack python client
+      yum: pkg={{item}} state=latest
+      with_items:
+        - python-novaclient
+        - python-keystoneclient
+        - python-neutronclient
+        - python-glanceclient
+        - python-heatclient
+        - python-neutronclient
+    - name: Openstack utils
+      yum: pkg={{item}} state=present
+      with_items:
+        - openstack-nova
+        - openstack-neutron
+        - openstack-neutron-ml2
+        - openstack-neutron-openvswitch
+
+- name: Controller packages
+  hosts: openstack-controller
+  tasks:
+    - copy: src={{ mosler_misc }}/misc/ dest=/tmp/misc/
+    - yum: state=present name=/tmp/misc/Django14-1.4.21-1.el6.noarch.rpm
+    - name: Openstack utils and more
+      yum: pkg={{item}} state=present
+      with_items:
+        - openstack-dashboard
+        - openstack-neutron
+        - openstack-keystone
+        - openstack-heat-engine
+        - openstack-heat-api
+        - openstack-heat-api-cfn
+        - openstack-nova
+        - openstack-glance
+        - openstack-neutron-ml2
+        - openstack-neutron-openvswitch
+        - mysql-server
+        - memcached
+        - rabbitmq-server
+    
+    - name: Openstack Mosler dashboard
+      yum: pkg={{item}} state=present
+      with_items:
+        - /tmp/misc/mosler-dashboard-2-5.i386.rpm
+        - /tmp/misc/nginx-1.8.1-1.el6.ngx.x86_64.rpm
+   
+- name: Upgrade all packages
+  hosts: all
+  tasks:
+    - yum: name=* state=latest update_cache=yes

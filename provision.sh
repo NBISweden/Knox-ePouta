@@ -2,15 +2,17 @@
 
 # Default values
 VERBOSE=no
+PACKAGES=no
 
 function usage(){
-    echo "Usage: $0 [--verbose|-v]"
+    echo "Usage: $0 [--verbose|-v] [--with-packages]"
 }
 
 # While there are arguments or '--' is reached
 while [ $# -gt 0 ]; do
     case "$1" in
         --verbose|-v) VERBOSE=yes;;
+        --with-packages) PACKAGES=yes;;
         --help|-h) usage; exit 0;;
         --) shift; break;;
         *) echo "$0: error - unrecognized option $1" 1>&2; usage; exit 1;;
@@ -85,6 +87,11 @@ mosler_images=$HOME/mosler-images
 ENDINVENTORY
 
 # Aaaaannndddd....cue music!
+if [ $PACKAGES = "yes" ]; then
+    [ $VERBOSE = "yes" ] && echo "Running playbook: ansible/packages.yml"
+    ANSIBLE_CONFIG=${ANSIBLE_CFG} ansible-playbook -s ./ansible/packages.yml
+fi
+
 [ $VERBOSE = "yes" ] && echo "Running playbook: ansible/micromosler.yml (using config file: ${ANSIBLE_CFG})"
 ANSIBLE_CONFIG=${ANSIBLE_CFG} ansible-playbook -s ./ansible/micromosler.yml
 # Note: config file overwritten by ANSIBLE_CFG env variable
