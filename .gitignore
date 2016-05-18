@@ -1,5 +1,6 @@
 *~
 .#*
+test/
 micromosler.rc
 user.rc
 cloudinit/*

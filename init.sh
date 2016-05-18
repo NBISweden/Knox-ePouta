@@ -140,14 +140,6 @@ function boot_machine {
     
     cat > ${CLOUDINIT_FOLDER}/vm_init-$id.yml <<ENDCLOUDINIT
 #cloud-config
-debug: 1
-# disable_root: 0
-# password: hello
-# chpasswd: { expire : False }
-# ssh_pwauth: True
-# system_info:
-#   default_user:
-#     name: root
 disable_root: 1
 system_info:
   default_user:
@@ -246,7 +238,7 @@ ENDCLOUDINIT
 # Booting a machine
 nova boot \
 --flavor $flavor \
---image 'CentOS6-micromosler' \
+--image 'CentOS6' \
 --nic net-id=${MGMT_NET},v4-fixed-ip=172.25.8.$id \
 $DN \
 --security-group ${OS_TENANT_NAME}-sg \
