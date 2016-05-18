@@ -68,7 +68,14 @@ tl_home=${TL_HOME}
 mosler_home=${MOSLER_HOME}
 mosler_misc=${MOSLER_MISC}
 mosler_images=${MOSLER_IMAGES}
+mosler_images_url=http://10.254.0.1:$((PORT+1))
 ENDINVENTORY
+
+[ $VERBOSE = "yes" ] && echo "Starting the Mosler Images server [in ${MOSLER_IMAGES}]"
+pushd ${MOSLER_IMAGES}
+python -m SimpleHTTPServer $((PORT+1)) &
+FILE_SERVER=$!
+popd
 
 # Aaaaannndddd....cue music!
 if [ $PACKAGES = "yes" ]; then
@@ -81,3 +88,6 @@ fi
 ANSIBLE_CONFIG=${ANSIBLE_CFG} ansible-playbook -s ./ansible/micromosler.yml
 # Note: config file overwritten by ANSIBLE_CFG env variable
 # Ansible-playbook options: http://linux.die.net/man/1/ansible-playbook
+
+[ $VERBOSE = "yes" ] && echo "Killing the Mosler Images server [PID: ${FILE_SERVER}]"
+kill ${FILE_SERVER}
