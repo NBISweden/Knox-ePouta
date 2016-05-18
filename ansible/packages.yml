@@ -87,13 +87,13 @@
         - /tmp/misc/mosler-dashboard-2-5.i386.rpm
         - /tmp/misc/nginx-1.8.1-1.el6.ngx.x86_64.rpm
    
-    - file: path=/tmp/mosler-images/ state=directory
-    - name: Copying mosler images
-      copy: src={{ mosler_images }}/{{ item }} dest=/tmp/mosler-images/
-      with_items:
-        - project-computenode-stable 
-        - project-loginnode-stable
-        - topolino-q-stable
+    # - file: path=/tmp/mosler-images/ state=directory
+    # - name: Copying mosler images
+    #   copy: src={{ mosler_images }}/{{ item }} dest=/tmp/mosler-images/
+    #   with_items:
+    #     - project-computenode-stable 
+    #     - project-loginnode-stable
+    #     - topolino-q-stable
         
 - name: Upgrade all packages
   hosts: all
