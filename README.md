@@ -46,6 +46,7 @@ You can append the `-v` flag to get more verbose output.
 	cd <that_dir>
 	echo "OS_USERNAME=fred" > user.rc
 	echo "OS_PASSWORD=holala" >> user.rc
+	# The openstack user 'fred' must maybe be an admin on the µ-mosler tenant
 	./init.sh --all
 	./provision.sh --with-packages
 	
@@ -53,3 +54,4 @@ You can append the `-v` flag to get more verbose output.
 	./provision.sh # to just re-configure µ-mosler
 	./clean.sh     # to destroy the VMs
 	./init.sh      # to re-create them, but not the networks, routers, etc...
+	./provision.sh --with-packages # Gotta re-install the packages!
