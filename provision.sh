@@ -5,7 +5,7 @@ VERBOSE=no
 PACKAGES=no
 
 function usage(){
-    echo "Usage: $0 [--verbose|-v] [--with-packages]"
+    echo "Usage: $0 [--verbose|-v] [--with-packages] [--start-at TASK]"
 }
 
 # While there are arguments or '--' is reached
@@ -13,6 +13,7 @@ while [ $# -gt 0 ]; do
     case "$1" in
         --verbose|-v) VERBOSE=yes;;
         --with-packages) PACKAGES=yes;;
+        --start-at) TASK=$2; shift;;
         --help|-h) usage; exit 0;;
         --) shift; break;;
         *) echo "$0: error - unrecognized option $1" 1>&2; usage; exit 1;;
@@ -73,6 +74,7 @@ ENDINVENTORY
 
 [ $VERBOSE = "yes" ] && echo "Starting the Mosler Images server [in ${MOSLER_IMAGES}]"
 pushd ${MOSLER_IMAGES}
+fuser -k $((PORT+1))/tcp
 python -m SimpleHTTPServer $((PORT+1)) &
 FILE_SERVER=$!
 popd
@@ -85,9 +87,20 @@ if [ $PACKAGES = "yes" ]; then
 fi
 
 [ $VERBOSE = "yes" ] && echo "Running playbook: ansible/micromosler.yml (using config file: ${ANSIBLE_CFG})"
-ANSIBLE_CONFIG=${ANSIBLE_CFG} ansible-playbook -s ./ansible/micromosler.yml
+[ ! -z "$TASK" ] && TASK="--start-at-task $TASK"
+ANSIBLE_CONFIG=${ANSIBLE_CFG} ansible-playbook -s ./ansible/micromosler.yml $TASK
 # Note: config file overwritten by ANSIBLE_CFG env variable
 # Ansible-playbook options: http://linux.die.net/man/1/ansible-playbook
 
 [ $VERBOSE = "yes" ] && echo "Killing the Mosler Images server [PID: ${FILE_SERVER}]"
 kill ${FILE_SERVER}
+
+# Note: If the ansible script finishes before the Glance image are
+# pulled from the SimpleHTTPServer, then re-write the server using,
+# either a timeout, or some logic that checks that all the images
+# downloads are completed.  Like checking in the log file (or stderr
+# maybe) that the requests are completed, or making the request flags
+# itself when completed and we'd check if we have 3 flags...  That is
+# not super complex, but we might not need to do it.
+# See: http://code.activestate.com/recipes/499376-basehttpserver-with-socket-timeout/
+# and: http://code.activestate.com/recipes/425210/ 
