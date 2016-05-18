@@ -43,7 +43,7 @@ for name in "${MACHINES[@]}"; do ssh-keyscan -4 $IPPREFIX$((OFFSET + ${MACHINE_I
 cat > ${ANSIBLE_CFG} <<ENDANSIBLECFG
 [defaults]
 hostfile       = $INVENTORY
-remote_tmp     = ${ANSIBLE_FOLDER}/tmp/
+#remote_tmp     = ${ANSIBLE_FOLDER}/tmp/
 #sudo_user      = root
 remote_user    = centos
 executable     = /bin/bash
@@ -56,27 +56,11 @@ ENDANSIBLECFG
 [ $VERBOSE = "yes" ] && echo "Creating the inventory [in $INVENTORY]"
 echo "" > $INVENTORY
 for name in "${MACHINES[@]}"; do echo "$name ansible_ssh_host=$IPPREFIX$((OFFSET + ${MACHINE_IPs[$name]}))" >> $INVENTORY; done
-echo -e "\n[all]" >> $INVENTORY
-for name in "${MACHINES[@]}"; do echo "$name" >> $INVENTORY; done
+for group in "${!MACHINE_GROUPS[@]}"; do
+    echo -e "\n[$group]" >> $INVENTORY
+    for machine in ${MACHINE_GROUPS[$group]}; do echo "$machine" >> $INVENTORY; done
+done
 cat >> $INVENTORY <<ENDINVENTORY
-
-[nfs]
-supernode
-filsluss
-hnas-emulation
-
-[openstack]
-openstack-controller
-supernode
-networking-node
-compute1
-compute2
-compute3
-
-[openstack-compute]
-compute1
-compute2
-compute3
 
 [all:vars]
 mm_home=${MM_HOME}
