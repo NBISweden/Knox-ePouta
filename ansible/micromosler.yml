@@ -47,8 +47,15 @@
     - name: Running the openstack helper
       shell: /root/bin/openstack_helper.sh  2>/tmp/oserr >/tmp/osout
 
+    - name: Removing any old image from Glance
+      shell: . /root/.keystonerc && (glance image-list | awk '/ {{ item }} /{print $2}' | while read img; do glance image-delete $img; done)
+      with_items:
+        - project-computenode-stable 
+        - project-loginnode-stable
+        - topolino-q-stable
+
     - name: Adding the images to Glance
-      shell: . /root/.keystonerc && glance --os-image-api-version 1 image-create --location {{ mosler_images_url }}/{{ item }} --disk-format qcow2 --container-format bare  --name "project-computenode-stable" --is-public True
+      shell: . /root/.keystonerc && glance image-create --copy-from {{ mosler_images_url }}/{{ item }} --disk-format qcow2 --container-format bare  --name "{{ item }}" --is-public True
       with_items:
         - project-computenode-stable 
         - project-loginnode-stable
@@ -60,7 +67,6 @@
     #     - project-computenode-stable 
     #     - project-loginnode-stable
     #     - topolino-q-stable
-
 
 - name: OpenStack networking
   hosts: networking-node
