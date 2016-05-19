@@ -6,6 +6,7 @@ PACKAGES=no
 
 function usage(){
     echo "Usage: $0 [--verbose|-v] [--with-packages] -- ..."
+    echo "       the ... arguments are passed on to the ansible call"
 }
 
 # While there are arguments or '--' is reached
@@ -80,7 +81,7 @@ popd
 # Aaaaannndddd....cue music!
 if [ $PACKAGES = "yes" ]; then
     [ $VERBOSE = "yes" ] && echo "Running playbook: ansible/packages.yml"
-    set -e # exit on erros
+    set -e # exit on errors
     ANSIBLE_CONFIG=${ANSIBLE_CFG} ansible-playbook -s ./ansible/packages.yml $@
 fi
 
