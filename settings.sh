@@ -22,9 +22,9 @@ CLOUDINIT_FOLDER=./cloudinit
 ANSIBLE_FOLDER=./ansible
 
 MM_HOME=$HOME/mosler-micro-mosler
-TL_HOME=/home/jonas/thinlinc
+TL_HOME=/home/jonas/thinlinc/ # must end with /
 MOSLER_HOME=/home/jonas/mosler-system-scripts
-MOSLER_MISC=/home/jonas/misc/
+MOSLER_MISC=/home/jonas/misc
 MOSLER_IMAGES=/home/jonas/mosler-images
 
 

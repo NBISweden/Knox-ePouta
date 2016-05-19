@@ -5,7 +5,7 @@ VERBOSE=no
 PACKAGES=no
 
 function usage(){
-    echo "Usage: $0 [--verbose|-v] [--with-packages] [--start-at TASK]"
+    echo "Usage: $0 [--verbose|-v] [--with-packages] -- ..."
 }
 
 # While there are arguments or '--' is reached
@@ -13,7 +13,6 @@ while [ $# -gt 0 ]; do
     case "$1" in
         --verbose|-v) VERBOSE=yes;;
         --with-packages) PACKAGES=yes;;
-        --start-at) TASK=$2; shift;;
         --help|-h) usage; exit 0;;
         --) shift; break;;
         *) echo "$0: error - unrecognized option $1" 1>&2; usage; exit 1;;
@@ -46,7 +45,6 @@ cat > ${ANSIBLE_CFG} <<ENDANSIBLECFG
 hostfile       = $INVENTORY
 #remote_tmp     = ${ANSIBLE_FOLDER}/tmp/
 #sudo_user      = root
-remote_user    = centos
 executable     = /bin/bash
 #hash_behaviour = merge
 
@@ -69,13 +67,13 @@ tl_home=${TL_HOME}
 mosler_home=${MOSLER_HOME}
 mosler_misc=${MOSLER_MISC}
 mosler_images=${MOSLER_IMAGES}
-mosler_images_url=http://10.254.0.1:$((PORT+1))
+mosler_images_url=http://10.254.0.1:$PORT
 ENDINVENTORY
 
 [ $VERBOSE = "yes" ] && echo "Starting the Mosler Images server [in ${MOSLER_IMAGES}]"
 pushd ${MOSLER_IMAGES}
-fuser -k $((PORT+1))/tcp
-python -m SimpleHTTPServer $((PORT+1)) &
+fuser -k $PORT/tcp
+python -m SimpleHTTPServer $PORT &
 FILE_SERVER=$!
 popd
 
@@ -83,12 +81,11 @@ popd
 if [ $PACKAGES = "yes" ]; then
     [ $VERBOSE = "yes" ] && echo "Running playbook: ansible/packages.yml"
     set -e # exit on erros
-    ANSIBLE_CONFIG=${ANSIBLE_CFG} ansible-playbook -s ./ansible/packages.yml
+    ANSIBLE_CONFIG=${ANSIBLE_CFG} ansible-playbook -s ./ansible/packages.yml $@
 fi
 
 [ $VERBOSE = "yes" ] && echo "Running playbook: ansible/micromosler.yml (using config file: ${ANSIBLE_CFG})"
-[ ! -z "$TASK" ] && TASK="--start-at-task $TASK"
-ANSIBLE_CONFIG=${ANSIBLE_CFG} ansible-playbook -s ./ansible/micromosler.yml $TASK
+ANSIBLE_CONFIG=${ANSIBLE_CFG} ansible-playbook -s ./ansible/micromosler.yml $@
 # Note: config file overwritten by ANSIBLE_CFG env variable
 # Ansible-playbook options: http://linux.die.net/man/1/ansible-playbook
 
