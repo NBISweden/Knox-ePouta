@@ -37,8 +37,7 @@ OFFSET=51 # I don't know why Pontus wants to offset the IPs
 ANSIBLE_CFG=${ANSIBLE_FOLDER}/config.${OS_TENANT_NAME}
 INVENTORY=${ANSIBLE_FOLDER}/inventory.${OS_TENANT_NAME}
 
-#TENANT_ID=$(openstack project list | awk '/'${OS_TENANT_NAME}'/ {print $2}')
-TENANT_ID=32
+TENANT_ID=$(openstack project list | awk '/'${OS_TENANT_NAME}'/ {print $2}')
 
 # Declaring the machines
 # Arrays are one-dimensional only. Tyvärr!
