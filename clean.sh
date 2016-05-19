@@ -46,6 +46,9 @@ done
 
 # Cleaning the network information
 if [ $ALL = "yes" ]; then
+    [ $VERBOSE = "yes" ] && echo "Cleaning the remaining VMs"
+    nova list --minimal --tenant ${TENANT_ID} | awk '/^$/ {next;} /^| ID / {next;} {print $2}' | while read m; do nova delete $m; done
+
     [ $VERBOSE = "yes" ] && echo "Cleaning the network information"
 
     [ $VERBOSE = "yes" ] && echo "Disconnecting the router from the management subnet"
@@ -63,12 +66,10 @@ if [ $ALL = "yes" ]; then
     neutron net-delete ${OS_TENANT_NAME}-data-net
 
     [ $VERBOSE = "yes" ] && echo "Deleting floating IPs"
-    neutron floatingip-list -F id -F floating_ip_address | awk '{print $2$3$4}' | while read floating; do
-	# If I find the server in the MACHINES list. Otherwise, don't touch! Might not be your server
-	for machine in "${MACHINES[@]}"; do
-	    [ "${floating##*|}" = "$IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET))" ] && neutron floatingip-delete ${floating%|*} && ssh-keygen -R ${floating%|*}
-	    #neutron floatingip-delete $IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET));
-	done
+    neutron floatingip-list -F id -F floating_ip_address | awk '/^$/ {next;} {print $2$3$4}' | while read floating; do
+	# We selected '--all'. That means, we do delete the network information.
+	# In that case, kill _all_ floating IPs since we also delete the networks
+	neutron floatingip-delete ${floating%|*} && ssh-keygen -R ${floating%|*}
     done
 
     # Removing the ssh config file
