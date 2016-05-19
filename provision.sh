@@ -24,6 +24,9 @@ done
 # Get credentials and machines settings
 source ./settings.sh
 
+# Note: Should exit the script if machines not yet available
+# Should I test with an ssh connection (with timeout?)
+
 #############################################
 ## Calling ansible for the MicroMosler setup
 #############################################
@@ -60,6 +63,8 @@ for group in "${!MACHINE_GROUPS[@]}"; do
     echo -e "\n[$group]" >> $INVENTORY
     for machine in ${MACHINE_GROUPS[$group]}; do echo "$machine" >> $INVENTORY; done
 done
+# Make TL_HOME end with slash
+if [ ${TL_HOME:(-1)} != '/' ]; then TL_HOME=${TL_HOME}/; fi
 cat >> $INVENTORY <<ENDINVENTORY
 
 [all:vars]
@@ -73,8 +78,8 @@ ENDINVENTORY
 
 [ $VERBOSE = "yes" ] && echo "Starting the Mosler Images server [in ${MOSLER_IMAGES}]"
 pushd ${MOSLER_IMAGES}
-fuser -k $PORT/tcp
-python -m SimpleHTTPServer $PORT &
+fuser -k ${PORT}/tcp
+python -m SimpleHTTPServer ${PORT} &
 FILE_SERVER=$!
 popd
 

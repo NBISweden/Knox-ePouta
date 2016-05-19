@@ -6,8 +6,8 @@ This created set set of virtual machines is called µ-Mosler (*micro-mosler*). O
 ## Requirements
 You first need to create a file (named 'user.rc') in order to set up your openstack credentials. That file will contain 2 variables:
 
-	OS_USERNAME=<username>
-	OS_PASSWORD=<password>
+	export OS_USERNAME=<username>
+	export OS_PASSWORD=<password>
 
 The scripts define some variables (in `settings.sh`)
 * `MM_HOME` (currently pointing to `$HOME/mosler-micro-mosler`)
@@ -44,8 +44,8 @@ You can append the `-v` flag to get more verbose output.
 ## Example
 	git clone https://github.com/NBISweden/mosler-micro-mosler <some_dir>
 	cd <that_dir>
-	echo "OS_USERNAME=fred" > user.rc
-	echo "OS_PASSWORD=holala" >> user.rc
+	echo "export OS_USERNAME=fred" > user.rc
+	echo "export OS_PASSWORD=holala" >> user.rc
 	# The openstack user 'fred' must maybe be an admin on the µ-mosler tenant
 	./init.sh --all
 	./provision.sh --with-packages
