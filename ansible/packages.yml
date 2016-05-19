@@ -94,7 +94,15 @@
     #     - project-computenode-stable 
     #     - project-loginnode-stable
     #     - topolino-q-stable
-        
+
+- name: ThinLinc packages
+  hosts: thinlinc-master
+  tasks:
+    - name: Copying Thinlinc packages
+      copy: src={{ tl_home }} dest=/tmp/tl
+    - name: Installing Thinlinc answers
+      shell: yum -y install /tmp/tl/*x86_64.rpm /tmp/tl/*noarch.rpm xauth
+
 - name: Upgrade all packages
   hosts: all
   tasks:

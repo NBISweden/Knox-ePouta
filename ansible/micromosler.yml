@@ -1,10 +1,12 @@
 - name: NFS Support
   hosts: nfs
+  gather_facts: no
   tasks:
     - shell: echo "todo"
     
 - name: LDAP
   hosts: ldap
+  gather_facts: no
   tasks:
     - lineinfile: dest=/etc/sysconfig/iptables state=present line='-A INPUT -m state --state NEW -m tcp -p tcp --dport 389 -j ACCEPT' insertbefore='^-A INPUT -m state --state NEW .*'
     - copy:   src={{ mm_home }}/configs/ldap_helper.sh dest=/root/ldap_helper.sh
@@ -14,6 +16,7 @@
 
 - name: OpenStack configuration
   hosts: openstack
+  gather_facts: no
   tasks:
     - service: name=openvswitch state=started
     - lineinfile: dest=/etc/sysconfig/iptables state=present line='-A INPUT -m state --state NEW -s 172.25.8.0/24 -j ACCEPT' insertbefore='^-A INPUT -m state --state NEW .*'
@@ -26,6 +29,7 @@
 
 - name: Controller specials
   hosts: openstack-controller
+  gather_facts: no
   tasks:
     - file: path=/root/bin state=directory
     - name: Copying config files
@@ -70,6 +74,7 @@
 
 - name: OpenStack networking
   hosts: networking-node
+  gather_facts: no
   tasks:
     - name: system config
       lineinfile: dest=/etc/sysctl.conf regexp={{item.regexp}} line={{item.line}}
@@ -94,7 +99,7 @@
     - name: Creating the OVS bridge
       shell: ovs-vsctl add-br br-eth1 || true
     - name: Adding eth1 to the OVS bridge
-      shell: ovs-vsctl add-port br-eth1 eth1|| true
+      shell: ovs-vsctl add-port br-eth1 eth1 || true
     - name: Starting Neutron services
       service: name={{ item }} enabled=yes state=started
       with_items:
@@ -106,6 +111,7 @@
 
 - name: OpenStack compute
   hosts: openstack-compute
+  gather_facts: no
   tasks:
     - name: system config
       lineinfile: dest=/etc/sysctl.conf regexp={{item.regexp}} line={{item.line}}
@@ -131,7 +137,7 @@
     - name: Creating the OVS bridge
       shell: ovs-vsctl add-br br-eth1 || true
     - name: Adding eth1 to the OVS bridge
-      shell: ovs-vsctl add-port br-eth1 eth1|| true
+      shell: ovs-vsctl add-port br-eth1 eth1 || true
     - name: Starting Nova and Neutron agents
       service: name={{ item }} enabled=yes
       with_items:
@@ -140,6 +146,7 @@
         
 - name: Supernode 
   hosts: supernode
+  gather_facts: no
   tasks:
     - name: Copying mosler config files
       copy: src={{ mosler_home }}/supernode/{{ item }} dest=/usr/local/bin/
@@ -194,9 +201,13 @@
 
 - name: ThinLinc
   hosts: thinlinc-master
+  gather_facts: no
+  tags:
+    - thinlinc
   tasks:
-    - copy: src={{ tl_home }} dest=/tmp/tl/
-    - copy: src={{ mm_home }}/configs/tl_answers dest=/tmp/tl/
-    - shell: yum -y install /tmp/tl/*x86_64.rpm /tmp/tl/*noarch.rpm || true
-    - shell: /opt/thinlinc/sbin/tl-setup -a /tmp/tl/tl_answers || true
-    - lineinfile: dest=/opt/thinlinc/etc/conf.d/webaccess.hconf regexp='^listen=.*$' line='listen=443'
+    - name: Copying Thinlinc answers
+      copy: src={{ mm_home }}/configs/tl_answers dest=/tmp/tl/
+    - name: Setting up Thinlinc
+      shell: /opt/thinlinc/sbin/tl-setup -a /tmp/tl/tl_answers || true
+    - name: Configuring Thinlinc web access
+      lineinfile: dest=/opt/thinlinc/etc/conf.d/webaccess.hconf regexp='^listen=.*$' line='listen=443'

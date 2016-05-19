@@ -5,7 +5,8 @@ VERBOSE=no
 PACKAGES=no
 
 function usage(){
-    echo "Usage: $0 [--verbose|-v] [--with-packages]"
+    echo "Usage: $0 [--verbose|-v] [--with-packages] -- ..."
+    echo "       the ... arguments are passed on to the ansible call"
 }
 
 # While there are arguments or '--' is reached
@@ -45,7 +46,6 @@ cat > ${ANSIBLE_CFG} <<ENDANSIBLECFG
 hostfile       = $INVENTORY
 #remote_tmp     = ${ANSIBLE_FOLDER}/tmp/
 #sudo_user      = root
-remote_user    = centos
 executable     = /bin/bash
 #hash_behaviour = merge
 
@@ -68,26 +68,37 @@ tl_home=${TL_HOME}
 mosler_home=${MOSLER_HOME}
 mosler_misc=${MOSLER_MISC}
 mosler_images=${MOSLER_IMAGES}
-mosler_images_url=http://10.254.0.1:$((PORT+1))
+mosler_images_url=http://10.254.0.1:$PORT
 ENDINVENTORY
 
 [ $VERBOSE = "yes" ] && echo "Starting the Mosler Images server [in ${MOSLER_IMAGES}]"
 pushd ${MOSLER_IMAGES}
-python -m SimpleHTTPServer $((PORT+1)) &
+fuser -k $PORT/tcp
+python -m SimpleHTTPServer $PORT &
 FILE_SERVER=$!
 popd
 
 # Aaaaannndddd....cue music!
 if [ $PACKAGES = "yes" ]; then
     [ $VERBOSE = "yes" ] && echo "Running playbook: ansible/packages.yml"
-    set -e # exit on erros
-    ANSIBLE_CONFIG=${ANSIBLE_CFG} ansible-playbook -s ./ansible/packages.yml
+    set -e # exit on errors
+    ANSIBLE_CONFIG=${ANSIBLE_CFG} ansible-playbook -s ./ansible/packages.yml $@
 fi
 
 [ $VERBOSE = "yes" ] && echo "Running playbook: ansible/micromosler.yml (using config file: ${ANSIBLE_CFG})"
-ANSIBLE_CONFIG=${ANSIBLE_CFG} ansible-playbook -s ./ansible/micromosler.yml
+ANSIBLE_CONFIG=${ANSIBLE_CFG} ansible-playbook -s ./ansible/micromosler.yml $@
 # Note: config file overwritten by ANSIBLE_CFG env variable
 # Ansible-playbook options: http://linux.die.net/man/1/ansible-playbook
 
 [ $VERBOSE = "yes" ] && echo "Killing the Mosler Images server [PID: ${FILE_SERVER}]"
 kill ${FILE_SERVER}
+
+# Note: If the ansible script finishes before the Glance image are
+# pulled from the SimpleHTTPServer, then re-write the server using,
+# either a timeout, or some logic that checks that all the images
+# downloads are completed.  Like checking in the log file (or stderr
+# maybe) that the requests are completed, or making the request flags
+# itself when completed and we'd check if we have 3 flags...  That is
+# not super complex, but we might not need to do it.
+# See: http://code.activestate.com/recipes/499376-basehttpserver-with-socket-timeout/
+# and: http://code.activestate.com/recipes/425210/ 
