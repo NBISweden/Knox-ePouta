@@ -33,13 +33,13 @@ source ./settings.sh
 [ $VERBOSE = "yes" ] && echo -e "Adding the SSH keys to ~/.ssh/known_hosts"
 if [ -f ~/.ssh/known_hosts ]; then
     # Cut the matching keys out
-    #for name in "${MACHINES[@]}"; do sed -i "/$IPPREFIX$((OFFSET + ${MACHINE_IPs[$name]}))/d" ~/.ssh/known_hosts; done
-    sed -n -i "/${IPPREFIX}/d" ~/.ssh/known_hosts
+    # for name in "${MACHINES[@]}"; do sed -i "/${FLOATING_IPs[$name]}/d" ~/.ssh/known_hosts; done
+    sed -n -i "/${FLOATING_CIDR%0/24}/d" ~/.ssh/known_hosts
 else 
     touch ~/.ssh/known_hosts
 fi
 # Adding the keys to the known_hosts file
-for name in "${MACHINES[@]}"; do ssh-keyscan -4 $IPPREFIX$((OFFSET + ${MACHINE_IPs[$name]})) >> ~/.ssh/known_hosts 2>/dev/null; done
+for name in "${MACHINES[@]}"; do ssh-keyscan -4 ${FLOATING_IPs[$name]} >> ~/.ssh/known_hosts 2>/dev/null; done
 # Note: I silence the errors from stderr (2) to /dev/null. Don't send them to &1.
 
 [ $VERBOSE = "yes" ] && echo "Creating the ansible config file [in ${ANSIBLE_CFG}]"
@@ -48,31 +48,33 @@ cat > ${ANSIBLE_CFG} <<ENDANSIBLECFG
 hostfile       = $INVENTORY
 #remote_tmp     = ${ANSIBLE_FOLDER}/tmp/
 #sudo_user      = root
+remote_user    = centos
 executable     = /bin/bash
 #hash_behaviour = merge
 
 [ssh_connection]
 ssh_args= -o ControlMaster=auto -o ControlPersist=60s -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ForwardAgent=yes
+# I know, I know, Forwarding the ssh-Agent is a bad idea. That'll do it for the moment.
 ENDANSIBLECFG
 
 [ $VERBOSE = "yes" ] && echo "Creating the inventory [in $INVENTORY]"
 echo "" > $INVENTORY
-for name in "${MACHINES[@]}"; do echo "$name ansible_ssh_host=$IPPREFIX$((OFFSET + ${MACHINE_IPs[$name]}))" >> $INVENTORY; done
+for name in "${MACHINES[@]}"; do echo "$name ansible_ssh_host=${FLOATING_IPs[$name]}" >> $INVENTORY; done
 for group in "${!MACHINE_GROUPS[@]}"; do
     echo -e "\n[$group]" >> $INVENTORY
     for machine in ${MACHINE_GROUPS[$group]}; do echo "$machine" >> $INVENTORY; done
 done
-# Make TL_HOME end with slash
-if [ ${TL_HOME:(-1)} != '/' ]; then TL_HOME=${TL_HOME}/; fi
+# Make sure TL_HOME and MOSLER_MISC end with a slash, or several!
 cat >> $INVENTORY <<ENDINVENTORY
 
 [all:vars]
 mm_home=${MM_HOME}
-tl_home=${TL_HOME}
+tl_home=${TL_HOME}/
 mosler_home=${MOSLER_HOME}
-mosler_misc=${MOSLER_MISC}
+mosler_misc=${MOSLER_MISC}/
 mosler_images=${MOSLER_IMAGES}
-mosler_images_url=http://10.254.0.1:$PORT
+mosler_images_url=http://${FLOATING_GATEWAY}:$PORT
+db_server=${MACHINE_IPs[openstack-controller]}
 ENDINVENTORY
 
 [ $VERBOSE = "yes" ] && echo "Starting the Mosler Images server [in ${MOSLER_IMAGES}]"
@@ -84,13 +86,13 @@ popd
 
 # Aaaaannndddd....cue music!
 if [ $PACKAGES = "yes" ]; then
-    [ $VERBOSE = "yes" ] && echo "Running playbook: ansible/packages.yml"
+    [ $VERBOSE = "yes" ] && echo "Running playbook: ansible/packages.yml (using ${#MACHINES[@]} forks)"
     set -e # exit on erros
-    ANSIBLE_CONFIG=${ANSIBLE_CFG} ansible-playbook -s ./ansible/packages.yml $@
+    ANSIBLE_CONFIG=${ANSIBLE_CFG} ansible-playbook -f ${#MACHINES[@]} -s ./ansible/packages.yml $@
 fi
 
-[ $VERBOSE = "yes" ] && echo "Running playbook: ansible/micromosler.yml (using config file: ${ANSIBLE_CFG})"
-ANSIBLE_CONFIG=${ANSIBLE_CFG} ansible-playbook -s ./ansible/micromosler.yml $@
+[ $VERBOSE = "yes" ] && echo "Running playbook: ansible/micromosler.yml (using config file: ${ANSIBLE_CFG}) (using ${#MACHINES[@]} forks)"
+ANSIBLE_CONFIG=${ANSIBLE_CFG} ansible-playbook -f ${#MACHINES[@]} -s ./ansible/micromosler.yml $@
 # Note: config file overwritten by ANSIBLE_CFG env variable
 # Ansible-playbook options: http://linux.die.net/man/1/ansible-playbook
 
