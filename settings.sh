@@ -27,11 +27,8 @@ MOSLER_HOME=/home/jonas/mosler-system-scripts
 MOSLER_MISC=/home/jonas/misc
 MOSLER_IMAGES=/home/jonas/mosler-images
 
-
 PHONE_HOME=10.254.0.1
 PORT=12345
-IPPREFIX=10.254.0.
-OFFSET=51 # I don't know why Pontus wants to offset the IPs
 
 #SSH_CONFIG=${ANSIBLE_FOLDER}/ssh_config.${OS_TENANT_NAME}
 ANSIBLE_CFG=${ANSIBLE_FOLDER}/config.${OS_TENANT_NAME}
@@ -60,25 +57,45 @@ FLAVORS=(\
 
 declare -A MACHINE_IPs
 MACHINE_IPs=(\
-    [openstack-controller]=3 \
-    [thinlinc-master]=4 \
-    [filsluss]=5 \
-    [supernode]=6 \
-    [compute1]=7 \
-    [compute2]=8 \
-    [compute3]=9 \
-    [hnas-emulation]=10 \
-    [ldap]=11 \
-    [networking-node]=12 \
+    [openstack-controller]=172.25.8.3 \
+    [thinlinc-master]=172.25.8.4 \
+    [filsluss]=172.25.8.5 \
+    [supernode]=172.25.8.6 \
+    [compute1]=172.25.8.7 \
+    [compute2]=172.25.8.8 \
+    [compute3]=172.25.8.9 \
+    [hnas-emulation]=172.25.8.10 \
+    [ldap]=172.25.8.11 \
+    [networking-node]=172.25.8.12 \
 )
+MGMT_GATEWAY=172.25.8.1
+MGMT_CIDR=172.25.8.0/22
 
 declare -A DATA_IPs
 DATA_IPs=(\
-    [compute1]=110 \
-    [compute2]=111 \
-    [compute3]=112 \
-    [networking-node]=101 \
+    [compute1]=10.10.10.110 \
+    [compute2]=10.10.10.111 \
+    [compute3]=10.10.10.112 \
+    [networking-node]=10.10.10.101 \
 )
+DATA_GATEWAY=10.10.10.1
+DATA_CIDR=10.10.10.0/24
+
+declare -A FLOATING_IPs
+FLOATING_IPs=(\
+    [openstack-controller]=10.254.0.54 \
+    [thinlinc-master]=10.254.0.55 \
+    [filsluss]=10.254.0.56 \
+    [supernode]=10.254.0.57 \
+    [compute1]=10.254.0.58 \
+    [compute2]=10.254.0.59 \
+    [compute3]=10.254.0.60 \
+    [hnas-emulation]=10.254.0.61 \
+    [ldap]=10.254.0.62 \
+    [networking-node]=10.254.0.63 \
+)
+FLOATING_GATEWAY=10.254.0.1
+FLOATING_CIDR=10.254.0.0/24
 
 declare -A MACHINE_GROUPS
 MACHINE_GROUPS=(\

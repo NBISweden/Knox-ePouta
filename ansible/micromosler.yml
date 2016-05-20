@@ -9,9 +9,17 @@
   gather_facts: no
   tasks:
     - lineinfile: dest=/etc/sysconfig/iptables state=present line='-A INPUT -m state --state NEW -m tcp -p tcp --dport 389 -j ACCEPT' insertbefore='^-A INPUT -m state --state NEW .*'
-    - copy:   src={{ mm_home }}/configs/ldap_helper.sh dest=/root/ldap_helper.sh
-    - shell: chmod a+x /root/ldap_helper.sh 
-    - shell: /root/ldap_helper.sh
+    - service: name=iptables state=restarted
+
+    - lineinfile: "dest='/etc/openldap/slapd.d/cn=config/olcDatabase={2}bdb.ldif' regexp='^olcRootDN:.*' line='olcRootDN: cn=Manager,dc=mosler,dc=bils,dc=se'"
+    - lineinfile: "dest='/etc/openldap/slapd.d/cn=config/olcDatabase={2}bdb.ldif' regexp='^olcSuffix:.*' line='olcSuffix: dc=mosler,dc=bils,dc=se'"
+    - lineinfile: "dest='/etc/openldap/slapd.d/cn=config/olcDatabase={2}bdb.ldif' regexp='^olcRootPW:.*' line='olcRootPW:  {SSHA}SGuX86SN0jX+X4M+1Gxlih4MmjEdh+gM' state=present"
+    #- lineinfile: dest='/etc/openldap/slapd.d/cn=config/olcDatabase={2}bdb.ldif' regexp='by dn.base="cn[^"]"' line='by dn.base="cn=Manager,dc=mosler,dc=bils,dc=se"'
+    - service: name=slapd enabled=yes state=restarted
+    - copy: src={{ mm_home }}/configs/ldap.conf dest=/tmp/ldap.conf
+    - shell: ldapadd -c -D cn=Manager,dc=mosler,dc=bils,dc=se -w ldap -f /tmp/ldap.conf
+      ignore_errors: yes
+    - file: path=/tmp/ldap.conf state=absent
      
 
 - name: OpenStack configuration
@@ -30,8 +38,9 @@
 - name: Controller specials
   hosts: openstack-controller
   gather_facts: no
+  tags:
+    - openstack
   tasks:
-    - file: path=/root/bin state=directory
     - name: Copying config files
       copy: src={{ mm_home }}/configs/{{ item.src }} dest={{ item.dst }}
       with_items:
@@ -45,12 +54,130 @@
         - { src: 'glance-registry.conf',   dst: '/etc/glance/glance-registry.conf'                        }
         - { src: 'heat.conf',              dst: '/etc/heat/heat.conf'                                     }
         - { src: 'local_settings',         dst: '/etc/openstack-dashboard/local_settings'                 }
-        - { src: 'openstack_helper.sh',    dst: '/root/bin/openstack_helper.sh'                           }
+        - { src: 'mysql_db.conf',          dst: '/tmp/openstack-db.sql'                                   }
 
-    - shell: chmod 0755 /root/bin/openstack_helper.sh
-    - name: Running the openstack helper
-      shell: /root/bin/openstack_helper.sh  2>/tmp/oserr >/tmp/osout
+    # - file: path=/root/bin state=directory
+    # - copy: src={{ mm_home }}/configs/openstack_helper.sh dest=/root/bin/openstack_helper.sh
+    # - shell: chmod 0755 /root/bin/openstack_helper.sh
+    # - name: Running the openstack helper
+    #   shell: /root/bin/openstack_helper.sh  2>/tmp/oserr >/tmp/osout
 
+    - name: Starting the Message Broker
+      service: name=rabbitmq-server state=started
+    - shell: rabbitmqctl add_user openstack rabbit
+      ignore_errors: true
+    - shell: rabbitmqctl set_permissions openstack ".*" ".*" ".*"
+      ignore_errors: true
+
+    - name: Copying my.cnf file
+      template: src={{ mm_home }}/configs/my.cnf.j2 dest=/etc/my.cnf
+      tags:
+        - db
+    - name: MySQL configuration
+      service: name=mysqld state=started
+      tags:
+        - db
+    # - mysql_user: name=root host={{ item }} password=mysql
+    #   with_items:
+    #     - localhost
+    #     - openstack-controller
+    #     - 127.0.0.1
+    #     - ::1
+    #   tags:
+    #     - db
+    - shell: /usr/bin/mysqladmin -u root -pmysql password mysql
+      # ignore_errors: true
+      tags:
+        - db
+    # - shell: /usr/bin/mysqladmin -u root -pmysql -h openstack-controller password mysql
+    #   ignore_errors: true
+    #   tags:
+    #     - db
+    - mysql_db: state=import login_user=root login_host=localhost login_password=mysql name=all target=/tmp/openstack-db.sql
+      tags:
+        - db
+
+    - name: Memcached service
+      service: name=memcached enable=yes state=restarted
+
+    - name: Preparing the databases
+      shell: su -s /bin/sh -c '{{ item.cmd }}' {{ item.user }}
+      with_items:
+        - { cmd: "keystone-manage db_sync", user: 'keystone' }
+        - { cmd: "glance-manage db_sync",   user: 'glance'   }
+        - { cmd: "nova-manage db sync",     user: 'nova'     }
+        - { cmd: "heat-manage db_sync",     user: 'heat'     }
+        - { cmd: "neutron-db-manage --config-file /etc/neutron/neutron.conf  --config-file /etc/neutron/plugin.ini upgrade 5ac1c354a051", user: 'neutron' }
+
+    - name: Keystone service
+      service: name=openstack-keystone enable=yes state=restarted
+
+# OS_SERVICE_TOKEN=0123456789abcdef0123456789abcdef
+# OS_SERVICE_ENDPOINT=http://openstack-controller:35357/v2.0
+
+# export OS_SERVICE_TOKEN
+# export OS_SERVICE_ENDPOINT
+    - name: Keystone roles
+      shell: keystone role-create --name={{ item }}
+      with_items:
+        - admin
+        - service
+        - _member_
+
+    - name: Keystone tenants
+      shell: keystone tenant-create --name={{ item.name }} --description='{{ item.desc }}'
+      with_items:
+        - { name: 'admin',    desc: "Admin Tenant"   }
+        - { name: 'services', desc: "Service Tenant" }
+
+    - name: Keystone roles attribution
+      shell: keystone user-role-add --user={{ item.user }} --tenant={{ item.tenant }} --role={{ item.role }}
+      with_items:
+        - { user: 'admin',    tenant: 'admin',    role: 'admin'    }
+        - { user: 'admin',    tenant: '_member_', role: 'admin'    }
+        - { user: 'keystone', tenant: 'admin',    role: 'services' }
+        - { user: 'nova',     tenant: 'admin',    role: 'services' }
+        - { user: 'neutron',  tenant: 'admin',    role: 'services' }
+        - { user: 'glance',   tenant: 'admin',    role: 'services' }
+        - { user: 'heat',     tenant: 'admin',    role: 'services' }
+        
+    - name: Keystone service creation
+      shell: keystone service-create --name={{ item.name }} --type={{ item.type }} --description="{{ item.desc }}"
+      with_items:
+        - { name: 'keystone', type: 'identity',       desc: 'OpenStack Identity'           }
+        - { name: 'glance',   type: 'image',          desc: 'OpenStack Image Service'      }
+        - { name: 'nova',     type: 'compute',        desc: 'OpenStack Compute'            }
+        - { name: 'neutron',  type: 'network',        desc: 'OpenStack Networking'         }
+        - { name: 'heat',     type: 'orchestration',  desc: 'Orchestration'                }
+        - { name: 'heat-cfn', type: 'cloudformation', desc: 'Orchestration CloudFormation' }
+
+    - name: Keystone endpoints creation
+      shell: keystone endpoint-create --service-id=$(keystone service-list | awk '/ {{ item.service }} / {print $2}') --publicurl=http://openstack-controller:{{ item.public }} --internalurl=http://openstack-controller:{{ item.internal }} --adminurl=http://openstack-controller:{{ item.admin }}
+      with_items:
+        - { service: 'identity',       public: '5000/v2.0',               internal: '5000/v2.0',               admin: '35357/v2.0'              }
+        - { service: 'image',          public: '9292',                    internal: '9292',                    admin: '9292'                    }
+        - { service: 'compute',        public: '8774/v2/%\(tenant_id\)s', internal: '8774/v2/%\(tenant_id\)s', admin: '8774/v2/%\(tenant_id\)s' }
+        - { service: 'network',        public: '9696',                    internal: '9696',                    admin: '9696'                    }
+        - { service: 'orchestration',  public: '8004/v1/%\(tenant_id\)s', internal: '8004/v1/%\(tenant_id\)s', admin: '8004/v1/%\(tenant_id\)s' }
+        - { service: 'cloudformation', public: '8000/v1',                 internal: '8000/v1',                 admin: '8000/v1'                 }
+
+
+    - name: Starting Openstack Services
+      service: name={{ item }} enable=yes state=restarted
+      with_items:
+        - openstack-heat-api
+        - openstack-heat-api-cfn
+        - openstack-heat-engine
+        - openstack-nova-api
+        - openstack-nova-scheduler
+        - openstack-nova-conductor
+        - openstack-glance-api
+        - neutron-server
+        - openstack-glance-registry
+        - httpd
+
+# unset OS_SERVICE_TOKEN
+# unset OS_SERVICE_ENDPOINT
     - name: Removing any old image from Glance
       shell: . /root/.keystonerc && (glance image-list | awk '/ {{ item }} /{print $2}' | while read img; do glance image-delete $img; done)
       with_items:
@@ -65,12 +192,19 @@
         - project-loginnode-stable
         - topolino-q-stable
 
-    # - name: Removing the image files
-    #   shell: rm /tmp/mosler-images/{{ item }}
-    #   with_items:
-    #     - project-computenode-stable 
-    #     - project-loginnode-stable
-    #     - topolino-q-stable
+
+    - name: Openstack flavors
+      shell: . /root/.keystonerc && nova flavor-create {{ item }}
+      with_items:
+        - mosler.1core auto 500 10 1
+        - mosler.2cores auto 500 10 1
+        - mosler.4cores auto 500 10 1
+        - mosler.8cores auto 500 10 1
+        - mosler.16cores auto 500 10 1
+
+    - shell: . /root/.keystonerc && nova aggregate-create service-and-login serv-login
+    - shell: . /root/.keystonerc && nova aggregate-add-host service-and-login compute1.novalocal
+
 
 - name: OpenStack networking
   hosts: networking-node
@@ -97,9 +231,11 @@
     - name: Starting OpenVSwitch
       service: name=openvswitch enabled=yes state=started
     - name: Creating the OVS bridge
-      shell: ovs-vsctl add-br br-eth1 || true
+      shell: ovs-vsctl add-br br-eth1
+      ignore_errors: yes
     - name: Adding eth1 to the OVS bridge
-      shell: ovs-vsctl add-port br-eth1 eth1 || true
+      shell: ovs-vsctl add-port br-eth1 eth1
+      ignore_errors: yes
     - name: Starting Neutron services
       service: name={{ item }} enabled=yes state=started
       with_items:
@@ -135,9 +271,11 @@
     - name: Starting OpenVSwitch
       service: name=openvswitch enabled=yes state=started
     - name: Creating the OVS bridge
-      shell: ovs-vsctl add-br br-eth1 || true
+      shell: ovs-vsctl add-br br-eth1
+      ignore_errors: yes
     - name: Adding eth1 to the OVS bridge
-      shell: ovs-vsctl add-port br-eth1 eth1 || true
+      shell: ovs-vsctl add-port br-eth1 eth1
+      ignore_errors: yes
     - name: Starting Nova and Neutron agents
       service: name={{ item }} enabled=yes
       with_items:
@@ -147,6 +285,8 @@
 - name: Supernode 
   hosts: supernode
   gather_facts: no
+  tags:
+    - supernode
   tasks:
     - name: Copying mosler config files
       copy: src={{ mosler_home }}/supernode/{{ item }} dest=/usr/local/bin/
@@ -177,14 +317,6 @@
         - get_vlan.sh
         - heat_add_compute.sh
 
-    - copy: src={{ mm_home }}/configs/{{ item }} dest=/usr/local/bin/ mode=0755
-      with_items:
-        - create_nfs_share.sh
-        - nfs_san_check.sh
-
-    - file: path=/root/bin state=directory
-    - copy: src={{ mm_home }}/configs/public-net-helper.sh dest=/root/bin/ mode=0755
-
     - file: path=/usr/local/heat state=directory
     - copy: src={{ mm_home }}/configs/{{ item }} dest=/usr/local/heat/ mode=0755
       with_items:
@@ -195,8 +327,13 @@
         - mosler-template-resources-servicenode
         - mosler-template-parameters
 
-    - name: Running the public net helper
-      shell: /root/bin/public-net-helper.sh
+    - name: Removing any 'public-net'
+      shell: . /root/.keystonerc && neutron net-list -F id -F name | awk '/ public-net / {print $2}' | while read netid; do neutron net-delete ${netid}; done
+    - name: Creating public network in neutron & updating the mosler-heat parameters
+      shell: . /root/.keystonerc && extnet=$(neutron net-create public-net --router:external True | awk '/ id / {print $4}') && sed -i -e "s/__EXT_NET__/$extnet/"  /usr/local/heat/mosler-template-parameters
+    - name: Creating public subnet network in neutron
+      shell: . /root/.keystonerc && neutron subnet-create public-net --name public-subnet --allocation-pool start=172.18.0.30,end=172.18.0.200 --disable-dhcp --gateway 172.18.0.1  172.18.0.0/24
+
 
 
 - name: ThinLinc
@@ -208,6 +345,7 @@
     - name: Copying Thinlinc answers
       copy: src={{ mm_home }}/configs/tl_answers dest=/tmp/tl/
     - name: Setting up Thinlinc
-      shell: /opt/thinlinc/sbin/tl-setup -a /tmp/tl/tl_answers || true
+      shell: /opt/thinlinc/sbin/tl-setup -a /tmp/tl/tl_answers
+      ignore_errors: yes
     - name: Configuring Thinlinc web access
       lineinfile: dest=/opt/thinlinc/etc/conf.d/webaccess.hconf regexp='^listen=.*$' line='listen=443'

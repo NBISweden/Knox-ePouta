@@ -47,7 +47,7 @@ done
 # Cleaning the network information
 if [ $ALL = "yes" ]; then
     [ $VERBOSE = "yes" ] && echo "Cleaning the remaining VMs"
-    nova list --minimal --tenant ${TENANT_ID} | awk '/^$/ {next;} /^| ID / {next;} {print $2}' | while read m; do nova delete $m; done
+    nova list --minimal --tenant ${TENANT_ID} | awk '/^$/ {next;} /^| ID / {next;} /^+--/ {next;} {print $2}' | while read m; do nova delete $m; done
 
     [ $VERBOSE = "yes" ] && echo "Cleaning the network information"
 
@@ -89,8 +89,8 @@ rm -rf ${ANSIBLE_FOLDER}/tmp/
 [ $VERBOSE = "yes" ] && echo "Cleaning the SSH keys"
 if [ -f ~/.ssh/known_hosts ]; then
     # Cut the matching keys out
-    #for name in "${MACHINES[@]}"; do sed -i "/$IPPREFIX$((OFFSET + ${MACHINE_IPs[$name]}))/d" ~/.ssh/known_hosts; done
-    sed -n -i "/${IPPREFIX}/d" ~/.ssh/known_hosts
+    # for name in "${MACHINES[@]}"; do sed -i "/${FLOATING_IPs[$name]}/d" ~/.ssh/known_hosts; done
+    sed -n -i "/${FLOATING_CIDR%0/24}/d" ~/.ssh/known_hosts
 fi
 
 echo "Cleaning done"

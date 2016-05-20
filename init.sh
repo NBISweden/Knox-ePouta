@@ -11,7 +11,6 @@ function usage(){
 # While there are arguments or '--' is reached
 while [ $# -gt 0 ]; do
     case "$1" in
-        --ipprefix) IPPREFIX=$2; shift ;;
         --all|-a) ALL=yes;;
         --verbose|-v) VERBOSE=yes;;
         --help|-h) usage; exit 0;;
@@ -47,7 +46,8 @@ if [ $ALL = "yes" ]; then
     
     # Creating the management and data networks
     neutron net-create ${OS_TENANT_NAME}-mgmt-net
-    neutron subnet-create --name ${OS_TENANT_NAME}-mgmt-subnet ${OS_TENANT_NAME}-mgmt-net --gateway 172.25.8.1 172.25.8.0/22
+    neutron subnet-create --name ${OS_TENANT_NAME}-mgmt-subnet ${OS_TENANT_NAME}-mgmt-net --gateway ${MGMT_GATEWAY} ${MGMT_CIDR}
+
     neutron router-interface-add ${OS_TENANT_NAME}-mgmt-router ${OS_TENANT_NAME}-mgmt-subnet
 
     # Get the DHCP that host the public network and add an interface for the management network
@@ -56,13 +56,13 @@ if [ $ALL = "yes" ]; then
 
     # should we have the vlan-transparent flag?
     neutron net-create --vlan-transparent=True ${OS_TENANT_NAME}-data-net
-    neutron subnet-create --name ${OS_TENANT_NAME}-data-subnet ${OS_TENANT_NAME}-data-net --gateway 10.10.10.1 10.10.10.0/24 #--enable-dhcp 
+    neutron subnet-create --name ${OS_TENANT_NAME}-data-subnet ${OS_TENANT_NAME}-data-net --gateway ${DATA_GATEWAY} ${DATA_CIDR} #--enable-dhcp 
     neutron router-interface-add ${OS_TENANT_NAME}-data-router ${OS_TENANT_NAME}-data-subnet
     
 
     [ $VERBOSE = "yes" ] && echo "Creating the floating IPs"
     for machine in "${MACHINES[@]}"; do
-	neutron floatingip-create --tenant-id ${TENANT_ID} --floating-ip-address $IPPREFIX$((${MACHINE_IPs[$machine]} + OFFSET)) public
+	neutron floatingip-create --tenant-id ${TENANT_ID} --floating-ip-address ${FLOATING_IPs[$machine]} public
     done
 
     [ $VERBOSE = "yes" ] && echo "Creating the Security Group: ${OS_TENANT_NAME}-sg"
@@ -135,10 +135,10 @@ ENDREST
 
 function boot_machine {
     local name=$1
-    local id=${MACHINE_IPs[$name]}
+    local ip=${MACHINE_IPs[$name]}
     local flavor=${FLAVORS[$machine]}
     
-    cat > ${CLOUDINIT_FOLDER}/vm_init-$id.yml <<ENDCLOUDINIT
+    cat > ${CLOUDINIT_FOLDER}/vm_init-$ip.yml <<ENDCLOUDINIT
 #cloud-config
 disable_root: 1
 system_info:
@@ -160,23 +160,15 @@ write_files:
     content: |
       127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
       ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
-      # Management network is 192.168.20.0/24
-      172.25.8.3 openstack-controller tos1
-      172.25.8.5 filsluss
-      172.25.8.4 thinlinc-master
-      172.25.8.6 supernode tsn
-      172.25.8.7 compute1
-      172.25.8.8 compute2
-      172.25.8.9 compute3
-      172.25.8.10 hnas-emulation
-      172.25.8.11 ldap
-
 ENDCLOUDINIT
+    for name in "${MACHINES[@]}"; do echo "      ${MACHINE_IPs[$name]} $name" >> ${CLOUDINIT_FOLDER}/vm_init-$ip.yml; done
+    echo "      ${MACHINE_IPs[openstack-controller]} tos1" >> ${CLOUDINIT_FOLDER}/vm_init-$ip.yml
+    # the white spaces are important
 
     # If Data IP is not zero-length
     if [ ! -z ${DATA_IPs[$machine]} ]; then
-	local DN="--nic net-id=$DATA_NET,v4-fixed-ip=10.10.10.${DATA_IPs[$machine]}"
-	cat >> ${CLOUDINIT_FOLDER}/vm_init-$id.yml <<ENDCLOUDINIT
+	local DN="--nic net-id=$DATA_NET,v4-fixed-ip=${DATA_IPs[$machine]}"
+	cat >> ${CLOUDINIT_FOLDER}/vm_init-$ip.yml <<ENDCLOUDINIT
 write_files:
   - path: /etc/sysconfig/network-scripts/ifcfg-eth0
     owner: root:root
@@ -188,9 +180,9 @@ write_files:
       NAME=eth0
       DEVICE=eth0
       ONBOOT=yes
-      IPADDR=172.25.8.$id
+      IPADDR=$ip
       PREFIX=24
-      GATEWAY=172.25.8.1
+      GATEWAY=${MGMT_GATEWAY}
       NM_CONTROLLED=no
 
   - path: /etc/sysconfig/network-scripts/ifcfg-eth1
@@ -203,23 +195,23 @@ write_files:
       NAME=eth1
       DEVICE=eth1
       ONBOOT=yes
-      IPADDR=10.10.10.${DATA_IPs[$machine]}
+      IPADDR=${DATA_IPs[$machine]}
       PREFIX=24
-      GATEWAY=10.10.10.1
+      GATEWAY=${DATA_GATEWAY}
       NM_CONTROLLED=no
 
   - path: /etc/sysconfig/network-scripts/rule-eth1
     owner: root:root
     permissions: '0644'
     content: |
-      to 10.10.10.0/24 lookup data
-      from 10.10.10.0/24 lookup data
+      to ${DATA_CIDR} lookup data
+      from ${DATA_CIDR} lookup data
 
   - path: /etc/sysconfig/network-scripts/route-eth1
     owner: root:root
     permissions: '0644'
     content: |
-      default via 10.10.10.1 dev eth1 table data
+      default via ${DATA_GATEWAY} dev eth1 table data
 
 runcmd:
   - echo 'Restarting network'
@@ -229,7 +221,7 @@ ENDCLOUDINIT
     fi
 
     # Final part: Phone home
-    cat >> ${CLOUDINIT_FOLDER}/vm_init-$id.yml <<ENDCLOUDINIT
+    cat >> ${CLOUDINIT_FOLDER}/vm_init-$ip.yml <<ENDCLOUDINIT
 runcmd:
   - echo 'Cloudinit phone home'
   - curl http://${PHONE_HOME}:$PORT/machine/$machine/ready
@@ -239,10 +231,10 @@ ENDCLOUDINIT
 nova boot \
 --flavor $flavor \
 --image 'CentOS6' \
---nic net-id=${MGMT_NET},v4-fixed-ip=172.25.8.$id \
+--nic net-id=${MGMT_NET},v4-fixed-ip=$ip \
 $DN \
 --security-group ${OS_TENANT_NAME}-sg \
---user-data ${CLOUDINIT_FOLDER}/vm_init-$id.yml \
+--user-data ${CLOUDINIT_FOLDER}/vm_init-$ip.yml \
 $name
 } # End boot_machine function
 
@@ -262,8 +254,8 @@ wait ${REST_PID}
 [ $VERBOSE = "yes" ] && echo -e "Associating floating IPs"
 for machine in "${MACHINES[@]}"
 do
-    echo -e "\t$IPPREFIX$((OFFSET + ${MACHINE_IPs[$machine]})) to $machine"
-    nova floating-ip-associate $machine $IPPREFIX$((OFFSET + ${MACHINE_IPs[$machine]}))
+    echo -e "\t${FLOATING_IPs[$machine]} to $machine"
+    nova floating-ip-associate $machine ${FLOATING_IPs[$machine]}
 done
 
 echo -e "Initialization phase complete. You can go on and provision the machines"
