@@ -8,11 +8,12 @@ export OS_AUTH_URL=http://controller:5000/v3
 export OS_IDENTITY_API_VERSION=3
 export OS_IMAGE_API_VERSION=2
 export OS_ENDPOINT_TYPE=internalURL # User internal URLs
-    
-if [ -f user.rc ]; then
-    source user.rc
+
+HERE=$(dirname ${BASH_SOURCE[0]})
+if [ -f $HERE/user.rc ]; then
+    source $HERE/user.rc
 else
-    echo "Error: User credentials not found [user.rc]"
+    echo "Error: User credentials not found [$HERE/user.rc]"
     exit 1;
 fi
 
