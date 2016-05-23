@@ -38,8 +38,6 @@
 - name: Controller specials
   hosts: openstack-controller
   gather_facts: no
-  tags:
-    - openstack
   tasks:
     - name: Copying config files
       copy: src={{ mm_home }}/configs/{{ item.src }} dest={{ item.dst }}
@@ -64,41 +62,57 @@
 
     - name: Starting the Message Broker
       service: name=rabbitmq-server state=started
-    - shell: rabbitmqctl add_user openstack rabbit
-      ignore_errors: true
-    - shell: rabbitmqctl set_permissions openstack ".*" ".*" ".*"
-      ignore_errors: true
+    - name: Preparing the RabbitMQ user
+      rabbitmq_user: state=present force=yes user=openstack password=rabbit configure_priv='.*' read_priv='.*' write_priv='.*'
+    # - shell: rabbitmqctl add_user openstack rabbit
+    #   ignore_errors: true
+    # - shell: rabbitmqctl set_permissions openstack ".*" ".*" ".*"
+    #   ignore_errors: true
 
-    - name: Copying my.cnf file
+    - name: Stopping Openstack Services
+      service: name={{ item }} state=stopped
+      with_items:
+        - openstack-keystone
+        - openstack-heat-api
+        - openstack-heat-api-cfn
+        - openstack-heat-engine
+        - openstack-nova-api
+        - openstack-nova-scheduler
+        - openstack-nova-conductor
+        - openstack-glance-api
+        - neutron-server
+        - openstack-glance-registry
+
+    - service: name=mysqld state=stopped
+    - name: Removing databases by hand
+      shell: rm -rf /var/lib/mysql; mkdir --mode=0755 /var/lib/mysql; chown mysql:mysql /var/lib/mysql
+      # shell: rm -rf /var/lib/mysql/{{ item }}
+      # with_items:
+      #   - glance
+      #   - heat
+      #   - keystone
+      #   - neutron
+      #   - nova
+
+    - name: Copying /etc/my.cnf file
       template: src={{ mm_home }}/configs/my.cnf.j2 dest=/etc/my.cnf
-      tags:
-        - db
     - name: MySQL configuration
       service: name=mysqld state=started
-      tags:
-        - db
-    # - mysql_user: name=root host={{ item }} password=mysql
-    #   with_items:
-    #     - localhost
-    #     - openstack-controller
-    #     - 127.0.0.1
-    #     - ::1
-    #   tags:
-    #     - db
-    - shell: /usr/bin/mysqladmin -u root -pmysql password mysql
+    - shell: /usr/bin/mysqladmin -u root password 'mysql'
       # ignore_errors: true
-      tags:
-        - db
-    # - shell: /usr/bin/mysqladmin -u root -pmysql -h openstack-controller password mysql
-    #   ignore_errors: true
-    #   tags:
-    #     - db
-    - mysql_db: state=import login_user=root login_host=localhost login_password=mysql name=all target=/tmp/openstack-db.sql
-      tags:
-        - db
+    - shell: /usr/bin/mysqladmin -u root -h openstack-controller password 'mysql'
+      # ignore_errors: true
+    # - name: Copying config files
+    #   copy: src={{ mm_home }}/configs/{{ item.src }} dest={{ item.dst }}
+    #   with_items:
+    #     - { src: 'mysql_db.conf',          dst: '/tmp/openstack-db.sql' }
+    #     - { src: 'root_my.cnf',            dst: '/root/.my.cnf'         }
+
+    - name: MySQL Databases setup
+      shell: mysql -u root -pmysql < /tmp/openstack-db.sql
 
     - name: Memcached service
-      service: name=memcached enable=yes state=restarted
+      service: name=memcached enabled=yes state=restarted
 
     - name: Preparing the databases
       shell: su -s /bin/sh -c '{{ item.cmd }}' {{ item.user }}
@@ -110,39 +124,46 @@
         - { cmd: "neutron-db-manage --config-file /etc/neutron/neutron.conf  --config-file /etc/neutron/plugin.ini upgrade 5ac1c354a051", user: 'neutron' }
 
     - name: Keystone service
-      service: name=openstack-keystone enable=yes state=restarted
+      service: name=openstack-keystone enabled=yes state=restarted
 
-# OS_SERVICE_TOKEN=0123456789abcdef0123456789abcdef
-# OS_SERVICE_ENDPOINT=http://openstack-controller:35357/v2.0
-
-# export OS_SERVICE_TOKEN
-# export OS_SERVICE_ENDPOINT
     - name: Keystone roles
       shell: keystone role-create --name={{ item }}
+      environment:
+        OS_SERVICE_TOKEN: 0123456789abcdef0123456789abcdef
+        OS_SERVICE_ENDPOINT: http://openstack-controller:35357/v2.0
       with_items:
         - admin
         - service
-        - _member_
+        # - _member_ # already created by 'keystone-manage db_sync'
 
     - name: Keystone tenants
       shell: keystone tenant-create --name={{ item.name }} --description='{{ item.desc }}'
+      environment:
+        OS_SERVICE_TOKEN: 0123456789abcdef0123456789abcdef
+        OS_SERVICE_ENDPOINT: http://openstack-controller:35357/v2.0
       with_items:
         - { name: 'admin',    desc: "Admin Tenant"   }
         - { name: 'services', desc: "Service Tenant" }
 
     - name: Keystone roles attribution
       shell: keystone user-role-add --user={{ item.user }} --tenant={{ item.tenant }} --role={{ item.role }}
+      environment:
+        OS_SERVICE_TOKEN: 0123456789abcdef0123456789abcdef
+        OS_SERVICE_ENDPOINT: http://openstack-controller:35357/v2.0
       with_items:
         - { user: 'admin',    tenant: 'admin',    role: 'admin'    }
-        - { user: 'admin',    tenant: '_member_', role: 'admin'    }
-        - { user: 'keystone', tenant: 'admin',    role: 'services' }
-        - { user: 'nova',     tenant: 'admin',    role: 'services' }
-        - { user: 'neutron',  tenant: 'admin',    role: 'services' }
-        - { user: 'glance',   tenant: 'admin',    role: 'services' }
-        - { user: 'heat',     tenant: 'admin',    role: 'services' }
+        - { user: 'admin',    tenant: 'admin',    role: '_member_' }
+        - { user: 'keystone', tenant: 'services', role: 'admin'    }
+        - { user: 'nova',     tenant: 'services', role: 'admin'    }
+        - { user: 'neutron',  tenant: 'services', role: 'admin'    }
+        - { user: 'glance',   tenant: 'services', role: 'admin'    }
+        - { user: 'heat',     tenant: 'services', role: 'admin'    }
         
     - name: Keystone service creation
       shell: keystone service-create --name={{ item.name }} --type={{ item.type }} --description="{{ item.desc }}"
+      environment:
+        OS_SERVICE_TOKEN: 0123456789abcdef0123456789abcdef
+        OS_SERVICE_ENDPOINT: http://localhost:35357/v2.0
       with_items:
         - { name: 'keystone', type: 'identity',       desc: 'OpenStack Identity'           }
         - { name: 'glance',   type: 'image',          desc: 'OpenStack Image Service'      }
@@ -153,6 +174,9 @@
 
     - name: Keystone endpoints creation
       shell: keystone endpoint-create --service-id=$(keystone service-list | awk '/ {{ item.service }} / {print $2}') --publicurl=http://openstack-controller:{{ item.public }} --internalurl=http://openstack-controller:{{ item.internal }} --adminurl=http://openstack-controller:{{ item.admin }}
+      environment:
+        OS_SERVICE_TOKEN: 0123456789abcdef0123456789abcdef
+        OS_SERVICE_ENDPOINT: http://localhost:35357/v2.0
       with_items:
         - { service: 'identity',       public: '5000/v2.0',               internal: '5000/v2.0',               admin: '35357/v2.0'              }
         - { service: 'image',          public: '9292',                    internal: '9292',                    admin: '9292'                    }
@@ -163,7 +187,7 @@
 
 
     - name: Starting Openstack Services
-      service: name={{ item }} enable=yes state=restarted
+      service: name={{ item }} enabled=yes state=restarted
       with_items:
         - openstack-heat-api
         - openstack-heat-api-cfn
@@ -176,14 +200,14 @@
         - openstack-glance-registry
         - httpd
 
-# unset OS_SERVICE_TOKEN
-# unset OS_SERVICE_ENDPOINT
     - name: Removing any old image from Glance
-      shell: . /root/.keystonerc && (glance image-list | awk '/ {{ item }} /{print $2}' | while read img; do glance image-delete $img; done)
-      with_items:
-        - project-computenode-stable 
-        - project-loginnode-stable
-        - topolino-q-stable
+      shell: rm -rf /var/lib/glance/images/*
+    #   shell: . /root/.keystonerc && (glance image-list | awk '/ {{ item }} /{print $2}' | while read img; do glance image-delete $img; done)
+    #   with_items:
+    #     - project-computenode-stable 
+    #     - project-loginnode-stable
+    #     - topolino-q-stable
+    # - name: Removing any old image from Glance
 
     - name: Adding the images to Glance
       shell: . /root/.keystonerc && glance image-create --copy-from {{ mosler_images_url }}/{{ item }} --disk-format qcow2 --container-format bare  --name "{{ item }}" --is-public True
@@ -192,8 +216,10 @@
         - project-loginnode-stable
         - topolino-q-stable
 
+    - name: Removing existing Mosler flavors
+      shell: . /root/.keystonerc && (nova flavor-list | awk '/ mosler\./ {print $2}' | while read flavor; do nova flavor-delete $flavor; done)
 
-    - name: Openstack flavors
+    - name: Adding Mosler flavors
       shell: . /root/.keystonerc && nova flavor-create {{ item }}
       with_items:
         - mosler.1core auto 500 10 1
@@ -203,7 +229,9 @@
         - mosler.16cores auto 500 10 1
 
     - shell: . /root/.keystonerc && nova aggregate-create service-and-login serv-login
+      ignore_errors: true
     - shell: . /root/.keystonerc && nova aggregate-add-host service-and-login compute1.novalocal
+      ignore_errors: true
 
 
 - name: OpenStack networking
@@ -285,8 +313,6 @@
 - name: Supernode 
   hosts: supernode
   gather_facts: no
-  tags:
-    - supernode
   tasks:
     - name: Copying mosler config files
       copy: src={{ mosler_home }}/supernode/{{ item }} dest=/usr/local/bin/
@@ -339,8 +365,6 @@
 - name: ThinLinc
   hosts: thinlinc-master
   gather_facts: no
-  tags:
-    - thinlinc
   tasks:
     - name: Copying Thinlinc answers
       copy: src={{ mm_home }}/configs/tl_answers dest=/tmp/tl/
