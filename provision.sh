@@ -51,6 +51,7 @@ hostfile       = $INVENTORY
 remote_user    = centos
 executable     = /bin/bash
 #hash_behaviour = merge
+log_path       = ${ANSIBLE_FOLDER}/log
 
 [ssh_connection]
 ssh_args= -o ControlMaster=auto -o ControlPersist=60s -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ForwardAgent=yes
