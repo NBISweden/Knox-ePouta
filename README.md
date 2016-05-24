@@ -42,7 +42,7 @@ The `clean.sh` script can be run with the --all flag, to destroy
 routers, networks, security groups and floating IPs.  Otherwise, it
 only deletes the running VMs.
 
-You can append the `-v` flag to get more verbose output.
+You can append the `-q` flag to turn off the verbose output.
 
 ## Example
 	git clone https://github.com/NBISweden/mosler-micro-mosler <some_dir>
