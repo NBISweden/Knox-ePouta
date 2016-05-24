@@ -102,37 +102,27 @@ python -m SimpleHTTPServer ${PORT} &
 FILE_SERVER=$!
 popd
 
-#TAGS=""
-[ $COMMON = "yes" ] && TAGS="common,$TAGS"
-[ $OS_COMMON = "yes" ] && TAGS="openstack-common,$TAGS"
-
 mkdir -p ${ANSIBLE_LOGS}
 declare -A ANSIBLE_PIDS
-[ $VERBOSE = "yes" ] && echo "Running playbooks:"
+[ $VERBOSE = "yes" ] && echo "Running playbooks (see logs in ${ANSIBLE_LOGS})"
 for group in "${!MACHINE_GROUPS[@]}"; do
     [ $group = "all" ] && continue # Skipping that group
-    [ $VERBOSE = "yes" ] && echo -e "\t- for $group"
-    ansible-playbook -f ${#MACHINES[@]} -s ./ansible/micromosler.yml --tags "$TAGS$group" 2>&1 > ${ANSIBLE_LOGS}/$group $@ &
-    #echo ansible-playbook -f ${#MACHINES[@]} -s ./ansible/micromosler.yml --tags "$TAGS$group" $@ &
+    # Note: Using the ANSIBLE_CONFIG env variable
+    # Ansible-playbook options: http://linux.die.net/man/1/ansible-playbook
+    ansible-playbook -f ${#MACHINES[@]} -s ./ansible/micromosler.yml --tags "$group" 2>&1 > ${ANSIBLE_LOGS}/$group $@ &
     ANSIBLE_PIDS[$group]=$!
 done
 # Wait for all the ansible calls to finish
 [ $VERBOSE = "yes" ] && echo "Waiting for the playbooks to finish"
+for job in ${!ANSIBLE_PIDS[@]}; do echo -e "\t* for $job [PID: ${ANSIBLE_PIDS[$job]}]"; done
 FAIL=""
-echo "PIDS: ${ANSIBLE_PIDS[@]}"
 for job in ${!ANSIBLE_PIDS[@]}
 do
-    echo "Waiting for $job"
     wait ${ANSIBLE_PIDS[$job]} || FAIL+=" $job"
-    echo "$job finished"
+    echo -e "\t=> $job finished"
 done
 [ $VERBOSE = "yes" ] && echo "Playbooks finished"
 [ -n "$FAIL" ] && echo "Failed playbooks: $FAIL"
-
-# [ $VERBOSE = "yes" ] && echo "Running playbook: ansible/micromosler.yml (using config file: ${ANSIBLE_CFG}) (using ${#MACHINES[@]} forks)"
-# ansible-playbook -f ${#MACHINES[@]} -s ./ansible/micromosler.yml $@
-# Note: config file overwritten by ANSIBLE_CFG env variable
-# Ansible-playbook options: http://linux.die.net/man/1/ansible-playbook
 
 [ $VERBOSE = "yes" ] && echo "Killing the Mosler Images server [PID: ${FILE_SERVER}]"
 kill ${FILE_SERVER}
