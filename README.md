@@ -47,9 +47,10 @@ You can append the `-v` flag to get more verbose output.
 ## Example
 	git clone https://github.com/NBISweden/mosler-micro-mosler <some_dir>
 	cd <that_dir>
-	echo "export OS_USERNAME=fred" > user.rc
+	echo "export OS_TENANT_NAME=mmosler1" > user.rc
+	echo "export OS_USERNAME=fred" >> user.rc
 	echo "export OS_PASSWORD=holala" >> user.rc
-	# The openstack user 'fred' must maybe be an admin on the µ-mosler tenant
+	# The openstack user 'fred' must maybe be an admin on the tenant 'mmosler1'
 	./init.sh --all
 	./provision.sh --with-packages
 	
