@@ -47,7 +47,7 @@ done
 # Cleaning the network information
 if [ $ALL = "yes" ]; then
     [ $VERBOSE = "yes" ] && echo "Cleaning the remaining VMs"
-    nova list --minimal --tenant ${TENANT_ID} | awk '/^$/ {next;} /^| ID / {next;} /^+--/ {next;} {print $2}' | while read m; do nova delete $m; done
+    nova list --minimal --tenant ${TENANT_ID} | awk '/^$/ {next;} /^| ID / {next;} /^+--/ {next;} {print $2}' | while read m; do delete_machine $m; done
 
     [ $VERBOSE = "yes" ] && echo "Cleaning the network information"
 
@@ -83,8 +83,9 @@ fi # End cleaning if ALL
 
 [ $VERBOSE = "yes" ] && echo "Cleaning cloudinit folder and ansible generated files"
 rm -rf ${CLOUDINIT_FOLDER}
-rm -f ${ANSIBLE_CFG} ${INVENTORY}
-rm -rf ${ANSIBLE_FOLDER}/tmp/
+rm -f ${ANSIBLE_CONFIG} ${INVENTORY}
+rm -rf ${ANSIBLE_LOGS}
+unset ANSIBLE_CONFIG
 
 [ $VERBOSE = "yes" ] && echo "Cleaning the SSH keys"
 if [ -f ~/.ssh/known_hosts ]; then

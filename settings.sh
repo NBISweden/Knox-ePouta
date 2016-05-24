@@ -22,8 +22,8 @@ if [ -z $OS_TENANT_NAME ]; then
     exit 1;
 fi
 
-# 
 TENANT_ID=$(openstack project list | awk '/'${OS_TENANT_NAME}'/ {print $2}')
+# Checking if the user is admin for that tenant
 CHECK=$(openstack role assignment list --user ${OS_USERNAME} --role admin --project ${OS_TENANT_NAME})
 if [ $? -ne 0 ] || [ -z "$CHECK" ]; then
     echo "ERROR: $CHECK"
@@ -47,8 +47,9 @@ PHONE_HOME=10.254.0.1
 PORT=12345
 
 #SSH_CONFIG=${ANSIBLE_FOLDER}/ssh_config.${OS_TENANT_NAME}
-ANSIBLE_CFG=${ANSIBLE_FOLDER}/config.${OS_TENANT_NAME}
+export ANSIBLE_CONFIG=${ANSIBLE_FOLDER}/config.${OS_TENANT_NAME}
 INVENTORY=${ANSIBLE_FOLDER}/inventory.${OS_TENANT_NAME}
+ANSIBLE_LOGS=${ANSIBLE_FOLDER}/logs
 
 #################################################################
 
@@ -113,11 +114,16 @@ FLOATING_IPs=(\
 FLOATING_GATEWAY=10.254.0.1
 FLOATING_CIDR=10.254.0.0/24
 
+# Partitioning the machines for Ansible parallelization
+# And including a [all] group
 declare -A MACHINE_GROUPS
 MACHINE_GROUPS=(\
     [all]="openstack-controller thinlinc-master filsluss supernode compute1 compute2 compute3 hnas-emulation ldap networking-node" \
     [nfs]="supernode filsluss hnas-emulation" \
-    [openstack]="openstack-controller supernode networking-node compute1 compute2 compute3" \
+    [ldap]="ldap" \
+    [thinlinc]="thinlinc-master" \
+    [openstack-controller]="openstack-controller" \
+    [openstack-network]="networking-node" \
     [openstack-compute]="compute1 compute2 compute3" \
+    [supernode]="supernode" \
 )
-
