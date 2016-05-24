@@ -25,7 +25,7 @@ fi
 # 
 TENANT_ID=$(openstack project list | awk '/'${OS_TENANT_NAME}'/ {print $2}')
 CHECK=$(openstack role assignment list --user ${OS_USERNAME} --role admin --project ${OS_TENANT_NAME})
-if [ $? -ne 0 ]; then
+if [ $? -ne 0 ] || [ -z "$CHECK" ]; then
     echo "ERROR: $CHECK"
     echo -e "\nThe user ${OS_USERNAME} does not seem to have the 'admin' role for the project ${OS_TENANT_NAME}"
     echo "Exiting..."
