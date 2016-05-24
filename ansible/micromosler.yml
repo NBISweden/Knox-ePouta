@@ -54,20 +54,10 @@
         - { src: 'local_settings',         dst: '/etc/openstack-dashboard/local_settings'                 }
         - { src: 'mysql_db.conf',          dst: '/tmp/openstack-db.sql'                                   }
 
-    # - file: path=/root/bin state=directory
-    # - copy: src={{ mm_home }}/configs/openstack_helper.sh dest=/root/bin/openstack_helper.sh
-    # - shell: chmod 0755 /root/bin/openstack_helper.sh
-    # - name: Running the openstack helper
-    #   shell: /root/bin/openstack_helper.sh  2>/tmp/oserr >/tmp/osout
-
     - name: Starting the Message Broker
       service: name=rabbitmq-server state=started
     - name: Preparing the RabbitMQ user
       rabbitmq_user: state=present force=yes user=openstack password=rabbit configure_priv='.*' read_priv='.*' write_priv='.*'
-    # - shell: rabbitmqctl add_user openstack rabbit
-    #   ignore_errors: true
-    # - shell: rabbitmqctl set_permissions openstack ".*" ".*" ".*"
-    #   ignore_errors: true
 
     - name: Stopping Openstack Services
       service: name={{ item }} state=stopped
@@ -85,6 +75,7 @@
 
     - service: name=mysqld state=stopped
     - name: Removing databases by hand
+      # Or check that: http://hakunin.com/six-ansible-practices#path-to-success-3
       shell: rm -rf /var/lib/mysql; mkdir --mode=0755 /var/lib/mysql; chown mysql:mysql /var/lib/mysql
       # shell: rm -rf /var/lib/mysql/{{ item }}
       # with_items:
