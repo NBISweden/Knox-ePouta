@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 
 # Default values
-VERBOSE=no
+VERBOSE=yes
 ALL=no
 
 function usage(){
-    echo "Usage: $0 [--verbose|-v] [--ipprefix <aaa.bbb.ccc.>] [--all]"
+    echo "Usage: $0 [--quiet|-q] [--all|-a]"
 }
 
 # While there are arguments or '--' is reached
 while [ $# -gt 0 ]; do
     case "$1" in
         --all|-a) ALL=yes;;
-        --verbose|-v) VERBOSE=yes;;
+        --quiet|-q) VERBOSE=no;;
         --help|-h) usage; exit 0;;
         --) shift; break;;
         *) echo "$0: error - unrecognized option $1" 1>&2; usage; exit 1;;

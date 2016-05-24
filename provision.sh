@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Default values
-VERBOSE=no
+VERBOSE=yes
 PACKAGES=no
 
 function usage(){
@@ -11,7 +11,7 @@ function usage(){
 # While there are arguments or '--' is reached
 while [ $# -gt 0 ]; do
     case "$1" in
-        --verbose|-v) VERBOSE=yes;;
+        --quiet|-q) VERBOSE=no;;
         --with-packages) PACKAGES=yes;;
         --help|-h) usage; exit 0;;
         --) shift; break;;
