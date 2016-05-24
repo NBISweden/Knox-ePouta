@@ -12,11 +12,27 @@ HERE=$(dirname ${BASH_SOURCE[0]})
 if [ -f $HERE/user.rc ]; then
     source $HERE/user.rc
 else
-    echo "Error: User credentials not found [$HERE/user.rc]"
+    echo "ERROR: User credentials not found [$HERE/user.rc]"
+    exit 1;
+fi
+
+if [ -z $OS_TENANT_NAME ]; then
+    echo "ERROR: No tenant name found in [$HERE/user.rc]"
+    echo "Exiting..."
     exit 1;
 fi
 
 # 
+TENANT_ID=$(openstack project list | awk '/'${OS_TENANT_NAME}'/ {print $2}')
+CHECK=$(openstack role assignment list --user ${OS_USERNAME} --role admin --project ${OS_TENANT_NAME})
+if [ $? -ne 0 ]; then
+    echo "ERROR: $CHECK"
+    echo -e "\nThe user ${OS_USERNAME} does not seem to have the 'admin' role for the project ${OS_TENANT_NAME}"
+    echo "Exiting..."
+    exit 1
+fi
+
+#################################################################
 
 CLOUDINIT_FOLDER=./cloudinit
 ANSIBLE_FOLDER=./ansible
@@ -34,7 +50,7 @@ PORT=12345
 ANSIBLE_CFG=${ANSIBLE_FOLDER}/config.${OS_TENANT_NAME}
 INVENTORY=${ANSIBLE_FOLDER}/inventory.${OS_TENANT_NAME}
 
-TENANT_ID=$(openstack project list | awk '/'${OS_TENANT_NAME}'/ {print $2}')
+#################################################################
 
 # Declaring the machines
 # Arrays are one-dimensional only. Tyvärr!
