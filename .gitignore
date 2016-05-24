@@ -6,4 +6,6 @@ user.rc
 cloudinit/*
 **/vm_init-*.yml
 **/machines.py*
-!ansible/*.yml
+ansible/config.*
+ansible/inventory.*
+ansible/log*

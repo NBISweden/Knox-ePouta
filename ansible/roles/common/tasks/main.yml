@@ -1,0 +1,22 @@
+---
+# This playbook contains common plays that will be run on all nodes.
+
+- name: Timezone configuration
+  lineinfile: dest=/etc/timezone  create=yes state=present line=Europe/Stockholm
+
+- name: Proxy configuration
+  lineinfile: dest=/etc/yum.conf  create=no state=present line=proxy=http://130.238.7.178:3128/
+
+- name: EPEL repo
+  yum: state=present name=https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
+
+- name: Packages we always want
+  yum: pkg={{ item }} state=latest
+  with_items:
+    - lsof
+    - strace
+    - jq
+    - tcpdump
+
+- name: Upgrade all packages
+  yum: name=* state=latest

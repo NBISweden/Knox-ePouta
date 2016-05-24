@@ -1,0 +1,36 @@
+- name: Icehouse EOL repo
+  copy: src={{ mm_home }}/configs/rdo-release.repo dest=/etc/yum.repos.d/rdo-release.repo
+
+- name: Icehouse signing key
+  copy: src={{ mm_home }}/configs/RPM-GPG-KEY-Icehouse-SIG dest=/etc/pki/rpm-gpg/RPM-GPG-KEY-Icehouse-SIG
+
+- name: Openstack python clients
+  yum: pkg={{ item }} state=present
+  with_items:
+    - python-novaclient
+    - python-keystoneclient
+    - python-neutronclient
+    - python-glanceclient
+    - python-heatclient
+    - python-neutronclient
+    - openstack-nova
+    - openstack-neutron
+    - openstack-neutron-ml2
+    - openstack-neutron-openvswitch
+    - openvswitch
+    - MySQL-python
+
+- name: Starting OpenVSwitch
+  service: name=openvswitch state=started enabled=yes
+
+- name: Configuring iptables
+  lineinfile: dest=/etc/sysconfig/iptables state=present line='-A INPUT -m state --state NEW -s {{ mgmt_cidr }} -j ACCEPT' insertbefore='^-A INPUT -m state --state NEW .*'
+  notify: restart iptables
+    
+- name: Copying Keystone credentials
+  copy: src={{ mm_home }}/configs/keystonerc dest=/root/.keystonerc
+
+- name: Adding the supernode as known_hosts
+  shell: echo 'todo'
+# Supernode needs to reach everywhere
+#    - copy: src={{ lookup('env','HOME') }}/.ssh/id_rsa dest=/root/.ssh/id_rsa
