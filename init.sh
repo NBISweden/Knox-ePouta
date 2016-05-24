@@ -134,8 +134,8 @@ if __name__ == "__main__":
 ENDREST
 
 function boot_machine {
-    local name=$1
-    local ip=${MACHINE_IPs[$name]}
+    local machine=$1
+    local ip=${MACHINE_IPs[$machine]}
     local flavor=${FLAVORS[$machine]}
     
     cat > ${CLOUDINIT_FOLDER}/vm_init-$ip.yml <<ENDCLOUDINIT
@@ -223,6 +223,7 @@ ENDCLOUDINIT
     # Final part: Phone home
     cat >> ${CLOUDINIT_FOLDER}/vm_init-$ip.yml <<ENDCLOUDINIT
 runcmd:
+  - sed -i 's/^Defaults.*requiretty/#&/g' /etc/sudoers
   - echo 'Cloudinit phone home'
   - curl http://${PHONE_HOME}:$PORT/machine/$machine/ready
 ENDCLOUDINIT
@@ -235,7 +236,7 @@ nova boot \
 $DN \
 --security-group ${OS_TENANT_NAME}-sg \
 --user-data ${CLOUDINIT_FOLDER}/vm_init-$ip.yml \
-$name
+$machine
 } # End boot_machine function
 
 [ $VERBOSE = "yes" ] && echo "Starting the REST phone home server"
@@ -258,4 +259,5 @@ do
     nova floating-ip-associate $machine ${FLOATING_IPs[$machine]}
 done
 
-echo -e "Initialization phase complete. You can go on and provision the machines"
+echo "Initialization phase complete."
+echo "You can go on and provision the machines."

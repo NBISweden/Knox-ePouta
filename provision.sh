@@ -2,18 +2,19 @@
 
 # Default values
 VERBOSE=yes
-PACKAGES=no
+COMMON=yes
+OS_COMMON=yes
 
 function usage(){
-    echo "Usage: $0 [--verbose|-v] [--with-packages] -- ..."
-    echo "       the ... arguments are passed on to the ansible call"
+    echo "Usage: $0 [--quiet|-q] [--no-common] -- ..."
 }
 
 # While there are arguments or '--' is reached
 while [ $# -gt 0 ]; do
     case "$1" in
         --quiet|-q) VERBOSE=no;;
-        --with-packages) PACKAGES=yes;;
+        --no-common) COMMON=no;;
+        --no-os-common) OS_COMMON=no;;
         --help|-h) usage; exit 0;;
         --) shift; break;;
         *) echo "$0: error - unrecognized option $1" 1>&2; usage; exit 1;;
@@ -44,7 +45,7 @@ for name in "${MACHINES[@]}"; do ssh-keyscan -4 ${FLOATING_IPs[$name]} >> ~/.ssh
 # Note: I silence the errors from stderr (2) to /dev/null. Don't send them to &1.
 
 [ $VERBOSE = "yes" ] && echo "Creating the ansible config file [in ${ANSIBLE_CFG}]"
-cat > ${ANSIBLE_CFG} <<ENDANSIBLECFG
+cat > ${ANSIBLE_CONFIG} <<ENDANSIBLECFG
 [defaults]
 hostfile       = $INVENTORY
 #remote_tmp     = ${ANSIBLE_FOLDER}/tmp/
@@ -55,6 +56,7 @@ executable     = /bin/bash
 log_path       = ${ANSIBLE_FOLDER}/log
 
 [ssh_connection]
+pipelining = True
 ssh_args= -o ControlMaster=auto -o ControlPersist=60s -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ForwardAgent=yes
 # I know, I know, Forwarding the ssh-Agent is a bad idea. That'll do it for the moment.
 ENDANSIBLECFG
@@ -77,7 +79,21 @@ mosler_misc=${MOSLER_MISC}/
 mosler_images=${MOSLER_IMAGES}
 mosler_images_url=http://${FLOATING_GATEWAY}:$PORT
 db_server=${MACHINE_IPs[openstack-controller]}
+mgmt_cidr=${MGMT_CIDR}
 ENDINVENTORY
+
+########################################################################
+# Aaaaannndddd....cue music!
+########################################################################
+# ANSIBLE_CONFIG is defined in settings.sh
+
+# if [ $COMMON = "yes" ]; then
+#     set -e # exit on erros
+#     [ $VERBOSE = "yes" ] && echo "Running playbook: ansible/common.yml (using ${#MACHINES[@]} forks)"
+#     ansible-playbook -f ${#MACHINES[@]} -s ./ansible/common.yml 2>&1 > ${ANSIBLE_LOGS}/common $@
+# fi
+
+########################################################################
 
 [ $VERBOSE = "yes" ] && echo "Starting the Mosler Images server [in ${MOSLER_IMAGES}]"
 pushd ${MOSLER_IMAGES}
@@ -86,15 +102,35 @@ python -m SimpleHTTPServer ${PORT} &
 FILE_SERVER=$!
 popd
 
-# Aaaaannndddd....cue music!
-if [ $PACKAGES = "yes" ]; then
-    [ $VERBOSE = "yes" ] && echo "Running playbook: ansible/packages.yml"
-    set -e # exit on errors
-    ANSIBLE_CONFIG=${ANSIBLE_CFG} ansible-playbook -s ./ansible/packages.yml $@
-fi
+#TAGS=""
+[ $COMMON = "yes" ] && TAGS="common,$TAGS"
+[ $OS_COMMON = "yes" ] && TAGS="openstack-common,$TAGS"
 
-[ $VERBOSE = "yes" ] && echo "Running playbook: ansible/micromosler.yml (using config file: ${ANSIBLE_CFG}) (using ${#MACHINES[@]} forks)"
-ANSIBLE_CONFIG=${ANSIBLE_CFG} ansible-playbook -s ./ansible/micromosler.yml $@
+mkdir -p ${ANSIBLE_LOGS}
+declare -A ANSIBLE_PIDS
+[ $VERBOSE = "yes" ] && echo "Running playbooks:"
+for group in "${!MACHINE_GROUPS[@]}"; do
+    [ $group = "all" ] && continue # Skipping that group
+    [ $VERBOSE = "yes" ] && echo -e "\t- for $group"
+    ansible-playbook -f ${#MACHINES[@]} -s ./ansible/micromosler.yml --tags "$TAGS$group" 2>&1 > ${ANSIBLE_LOGS}/$group $@ &
+    #echo ansible-playbook -f ${#MACHINES[@]} -s ./ansible/micromosler.yml --tags "$TAGS$group" $@ &
+    ANSIBLE_PIDS[$group]=$!
+done
+# Wait for all the ansible calls to finish
+[ $VERBOSE = "yes" ] && echo "Waiting for the playbooks to finish"
+FAIL=""
+echo "PIDS: ${ANSIBLE_PIDS[@]}"
+for job in ${!ANSIBLE_PIDS[@]}
+do
+    echo "Waiting for $job"
+    wait ${ANSIBLE_PIDS[$job]} || FAIL+=" $job"
+    echo "$job finished"
+done
+[ $VERBOSE = "yes" ] && echo "Playbooks finished"
+[ -n "$FAIL" ] && echo "Failed playbooks: $FAIL"
+
+# [ $VERBOSE = "yes" ] && echo "Running playbook: ansible/micromosler.yml (using config file: ${ANSIBLE_CFG}) (using ${#MACHINES[@]} forks)"
+# ansible-playbook -f ${#MACHINES[@]} -s ./ansible/micromosler.yml $@
 # Note: config file overwritten by ANSIBLE_CFG env variable
 # Ansible-playbook options: http://linux.die.net/man/1/ansible-playbook
 
