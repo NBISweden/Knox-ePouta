@@ -113,17 +113,3 @@ FLOATING_IPs=(\
 )
 FLOATING_GATEWAY=10.254.0.1
 FLOATING_CIDR=10.254.0.0/24
-
-# Partitioning the machines for Ansible parallelization
-# And including a [all] group
-declare -A MACHINE_GROUPS
-MACHINE_GROUPS=(\
-    [all]="openstack-controller thinlinc-master filsluss supernode compute1 compute2 compute3 hnas-emulation ldap networking-node" \
-    [nfs]="supernode filsluss hnas-emulation" \
-    [ldap]="ldap" \
-    [thinlinc]="thinlinc-master" \
-    [openstack-controller]="openstack-controller" \
-    [openstack-network]="networking-node" \
-    [openstack-compute]="compute1 compute2 compute3" \
-    [supernode]="supernode" \
-)
