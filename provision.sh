@@ -64,10 +64,10 @@ ENDANSIBLECFG
 [ $VERBOSE = "yes" ] && echo "Creating the inventory [in $INVENTORY]"
 echo "" > $INVENTORY
 for name in "${MACHINES[@]}"; do echo "$name ansible_ssh_host=${FLOATING_IPs[$name]}" >> $INVENTORY; done
-for group in "${!MACHINE_GROUPS[@]}"; do
-    echo -e "\n[$group]" >> $INVENTORY
-    for machine in ${MACHINE_GROUPS[$group]}; do echo "$machine" >> $INVENTORY; done
-done
+# for group in "${!MACHINE_GROUPS[@]}"; do
+#     echo -e "\n[$group]" >> $INVENTORY
+#     for machine in ${MACHINE_GROUPS[$group]}; do echo "$machine" >> $INVENTORY; done
+# done
 # Make sure TL_HOME and MOSLER_MISC end with a slash, or several!
 cat >> $INVENTORY <<ENDINVENTORY
 
@@ -105,12 +105,11 @@ popd
 mkdir -p ${ANSIBLE_LOGS}
 declare -A ANSIBLE_PIDS
 [ $VERBOSE = "yes" ] && echo "Running playbooks (see logs in ${ANSIBLE_LOGS})"
-for group in "${!MACHINE_GROUPS[@]}"; do
-    [ $group = "all" ] && continue # Skipping that group
+for machine in "${MACHINES[@]}"; do
     # Note: Using the ANSIBLE_CONFIG env variable
     # Ansible-playbook options: http://linux.die.net/man/1/ansible-playbook
-    ansible-playbook -f ${#MACHINES[@]} -s ./ansible/micromosler.yml --tags "$group" 2>&1 > ${ANSIBLE_LOGS}/$group $@ &
-    ANSIBLE_PIDS[$group]=$!
+    ansible-playbook -f 1 -s ./ansible/micromosler.yml --limit "$machine" 2>&1 > ${ANSIBLE_LOGS}/$machine $@ &
+    ANSIBLE_PIDS[$machine]=$!
 done
 # Wait for all the ansible calls to finish
 [ $VERBOSE = "yes" ] && echo "Waiting for the playbooks to finish"
