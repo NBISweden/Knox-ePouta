@@ -4,8 +4,21 @@
 VERBOSE=yes
 ALL=no
 
+# Get credentials and machines settings
+source ./settings.sh
+
 function usage(){
-    echo "Usage: $0 [--quiet|-q] [--all|-a]"
+    local defaults=${MACHINES[@]}
+    echo "Usage: $0 [options]"
+    echo -e "\noptions are"
+    echo -e "\t--all,-a         \tCreates also networks, routers, security groups and floating IPs"
+    echo -e "\t--machines <list>,"
+    echo -e "\t        -m <list>\tA comma-separated list of machines"
+    echo -e "\t                 \tDefaults to: \"${defaults// /,}\"."
+    echo -e "\t                 \tWe filter out machines that don't appear in the default list."
+    echo -e "\t--quiet,-q       \tRemoves the verbose output"
+    echo -e "\t--help,-h        \tOutputs this message and exits"
+    echo -e "\t-- ...           \tAny other options appearing after the -- will be ignored"
 }
 
 # While there are arguments or '--' is reached
@@ -13,6 +26,7 @@ while [ $# -gt 0 ]; do
     case "$1" in
         --all|-a) ALL=yes;;
         --quiet|-q) VERBOSE=no;;
+        --machines|-m) CUSTOM_MACHINES=$2; shift;;
         --help|-h) usage; exit 0;;
         --) shift; break;;
         *) echo "$0: error - unrecognized option $1" 1>&2; usage; exit 1;;
@@ -20,10 +34,35 @@ while [ $# -gt 0 ]; do
     shift
 done                                                                                              
 
-# Get credentials and machines settings
-source ./settings.sh
 
 #[ $VERBOSE = "no" ] && REDIRECT="> /dev/null"
+
+#######################################################################
+# Logic to allow the user to specify some machines
+# Otherwise, continue with the ones in settings.sh
+if [ -n $CUSTOM_MACHINES ]; then
+    CUSTOM_MACHINES_TMP=${CUSTOM_MACHINES//,/ } # replace all commas with space
+    CUSTOM_MACHINES="" # Filtering the ones who don't exist in settings.sh
+    for cm in $CUSTOM_MACHINES_TMP; do
+	if [[ "${MACHINES[@]}" =~ "$cm" ]]; then
+	    CUSTOM_MACHINES+=" $cm"
+	else
+	    echo "Unknown machine: $cm"
+	fi
+	# for m in ${MACHINES[@]}; do
+	#     [ "$cm" = "$m" ] && CUSTOM_MACHINES+=" $cm" && break
+	# done
+    done
+    if [ -n "$CUSTOM_MACHINES" ]; then
+	[ $VERBOSE = "yes" ] && echo "Using these machines: $CUSTOM_MACHINES"
+	MACHINES=($CUSTOM_MACHINES)
+    else
+	echo "Error: all custom machines are unknown"
+	echo "Nothing to be done..."
+	echo -e "Exiting\!"
+	exit 2
+    fi  
+fi
 
 #######################################################################
 

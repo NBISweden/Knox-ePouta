@@ -1,11 +1,19 @@
 #!/usr/bin/env bash
 
+# Get credentials and machines settings
+source ./settings.sh
+
 # Default values
 ALL=no
 VERBOSE=yes
 
 function usage(){
-    echo "Usage: $0 [--quiet|-q] [--all|-a]"
+    echo "Usage: $0 [options]"
+    echo -e "\noptions are"
+    echo -e "\t--all,-a         \tDeletes also networks, routers, security groups and floating IPs"
+    echo -e "\t--quiet,-q       \tRemoves the verbose output"
+    echo -e "\t--help,-h        \tOutputs this message and exits"
+    echo -e "\t-- ...           \tAny other options appearing after the -- will be ignored"
 }
 
 # While there are arguments or '--' is reached
@@ -20,8 +28,6 @@ while [ $# -gt 0 ]; do
     shift
 done                                                                                              
 
-# Get credentials and machines settings
-source ./settings.sh
 
 #######################################################################
 
