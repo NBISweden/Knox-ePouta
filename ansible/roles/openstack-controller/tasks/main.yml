@@ -138,7 +138,6 @@
   shell: rm -rf /var/lib/glance/images/*
 
 - name: Adding the images to Glance
-  when: openstack_services
   shell: . /root/.keystonerc && glance image-create --copy-from {{ mosler_images_url }}/{{ item }} --disk-format qcow2 --container-format bare  --name "{{ item }}" --is-public True
   with_items:
     - project-computenode-stable 
@@ -146,11 +145,9 @@
     - topolino-q-stable
 
 - name: Removing existing Mosler flavors
-  when: openstack_services
   shell: . /root/.keystonerc && (nova flavor-list | awk '/ mosler\./ {print $2}' | while read flavor; do nova flavor-delete $flavor; done)
 
 - name: Adding Mosler flavors
-  when: openstack_services
   shell: . /root/.keystonerc && nova flavor-create {{ item }}
   with_items:
     - mosler.1core auto 500 10 1

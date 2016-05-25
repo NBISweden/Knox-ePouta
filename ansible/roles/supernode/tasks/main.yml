@@ -41,7 +41,7 @@
 
 - name: Removing any 'public-net'
   shell: . /root/.keystonerc && neutron net-list -F id -F name | awk '/ public-net / {print $2}' | while read netid; do neutron net-delete ${netid}; done
-  when: neutron_started
+  when: openstack_services
 - name: Creating public network in neutron & updating the mosler-heat parameters
   shell: . /root/.keystonerc && extnet=$(neutron net-create public-net --router:external True | awk '/ id / {print $4}') && sed -i -e "s/__EXT_NET__/$extnet/"  /usr/local/heat/mosler-template-parameters
 - name: Creating public subnet network in neutron
