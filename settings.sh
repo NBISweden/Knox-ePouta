@@ -22,34 +22,23 @@ if [ -z $OS_TENANT_NAME ]; then
     exit 1;
 fi
 
-TENANT_ID=$(openstack project list | awk '/'${OS_TENANT_NAME}'/ {print $2}')
-# Checking if the user is admin for that tenant
-CHECK=$(openstack role assignment list --user ${OS_USERNAME} --role admin --project ${OS_TENANT_NAME})
-if [ $? -ne 0 ] || [ -z "$CHECK" ]; then
-    echo "ERROR: $CHECK"
-    echo -e "\nThe user ${OS_USERNAME} does not seem to have the 'admin' role for the project ${OS_TENANT_NAME}"
-    echo "Exiting..."
-    exit 1
-fi
+export VERBOSE=yes
 
 #################################################################
+# Making these variables immutable
+# Note: Can source this file several times
 
-CLOUDINIT_FOLDER=./cloudinit
-ANSIBLE_FOLDER=./ansible
+[ -n "$MM_HOME" ]       || readonly MM_HOME=$HOME/mosler-micro-mosler
+[ -n "$TL_HOME" ]       || readonly TL_HOME=/home/jonas/thinlinc
+[ -n "$MOSLER_HOME" ]   || readonly MOSLER_HOME=/home/jonas/mosler-system-scripts
+[ -n "$MOSLER_MISC" ]   || readonly MOSLER_MISC=/home/jonas/misc
+[ -n "$MOSLER_IMAGES" ] || readonly MOSLER_IMAGES=/home/jonas/mosler-images
 
-MM_HOME=$HOME/mosler-micro-mosler
-TL_HOME=/home/jonas/thinlinc
-MOSLER_HOME=/home/jonas/mosler-system-scripts
-MOSLER_MISC=/home/jonas/misc
-MOSLER_IMAGES=/home/jonas/mosler-images
+[ -n "$INIT_TMP" ]      || readonly INIT_TMP=${MM_HOME}/tmp/init
+[ -n "$PROVISION_TMP" ] || readonly PROVISION_TMP=${MM_HOME}/tmp/provision
 
-PHONE_HOME=10.254.0.1
-PORT=12345
-
-#SSH_CONFIG=${ANSIBLE_FOLDER}/ssh_config.${OS_TENANT_NAME}
-export ANSIBLE_CONFIG=${ANSIBLE_FOLDER}/config.${OS_TENANT_NAME}
-INVENTORY=${ANSIBLE_FOLDER}/inventory.${OS_TENANT_NAME}
-ANSIBLE_LOGS=${ANSIBLE_FOLDER}/logs
+export TL_HOME MOSLER_HOME MOSLER_MISC MOSLER_IMAGES
+export INIT_TMP PROVISION_TMP
 
 #################################################################
 
@@ -113,3 +102,33 @@ FLOATING_IPs=(\
 )
 FLOATING_GATEWAY=10.254.0.1
 FLOATING_CIDR=10.254.0.0/24
+
+PHONE_HOME=${FLOATING_GATEWAY}
+PORT=12345
+
+########################################
+declare -A PROVISION
+PROVISION=(\
+    [openstack-controller]=openstack-controller \
+    [thinlinc-master]=thinlinc \
+    [filsluss]=storage \
+    [supernode]=supernode \
+    [compute1]=openstack-compute \
+    [compute2]=openstack-compute \
+    [compute3]=openstack-compute \
+    [hnas-emulation]=storage \
+    [ldap]=ldap \
+    [networking-node]=openstack-network \
+)
+
+########################################
+export SSH_CONFIG=${PROVISION_TMP}/ssh_config.${OS_TENANT_NAME}
+function mm_connect {
+    local host=$1
+    [ -f ${SSH_CONFIG} ] && CONF="-F ${SSH_CONFIG}"
+    if [ -n "${FLOATING_IPs[$host]}" ]; then
+	ssh $CONF ${FLOATING_IPs[$host]}
+    else
+	echo "Unknown machine: $host"
+    fi
+}
