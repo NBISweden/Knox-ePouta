@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 # Default values
-VERBOSE=yes
 ALL=no
 
 # Get credentials and machines settings
@@ -35,8 +34,6 @@ while [ $# -gt 0 ]; do
 done                                                                                              
 
 
-#[ $VERBOSE = "no" ] && REDIRECT="> /dev/null"
-
 #######################################################################
 # Logic to allow the user to specify some machines
 # Otherwise, continue with the ones in settings.sh
@@ -54,7 +51,7 @@ if [ -n $CUSTOM_MACHINES ]; then
 	# done
     done
     if [ -n "$CUSTOM_MACHINES" ]; then
-	[ $VERBOSE = "yes" ] && echo "Using these machines: $CUSTOM_MACHINES"
+	[ "$VERBOSE" = "yes" ] && echo "Using these machines: $CUSTOM_MACHINES"
 	MACHINES=($CUSTOM_MACHINES)
     else
 	echo "Error: all custom machines are unknown"
@@ -66,12 +63,21 @@ fi
 
 #######################################################################
 
+TENANT_ID=$(openstack project list | awk '/'${OS_TENANT_NAME}'/ {print $2}')
+# Checking if the user is admin for that tenant
+CHECK=$(openstack role assignment list --user ${OS_USERNAME} --role admin --project ${OS_TENANT_NAME})
+if [ $? -ne 0 ] || [ -z "$CHECK" ]; then
+    echo "ERROR: $CHECK"
+    echo -e "\nThe user ${OS_USERNAME} does not seem to have the 'admin' role for the project ${OS_TENANT_NAME}"
+    echo "Exiting..."
+    exit 1
+fi
 
 EXTNET_ID=$(neutron net-list | awk '/ public /{print $2}')
 
 if [ $ALL = "yes" ]; then
 
-    [ $VERBOSE = "yes" ] && echo "Creating routers and networks"
+    [ "$VERBOSE" = "yes" ] && echo "Creating routers and networks"
 
     MGMT_ROUTER_ID=$(neutron router-create ${OS_TENANT_NAME}-mgmt-router | awk '/ id / { print $4 }')
     DATA_ROUTER_ID=$(neutron router-create ${OS_TENANT_NAME}-data-router | awk '/ id / { print $4 }')
@@ -79,7 +85,7 @@ if [ $ALL = "yes" ]; then
     if [ -z "$MGMT_ROUTER_ID" ] || [ -z "$DATA_ROUTER_ID" ]; then
 	echo "Router issues, skipping."
     else
-	[ $VERBOSE = "yes" ] && echo -e "Attaching Management router to the External \"public\" network"
+	[ "$VERBOSE" = "yes" ] && echo -e "Attaching Management router to the External \"public\" network"
 	neutron router-gateway-set $MGMT_ROUTER_ID $EXTNET_ID
     fi
     
@@ -99,12 +105,12 @@ if [ $ALL = "yes" ]; then
     neutron router-interface-add ${OS_TENANT_NAME}-data-router ${OS_TENANT_NAME}-data-subnet
     
 
-    [ $VERBOSE = "yes" ] && echo "Creating the floating IPs"
+    [ "$VERBOSE" = "yes" ] && echo "Creating the floating IPs"
     for machine in "${MACHINES[@]}"; do
 	neutron floatingip-create --tenant-id ${TENANT_ID} --floating-ip-address ${FLOATING_IPs[$machine]} public
     done
 
-    [ $VERBOSE = "yes" ] && echo "Creating the Security Group: ${OS_TENANT_NAME}-sg"
+    [ "$VERBOSE" = "yes" ] && echo "Creating the Security Group: ${OS_TENANT_NAME}-sg"
     neutron security-group-create ${OS_TENANT_NAME}-sg
     neutron security-group-rule-create ${OS_TENANT_NAME}-sg --direction ingress --ethertype ipv4 --protocol icmp 
     neutron security-group-rule-create ${OS_TENANT_NAME}-sg --direction ingress --ethertype ipv4 --protocol tcp --port-range-min 22 --port-range-max 22
@@ -122,7 +128,7 @@ fi # End ALL config
 MGMT_NET=$(neutron net-list --tenant_id=$TENANT_ID | awk '/ '${OS_TENANT_NAME}-mgmt-net' /{print $2}')
 DATA_NET=$(neutron net-list --tenant_id=$TENANT_ID | awk '/ '${OS_TENANT_NAME}-data-net' /{print $2}')
 
-[ $VERBOSE = "yes" ] && echo -e "Management Net: $MGMT_NET\nData Net: $DATA_NET"
+[ "$VERBOSE" = "yes" ] && echo -e "Management Net: $MGMT_NET\nData Net: $DATA_NET"
 
 if [ -z $MGMT_NET ] || [ -z $DATA_NET ]; then
     echo "Error: Could not find the Management or Data network"
@@ -130,13 +136,13 @@ if [ -z $MGMT_NET ] || [ -z $DATA_NET ]; then
     exit 1
 fi
 
-mkdir -p ${CLOUDINIT_FOLDER}
+mkdir -p ${INIT_TMP}
 
 # Start the local REST server, to tell when the machines are ready
-echo '#!/usr/bin/env python' > $CLOUDINIT_FOLDER/machines.py
-echo -e "import web\nimport sys\n\nmachines = {" >> $CLOUDINIT_FOLDER/machines.py
-for machine in "${MACHINES[@]}"; do echo -e "'$machine': 'booting'," >> $CLOUDINIT_FOLDER/machines.py; done
-cat >> ${CLOUDINIT_FOLDER}/machines.py <<ENDREST
+echo '#!/usr/bin/env python' > $INIT_TMP/machines.py
+echo -e "import web\nimport sys\n\nmachines = {" >> $INIT_TMP/machines.py
+for machine in "${MACHINES[@]}"; do echo -e "'$machine': 'booting'," >> $INIT_TMP/machines.py; done
+cat >> ${INIT_TMP}/machines.py <<ENDREST
 }
 
 urls = (
@@ -177,7 +183,7 @@ function boot_machine {
     local ip=${MACHINE_IPs[$machine]}
     local flavor=${FLAVORS[$machine]}
     
-    cat > ${CLOUDINIT_FOLDER}/vm_init-$ip.yml <<ENDCLOUDINIT
+    cat > ${INIT_TMP}/vm_init-$ip.yml <<ENDCLOUDINIT
 #cloud-config
 disable_root: 1
 system_info:
@@ -200,14 +206,14 @@ write_files:
       127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
       ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
 ENDCLOUDINIT
-    for name in "${MACHINES[@]}"; do echo "      ${MACHINE_IPs[$name]} $name" >> ${CLOUDINIT_FOLDER}/vm_init-$ip.yml; done
-    echo "      ${MACHINE_IPs[openstack-controller]} tos1" >> ${CLOUDINIT_FOLDER}/vm_init-$ip.yml
+    for name in "${MACHINES[@]}"; do echo "      ${MACHINE_IPs[$name]} $name" >> ${INIT_TMP}/vm_init-$ip.yml; done
+    echo "      ${MACHINE_IPs[openstack-controller]} tos1" >> ${INIT_TMP}/vm_init-$ip.yml
     # the white spaces are important
 
     # If Data IP is not zero-length
     if [ ! -z ${DATA_IPs[$machine]} ]; then
 	local DN="--nic net-id=$DATA_NET,v4-fixed-ip=${DATA_IPs[$machine]}"
-	cat >> ${CLOUDINIT_FOLDER}/vm_init-$ip.yml <<ENDCLOUDINIT
+	cat >> ${INIT_TMP}/vm_init-$ip.yml <<ENDCLOUDINIT
 write_files:
   - path: /etc/sysconfig/network-scripts/ifcfg-eth0
     owner: root:root
@@ -260,7 +266,7 @@ ENDCLOUDINIT
     fi
 
     # Final part: Phone home
-    cat >> ${CLOUDINIT_FOLDER}/vm_init-$ip.yml <<ENDCLOUDINIT
+    cat >> ${INIT_TMP}/vm_init-$ip.yml <<ENDCLOUDINIT
 runcmd:
   - sed -i 's/^Defaults.*requiretty/#&/g' /etc/sudoers
   - echo 'Cloudinit phone home'
@@ -274,24 +280,24 @@ nova boot \
 --nic net-id=${MGMT_NET},v4-fixed-ip=$ip \
 $DN \
 --security-group ${OS_TENANT_NAME}-sg \
---user-data ${CLOUDINIT_FOLDER}/vm_init-$ip.yml \
+--user-data ${INIT_TMP}/vm_init-$ip.yml \
 $machine
 } # End boot_machine function
 
-[ $VERBOSE = "yes" ] && echo "Starting the REST phone home server"
+[ "$VERBOSE" = "yes" ] && echo "Starting the REST phone home server"
 fuser -k $PORT/tcp
-python ${CLOUDINIT_FOLDER}/machines.py $PORT &
+python ${INIT_TMP}/machines.py $PORT &
 REST_PID=$!
 
-[ $VERBOSE = "yes" ] && echo "Booting the machines"
+[ "$VERBOSE" = "yes" ] && echo "Booting the machines"
 # Let's go
 for machine in "${MACHINES[@]}"; do boot_machine $machine; done
 
-[ $VERBOSE = "yes" ] && echo "Waiting for the REST phone home server (PID: ${REST_PID})"
+[ "$VERBOSE" = "yes" ] && echo "Waiting for the REST phone home server (PID: ${REST_PID})"
 wait ${REST_PID}
-[ $VERBOSE = "yes" ] && echo "The last machine just phoned home."
+[ "$VERBOSE" = "yes" ] && echo "The last machine just phoned home."
 
-[ $VERBOSE = "yes" ] && echo -e "Associating floating IPs"
+[ "$VERBOSE" = "yes" ] && echo -e "Associating floating IPs"
 for machine in "${MACHINES[@]}"
 do
     echo -e "\t${FLOATING_IPs[$machine]} to $machine"
