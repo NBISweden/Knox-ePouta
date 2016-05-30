@@ -28,7 +28,7 @@ done
 mkdir -p ${PROVISION_TMP}
 export SCRIPT_FOLDER=${MM_HOME}/scripts
 export SSH_CONFIG=${PROVISION_TMP}/ssh_config.${OS_TENANT_NAME}
-SSH_KNOWN_HOSTS=${SCRIPT_FOLDER}/ssh_known_hosts.${OS_TENANT_NAME}
+SSH_KNOWN_HOSTS=${PROVISION_TMP}/ssh_known_hosts.${OS_TENANT_NAME}
 
 #############################################
 ## Calling ansible for the MicroMosler setup
@@ -55,7 +55,7 @@ ENDSSHCFG
 
 # Adding the keys to the known_hosts file
 true > ${SSH_KNOWN_HOSTS}
-for name in ${MACHINES[@]}; do ssh-keyscan -4 ${FLOATING_IPs[$name]} >> ${SSH_KNOWN_HOSTS} 2>/dev/null; done
+#for name in ${MACHINES[@]}; do ssh-keyscan -4 ${FLOATING_IPs[$name]} >> ${SSH_KNOWN_HOSTS} 2>/dev/null; done
 # Note: I silence the errors from stderr (2) to /dev/null. Don't send them to &1.
 
 ########################################################################
@@ -80,7 +80,11 @@ do
 	[ "$VERBOSE" = "yes" ] && echo -e "\t* $machine"
 	#(set -n -v; source ${_SCRIPT} 2>${_SCRIPT_DST})
 	bash --norc -n -v ${_SCRIPT} 2>${_SCRIPT_DST}
-	#{ source ${_SCRIPT}; set -n -v; } 2>&1 >${_SCRIPT_DST}
+	export _SCRIPT _SCRIPT_DST
+	# cat > ${_SCRIPT_DST} <( exec 2>&1; set -n -v; source ${_SCRIPT}; )
+	# cat > ${_SCRIPT_DST} <( exec 2>&1; bash --norc -n -x ${_SCRIPT} )
+	# echo -n $output > ${_SCRIPT_DST}
+	# cat > ${_SCRIPT_DST} <( set -n -v; source ${_SCRIPT} )
     else
 	echo "Unknown script ${_SCRIPT}"
     fi

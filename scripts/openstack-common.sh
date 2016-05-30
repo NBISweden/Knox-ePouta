@@ -1,5 +1,7 @@
 # -*-sh-*-
 
+set -v
+
 echo "Openstack python clients"
 { PACKAGES=\
 python-novaclient python-keystoneclient python-neutronclient python-glanceclient python-heatclient python-neutronclient \

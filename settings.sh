@@ -28,7 +28,7 @@ export VERBOSE=yes
 # Making these variables immutable
 # Note: Can source this file several times
 
-[ -n "$MM_HOME" ]       || readonly MM_HOME=$HOME/mosler-micro-mosler
+[ -n "$MM_HOME" ]       || readonly MM_HOME=$HOME/_micromosler/mosler-micro-mosler
 [ -n "$TL_HOME" ]       || readonly TL_HOME=/home/jonas/thinlinc
 [ -n "$MOSLER_HOME" ]   || readonly MOSLER_HOME=/home/jonas/mosler-system-scripts
 [ -n "$MOSLER_MISC" ]   || readonly MOSLER_MISC=/home/jonas/misc

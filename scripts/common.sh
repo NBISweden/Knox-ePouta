@@ -1,5 +1,7 @@
 # -*-sh-*-
 
+set -v
+
 echo "Timezone configuration"
 echo 'Europe/Stockholm' > /etc/timezone
 
