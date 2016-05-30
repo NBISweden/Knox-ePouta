@@ -1,7 +1,10 @@
 # -*-sh-*-
 
+set +v
 source ${SCRIPT_FOLDER:-.}/common.sh
+set +v
 source ${SCRIPT_FOLDER:-.}/openstack-common.sh
+#set -v
 
 { echo "Openstack utils and more"
   PACKAGES=\
