@@ -62,6 +62,8 @@ true > ${SSH_KNOWN_HOSTS}
 # Aaaaannndddd....cue music!
 ########################################################################
 
+export VAULT=rsync
+
 if [ "$DO_COPY" = "yes" ]; then
     set -e # exit on errors
     [ "$VERBOSE" = "yes" ] && echo "Copying files"
@@ -72,32 +74,20 @@ fi
 
 [ "$VERBOSE" = "yes" ] && echo "Configuring servers:"
 declare -A PROVISION_PIDS
-for machine in ${!PROVISION[@]}
+RENDER=${SCRIPT_FOLDER}/render.py
+pushd ${SCRIPT_FOLDER}
+for machine in ldap #openstack-controller #${!PROVISION[@]}
 do
-    _SCRIPT=${SCRIPT_FOLDER}/${PROVISION[$machine]}.sh
+     _SCRIPT=${PROVISION[$machine]}.jn2
     if [ -f ${_SCRIPT} ]; then
-	_SCRIPT_DST=${PROVISION_TMP}/run.$machine.${FLOATING_IPs[$machine]}.sh
-	[ "$VERBOSE" = "yes" ] && echo -e "\t* $machine"
-	#(set -n -v; source ${_SCRIPT} 2>${_SCRIPT_DST})
-	bash --norc -n -v ${_SCRIPT} 2>${_SCRIPT_DST}
-	export _SCRIPT _SCRIPT_DST
-	# cat > ${_SCRIPT_DST} <( exec 2>&1; set -n -v; source ${_SCRIPT}; )
-	# cat > ${_SCRIPT_DST} <( exec 2>&1; bash --norc -n -x ${_SCRIPT} )
-	# echo -n $output > ${_SCRIPT_DST}
-	# cat > ${_SCRIPT_DST} <( set -n -v; source ${_SCRIPT} )
-    else
-	echo "Unknown script ${_SCRIPT}"
+	# It will use the (exported) environment variables
+	${RENDER} ${_SCRIPT} > ${PROVISION_TMP}/run.$machine.${FLOATING_IPs[$machine]}
+	ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x 2>&1' <${PROVISION_TMP}/run.$machine.${FLOATING_IPs[$machine]} 1>${PROVISION_TMP}/log.$machine.${FLOATING_IPs[$machine]} &
+	#${_SCRIPT} | base64 -D > ${PROVISION_TMP}/log.$machine.${FLOATING_IPs[$machine]} 2>&1 &
+	PROVISION_PIDS[$machine]=$!
     fi
 done
-
-# set +n +v
-# for machine in ldap
-# do
-#     if [ -f ${PROVISION_TMP}/run.$machine.${FLOATING_IPs[$machine]}.sh ]; then
-# coproc $machine ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} "cat ${PROVISION_TMP}/run.$machine.${FLOATING_IPs[$machine]}.sh | base64 -d | sudo bash" > ${PROVISION_TMP}/run.$machine.${FLOATING_IPs[$machine]}.log 2>&1 &
-# 	PROVISION_PIDS[$machine]=$!
-#     fi
-# done
+popd
 
 # Wait for all the copying to finish
 [ "$VERBOSE" = "yes" ] && echo -e "\tWaiting for servers to be configured (${#PROVISION_PIDS[@]} background jobs)"
@@ -110,3 +100,4 @@ do
 done
 [ "$VERBOSE" = "yes" ] && echo " Servers configured"
 [ -n "$FAIL" ] && echo "Failed configuring:$FAIL"
+

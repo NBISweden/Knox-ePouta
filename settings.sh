@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+[ ${BASH_VERSINFO[0]} -lt 4 ] && exit 1
+
 export OS_PROJECT_DOMAIN_ID=default
 export OS_USER_DOMAIN_ID=default
 export OS_PROJECT_NAME=mmosler1
@@ -45,10 +47,10 @@ export INIT_TMP PROVISION_TMP
 # Declaring the machines
 # Arrays are one-dimensional only. Tyvärr!
 declare -a MACHINES
-MACHINES=('openstack-controller' 'thinlinc-master' 'filsluss' 'supernode' 'compute1' 'compute2' 'compute3' 'hnas-emulation' 'ldap' 'networking-node')
+export MACHINES=('openstack-controller' 'thinlinc-master' 'filsluss' 'supernode' 'compute1' 'compute2' 'compute3' 'hnas-emulation' 'ldap' 'networking-node')
 
 declare -A FLAVORS
-FLAVORS=(\
+export FLAVORS=(\
     [openstack-controller]=m1.small \
     [thinlinc-master]=m1.small \
     [filsluss]=m1.small \
@@ -62,7 +64,7 @@ FLAVORS=(\
 )
 
 declare -A MACHINE_IPs
-MACHINE_IPs=(\
+export MACHINE_IPs=(\
     [openstack-controller]=172.25.8.3 \
     [thinlinc-master]=172.25.8.4 \
     [filsluss]=172.25.8.5 \
@@ -74,21 +76,21 @@ MACHINE_IPs=(\
     [ldap]=172.25.8.11 \
     [networking-node]=172.25.8.12 \
 )
-MGMT_GATEWAY=172.25.8.1
-MGMT_CIDR=172.25.8.0/22
+export MGMT_GATEWAY=172.25.8.1
+export MGMT_CIDR=172.25.8.0/22
 
 declare -A DATA_IPs
-DATA_IPs=(\
+export DATA_IPs=(\
     [compute1]=10.10.10.110 \
     [compute2]=10.10.10.111 \
     [compute3]=10.10.10.112 \
     [networking-node]=10.10.10.101 \
 )
-DATA_GATEWAY=10.10.10.1
-DATA_CIDR=10.10.10.0/24
+export DATA_GATEWAY=10.10.10.1
+export DATA_CIDR=10.10.10.0/24
 
 declare -A FLOATING_IPs
-FLOATING_IPs=(\
+export FLOATING_IPs=(\
     [openstack-controller]=10.254.0.54 \
     [thinlinc-master]=10.254.0.55 \
     [filsluss]=10.254.0.56 \
@@ -100,15 +102,15 @@ FLOATING_IPs=(\
     [ldap]=10.254.0.62 \
     [networking-node]=10.254.0.63 \
 )
-FLOATING_GATEWAY=10.254.0.1
-FLOATING_CIDR=10.254.0.0/24
+export FLOATING_GATEWAY=10.254.0.1
+export FLOATING_CIDR=10.254.0.0/24
 
-PHONE_HOME=${FLOATING_GATEWAY}
-PORT=12345
+export PHONE_HOME=${FLOATING_GATEWAY}
+export PORT=12345
 
 ########################################
 declare -A PROVISION
-PROVISION=(\
+export PROVISION=(\
     [openstack-controller]=openstack-controller \
     [thinlinc-master]=thinlinc \
     [filsluss]=storage \
