@@ -1,7 +1,3 @@
-# -*-sh-*-
-
-set -v
-
 echo "Timezone configuration"
 echo 'Europe/Stockholm' > /etc/timezone
 
@@ -16,9 +12,7 @@ echo "EPEL repo"
 yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
 
 echo "Packages we always want"
-{ PACKAGES=lsof strace jq tcpdump
-  yum -y install $PACKAGES
-}
+yum -y install lsof strace jq tcpdump
 
 echo "Upgrade system"
 yum upgrade

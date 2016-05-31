@@ -1,11 +1,9 @@
-# -*-sh-*-
+#############################################################
+{% include 'modules/common.jn2' %}
 
-source ${SCRIPT_FOLDER:-.}/common.sh
-
+#############################################################
 echo "LDAP packages"
-{ PACKAGES=openldap-servers openldap-clients
-  yum -y install $PACKAGES
-}
+yum -y install openldap-servers openldap-clients
 
 echo "Configuring iptables"
 # Remove the line
@@ -27,5 +25,5 @@ fi
 service slapd restart
 
 echo "Configuration using ldap.conf"
-ldapadd -c -D cn=Manager,dc=mosler,dc=bils,dc=se -w ldap -f ldap_conf
+ldapadd -c -D cn=Manager,dc=mosler,dc=bils,dc=se -w ldap -f {{ env['VAULT'] }}/ldap_conf
 

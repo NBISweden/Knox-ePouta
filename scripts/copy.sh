@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 
 # Cleaning the listings
-#for machine in ${MACHINES[@]}; do rm ${PROVISION_TMP}/copy.$machine.${FLOATING_IPs[$machine]}; done
-for machine in ${MACHINES[@]}; do echo -n '' > ${PROVISION_TMP}/copy.$machine.${FLOATING_IPs[$machine]}; done
-# for machine in ${MACHINES[@]}; do truncate --size 0 ${PROVISION_TMP}/copy.$machine.${FLOATING_IPs[$machine]}; done
+for machine in ${MACHINES[@]}; do : > ${PROVISION_TMP}/copy.$machine.${FLOATING_IPs[$machine]}; done
 
 function copy {
     local machine=${FLOATING_IPs[$1]}
@@ -98,7 +96,7 @@ done
 #########################################################################
 
 # Preparing the drop folder
-for machine in ${MACHINES[@]}; do ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} mkdir -p rsync; done
+for machine in ${MACHINES[@]}; do ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} mkdir -p ${VAULT}; done
 
 declare -A RSYNC_PIDS
 for machine in ${MACHINES[@]}
@@ -110,14 +108,14 @@ do
 	    LINE=(${line//,/ }) # replace , with space and make it an array
 	    src=${LINE[0]}
 	    set -x -e # Print commands && exit if errors
-	    rsync -av -e "ssh -F ${SSH_CONFIG}" $src ${FLOATING_IPs[$machine]}:rsync/.
+	    rsync -av -e "ssh -F ${SSH_CONFIG}" $src ${FLOATING_IPs[$machine]}:${VAULT}/.
 	    dst=${LINE[1]}
 	    mode=${LINE[2]}
 	    if [ -n "$dst" ]; then 
 		if [ -n "$mode" ]; then
-		    ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} "sudo rsync rsync/${src##*/} $dst && sudo chmod $mode $dst"
+		    ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} "sudo rsync ${VAULT}/${src##*/} $dst && sudo chmod $mode $dst"
 		else
-		    ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} "sudo rsync rsync/${src##*/} $dst"
+		    ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} "sudo rsync ${VAULT}/${src##*/} $dst"
 		fi
 	    fi
 	done > ${PROVISION_TMP}/rsync.$machine.${FLOATING_IPs[$machine]} 2>&1 &
