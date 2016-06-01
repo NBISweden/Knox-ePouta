@@ -3,8 +3,8 @@
 # Get credentials and machines settings
 source ./settings.sh
 
-# Default values
-_ALL=no
+# Exit on errors
+#set -e 
 
 function usage(){
     local defaults=${MACHINES[@]}
@@ -40,37 +40,23 @@ if [ $? -ne 0 ] || [ -z "$CHECK" ]; then
     exit 1
 fi
 
-MGMT_NET=$(neutron net-list --tenant_id=$TENANT_ID | awk '/ '${OS_TENANT_NAME}-mgmt-net' /{print $2}')
-
-if [ -z $MGMT_NET ]; then
-    echo "Error: Could not find the Management network"
-    # TODO: fix so the network is prepared too, and not in init.sh
-    # echo -e "\tMaybe you should re-run with the --all flags?"
-    exit 1
-fi
-
 mkdir -p ${INIT_TMP}
-
-# [ "$VERBOSE" = "yes" ] && echo "Creating the floating IPs"
-# FLOATING_PREFIX=${FLOATING_CIDR%0/24}
-# _IP=100
-
-# while neutron floatingip-list -F floating_ip_address | grep ${FLOATING_PREFIX}${_IP}; do
-#     _IP=$((_IP + 1))
-# done
-# neutron floatingip-create --tenant-id ${TENANT_ID} --floating-ip-address ${FLOATING_PREFIX}${_IP} public
-
 cat > ${INIT_TMP}/vm_prepare.yml <<ENDCLOUDINIT
 #cloud-config
-bootcmd:
-  - echo 'Europe/Stockholm' > /etc/timezone
-  - if grep -q 'proxy=.*' /etc/yum.conf; then sed -i 's/proxy=.*/proxy=http:\/\/130.238.7.178:3128\//g' /etc/yum.conf; else echo 'proxy=http://130.238.7.178:3128' >> /etc/yum.conf; fi
-
 runcmd:
-  - echo "Installing the EPEL repo" && yum -y install epel-release
-  - echo "Upgrading system" && yum -y update
-  - echo "Installing packages we always want" && yum -y install lsof strace jq tcpdump cloud-utils-growpart
-  - echo "Cloudinit phone home" && curl http://${PHONE_HOME}:$PORT/prepare/ready > /dev/null || true
+  - echo 'proxy=http://130.238.7.178:3128' >> /etc/yum.conf
+  - echo ================================================================================
+  - echo "Installing the EPEL repo"
+  - yum -y install epel-release
+  - echo ================================================================================
+  - echo "System upgrade"
+  - yum -y update
+  - echo ================================================================================
+  - echo "Installing packages we always want"
+  - yum -y install lsof strace jq tcpdump cloud-utils-growpart
+  - echo ================================================================================
+  - echo "Cloudinit phone home"
+  - curl http://${PHONE_HOME}:$PORT/prepare/ready 2>&1 > /dev/null || true
 ENDCLOUDINIT
 
 cat > ${INIT_TMP}/prepare.py <<ENDREST
@@ -91,17 +77,19 @@ if __name__ == "__main__":
     web.config.debug = False
     app = web.application(urls, globals())
     app.run()
-
 ENDREST
 
 [ "$VERBOSE" = "yes" ] && echo "Starting the REST phone home server"
-fuser -k $PORT/tcp
+fuser -k $PORT/tcp || true
 python ${INIT_TMP}/prepare.py $PORT &
 REST_PID=$!
 
-# Booting a machine, getting an temporary ip from DHCP
+# Booting a machine, getting a temporary ip from DHCP
 # No need to add ssh-keys, since we won't log onto it
-nova boot --flavor 'm1.small' --image 'CentOS6' --nic net-id=${MGMT_NET} --user-data ${INIT_TMP}/vm_prepare.yml --poll prepare
+[ "$VERBOSE" = "yes" ] && echo "Booting a 'prepare' VM"
+nova boot --flavor 'm1.small' --image 'CentOS6' \
+--nic net-id=$(neutron net-list --tenant_id=$TENANT_ID | awk '/ '${OS_TENANT_NAME}-mgmt-net' /{print $2}') \
+--user-data ${INIT_TMP}/vm_prepare.yml prepare
 
 # For the moment, I delete the image, assuming there is one.
 # Otherwise, I check if the snapshots have that name,
@@ -116,4 +104,6 @@ wait ${REST_PID}
 [ "$VERBOSE" = "yes" ] && echo "Creating the CentOS-micromosler snapshot"
 nova image-create --poll prepare 'CentOS6-micromosler'
 
+[ "$VERBOSE" = "yes" ] && echo "Deleting the 'prepare' VM"
+nova delete prepare
 echo "Preparation done"
