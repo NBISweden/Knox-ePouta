@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 # Get credentials and machines settings
-source ./settings.sh
+source $(dirname ${BASH_SOURCE[0]})/settings.sh
 
 DO_COPY=yes
 
-function usage(){
+function usage {
     echo "Usage: $0 [--quiet|-q] [--no-copy|-n] -- ..."
 }
 
@@ -31,7 +31,7 @@ export SSH_CONFIG=${PROVISION_TMP}/ssh_config.${OS_TENANT_NAME}
 SSH_KNOWN_HOSTS=${PROVISION_TMP}/ssh_known_hosts.${OS_TENANT_NAME}
 
 #############################################
-## Calling ansible for the MicroMosler setup
+## Calling the MicroMosler setup
 #############################################
 
 [ "$VERBOSE" = "yes" ] && echo -e "Creating the ssh config [in ${SSH_CONFIG}]"
@@ -52,22 +52,77 @@ ENDSSHCFG
 # else 
 #     touch ${SSH_KNOWN_HOSTS}
 # fi
-
-# Adding the keys to the known_hosts file
-true > ${SSH_KNOWN_HOSTS}
-#for name in ${MACHINES[@]}; do ssh-keyscan -4 ${FLOATING_IPs[$name]} >> ${SSH_KNOWN_HOSTS} 2>/dev/null; done
+:> ${SSH_KNOWN_HOSTS}
+for name in ${MACHINES[@]}; do ssh-keyscan -4 ${FLOATING_IPs[$name]} >> ${SSH_KNOWN_HOSTS} 2>/dev/null; done
 # Note: I silence the errors from stderr (2) to /dev/null. Don't send them to &1.
 
 ########################################################################
 # Aaaaannndddd....cue music!
 ########################################################################
 
-export VAULT=rsync
+export VAULT=vault
 
 if [ "$DO_COPY" = "yes" ]; then
-    set -e # exit on errors
+
     [ "$VERBOSE" = "yes" ] && echo "Copying files"
-    source ${SCRIPT_FOLDER}/copy.sh
+
+    TL_HOME=${TL_HOME%%/}/
+    MOSLER_MISC=${MOSLER_MISC%%/}/ # Make sure there is a / at the end
+    export CONFIGS=${MM_HOME}/configs
+    python -c 'import os;
+import sys;
+import jinja2;
+sys.stdout.write(jinja2.Template(sys.stdin.read()).render(env=os.environ))' <files.jn2 >${PROVISION_TMP}/files
+
+    # In order to avoid many concurrent ssh connections towards the same
+    # server, we gather the file to copy and cluster them per server. 
+    #
+    # We will launch a new process, per machine, that copies the listed
+    # files for that machine.
+    
+    # Cleaning the listings
+    [ "$VERBOSE" = "yes" ] && echo "Preparing listings"
+    for machine in ${MACHINES[@]}; do : > ${PROVISION_TMP}/copy.$machine.${FLOATING_IPs[$machine]}; done
+
+    sed '/^$/d' ${PROVISION_TMP}/files | while IFS='' read -r line; do
+	src=${line#*:}
+	machine=${line%%:*}
+	if [ -e $src ]; then
+	    echo "$src" >> ${PROVISION_TMP}/copy.$machine.${FLOATING_IPs[$machine]}
+	else
+	    echo "\tIgnoring $src [for $machine]."
+	fi
+    done
+
+    declare -A RSYNC_PIDS
+    for machine in ${MACHINES[@]}
+    do
+	if [ -f ${PROVISION_TMP}/copy.$machine.${FLOATING_IPs[$machine]} ]; then
+	    { # Scoping
+		set -x -e # Print commands && exit if errors
+		# Preparing the drop folder
+		ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} mkdir -p ${VAULT}
+		# Copying all files to the VAULT on that machine
+		for f in $(cat ${PROVISION_TMP}/copy.$machine.${FLOATING_IPs[$machine]})
+		do
+		    rsync -av -e "ssh -F ${SSH_CONFIG}" $f ${FLOATING_IPs[$machine]}:${VAULT}/.
+		done
+	    } > ${PROVISION_TMP}/rsync.$machine.${FLOATING_IPs[$machine]} 2>&1 &
+	    RSYNC_PIDS[$machine]=$!
+	fi
+    done
+
+    # Wait for all the copying to finish
+    [ "$VERBOSE" = "yes" ] && echo "Waiting for the files to be copied (${#RSYNC_PIDS[@]} background jobs)"
+    for job in ${!RSYNC_PIDS[@]}; do echo -e "\t* on $job [PID: ${RSYNC_PIDS[$job]}]"; done
+    FAIL=""
+    for job in ${!RSYNC_PIDS[@]}
+    do
+	wait ${RSYNC_PIDS[$job]} || FAIL+=" $job (${RSYNC_PIDS[$job]}),"
+	echo -n "."
+    done
+    [ "$VERBOSE" = "yes" ] && echo " Files copied"
+    [ -n "$FAIL" ] && echo "Failed copying:$FAIL" && echo "Exiting..." && exit 1
 fi
 
 ########################################################################
@@ -76,7 +131,7 @@ fi
 declare -A PROVISION_PIDS
 RENDER=${SCRIPT_FOLDER}/render.py
 pushd ${SCRIPT_FOLDER}
-for machine in ldap #openstack-controller #${!PROVISION[@]}
+for machine in ldap thinlinc storage opentack-controller #openstack-controller #${!PROVISION[@]}
 do
      _SCRIPT=${PROVISION[$machine]}.jn2
     if [ -f ${_SCRIPT} ]; then
