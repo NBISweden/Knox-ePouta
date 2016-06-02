@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
 # Get credentials and machines settings
-source ./settings.sh
+source $(dirname ${BASH_SOURCE[0]})/settings.sh
 
 # Default values
 ALL=no
 
-function usage(){
+function usage {
     echo "Usage: $0 [options]"
     echo -e "\noptions are"
     echo -e "\t--all,-a         \tDeletes also networks, routers, security groups and floating IPs"
@@ -38,9 +38,6 @@ TENANT_ID=$(openstack project list | awk '/'${OS_TENANT_NAME}'/ {print $2}')
 # fi
 
 #######################################################################
-
-[ "$VERBOSE" = "yes" ] && echo "Removing the Cloudinit folder"
-rm -rf $CLOUDINIT_FOLDER
 
 # Cleaning all the running machines
 function delete_machine {

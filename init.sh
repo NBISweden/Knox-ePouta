@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 
-# Default values
-ALL=no
-
 # Get credentials and machines settings
-source ./settings.sh
+source $(dirname ${BASH_SOURCE[0]})/settings.sh
 
-function usage(){
+# Default values
+_ALL=no
+_IMAGE=CentOS6-micromosler
+
+function usage {
     local defaults=${MACHINES[@]}
     echo "Usage: $0 [options]"
     echo -e "\noptions are"
@@ -15,6 +16,8 @@ function usage(){
     echo -e "\t        -m <list>\tA comma-separated list of machines"
     echo -e "\t                 \tDefaults to: \"${defaults// /,}\"."
     echo -e "\t                 \tWe filter out machines that don't appear in the default list."
+    echo -e "\t--image <img>,"
+    echo -e "\t     -i <img>    \tGlance image to use. Defaults to ${_IMAGE}"
     echo -e "\t--quiet,-q       \tRemoves the verbose output"
     echo -e "\t--help,-h        \tOutputs this message and exits"
     echo -e "\t-- ...           \tAny other options appearing after the -- will be ignored"
@@ -23,23 +26,24 @@ function usage(){
 # While there are arguments or '--' is reached
 while [ $# -gt 0 ]; do
     case "$1" in
-        --all|-a) ALL=yes;;
+        --all|-a) _ALL=yes;;
         --quiet|-q) VERBOSE=no;;
         --machines|-m) CUSTOM_MACHINES=$2; shift;;
+        --image|-i) _IMAGE=$2; shift;;
         --help|-h) usage; exit 0;;
         --) shift; break;;
         *) echo "$0: error - unrecognized option $1" 1>&2; usage; exit 1;;
     esac
     shift
-done                                                                                              
+done
 
 
 #######################################################################
 # Logic to allow the user to specify some machines
 # Otherwise, continue with the ones in settings.sh
-if [ -n $CUSTOM_MACHINES ]; then
+if [ -n ${CUSTOM_MACHINES:-''} ]; then
     CUSTOM_MACHINES_TMP=${CUSTOM_MACHINES//,/ } # replace all commas with space
-    CUSTOM_MACHINES="" # Filtering the ones who don't exist in settings.sh
+    CUSTOM_MACHINES="" # Filtering the ones which don't exist in settings.sh
     for cm in $CUSTOM_MACHINES_TMP; do
 	if [[ "${MACHINES[@]}" =~ "$cm" ]]; then
 	    CUSTOM_MACHINES+=" $cm"
@@ -75,7 +79,7 @@ fi
 
 EXTNET_ID=$(neutron net-list | awk '/ public /{print $2}')
 
-if [ $ALL = "yes" ]; then
+if [ ${_ALL} = "yes" ]; then
 
     [ "$VERBOSE" = "yes" ] && echo "Creating routers and networks"
 
@@ -118,15 +122,18 @@ if [ $ALL = "yes" ]; then
     neutron security-group-rule-create ${OS_TENANT_NAME}-sg --ethertype ipv4 --direction ingress --remote-group-id ${OS_TENANT_NAME}-sg
     neutron security-group-rule-create ${OS_TENANT_NAME}-sg --ethertype ipv4 --direction egress --remote-group-id ${OS_TENANT_NAME}-sg
 
-fi # End ALL config
+fi # End _ALL config
 
-# Using Cloudinit instead to include several keys at boot time
-#nova keypair-add --pub-key "$HOME"/.ssh/id_rsa.pub "${OS_TENANT_NAME}"-key
-# Note: nova boot will not use the --key-name flag
 
-# TENANT_ID is defined in credentials.sh
-MGMT_NET=$(neutron net-list --tenant_id=$TENANT_ID | awk '/ '${OS_TENANT_NAME}-mgmt-net' /{print $2}')
-DATA_NET=$(neutron net-list --tenant_id=$TENANT_ID | awk '/ '${OS_TENANT_NAME}-data-net' /{print $2}')
+# Testing if the image exists
+if nova image-list | grep "${_IMAGE}" > /dev/null; then : ; else
+    echo "Error: Could not find the image '${_IMAGE}' to boot from."
+    echo "Exiting..."
+    exit 1
+fi
+
+MGMT_NET=$(neutron net-list --tenant_id=${TENANT_ID} | awk '/ '${OS_TENANT_NAME}-mgmt-net' /{print $2}')
+DATA_NET=$(neutron net-list --tenant_id=${TENANT_ID} | awk '/ '${OS_TENANT_NAME}-data-net' /{print $2}')
 
 [ "$VERBOSE" = "yes" ] && echo -e "Management Net: $MGMT_NET\nData Net: $DATA_NET"
 
@@ -138,7 +145,8 @@ fi
 
 mkdir -p ${INIT_TMP}
 
-# Start the local REST server, to tell when the machines are ready
+########################################################################
+# Start the local REST server, to follow the progress of the machines
 echo '#!/usr/bin/env python' > $INIT_TMP/machines.py
 echo -e "import web\nimport sys\n\nmachines = {" >> $INIT_TMP/machines.py
 for machine in "${MACHINES[@]}"; do echo -e "'$machine': 'booting'," >> $INIT_TMP/machines.py; done
@@ -178,25 +186,30 @@ if __name__ == "__main__":
 
 ENDREST
 
+########################################################################
+[ "$VERBOSE" = "yes" ] && echo "Starting the REST phone home server"
+fuser -k ${PORT}/tcp || true
+trap "fuser -k ${PORT}/tcp || true" SIGINT SIGTERM EXIT
+python ${INIT_TMP}/machines.py $PORT &
+REST_PID=$!
+
 function boot_machine {
     local machine=$1
     local ip=${MACHINE_IPs[$machine]}
     local flavor=${FLAVORS[$machine]}
     
-    cat > ${INIT_TMP}/vm_init-$ip.yml <<ENDCLOUDINIT
+    _VM_INIT=${INIT_TMP}/vm-$machine-$ip.yml
+    cat > ${_VM_INIT} <<ENDCLOUDINIT
 #cloud-config
-disable_root: 1
-system_info:
-  default_user:
-    name: centos
-    lock_passwd: true
-    sudo: ["ALL=(ALL) NOPASSWD:ALL"]
-    shell: /bin/bash
 
 # add each entry to ~/.ssh/authorized_keys for the configured user (ie centos)
 ssh_authorized_keys:
-  - ssh-dss AAAAB3NzaC1kc3MAAACBAPS8NmjvC0XVOxumjmB8qEzp/Ywz0a1ArVQy0R5KmC0OfF4jLwQlf06G5oxsyx/PhOHyMHcQN8pxoWPfkfjKA8ES8jwveDTN4sprP9wRFKHZvl+DyLvTULcIciw14afHKHx5VvG7gx8Jp9+hcuEyZXO/zP8vrFAFoTf7mU7XYsNFAAAAFQC0cdoL/Wv26mZsoOMO97w5RrV0TwAAAIEAhmijgzvzxHeN0os2vw12ycSn0FyGRWtEPclOfABuDZemX+3wCBle6G/HqO8umZ6OH+oZtcm+b5HAHYx2QXsL9ZG2VvN8hVhZlexa6z9xbYGujD+UHdbA1DKpLnHf7NEeXyyx0uD7vBKj6aPLx1btWNxCtuWRAt9A6VoJ1+ndvboAAACBALRqEh2JZqbMBuUxmVg9QDBG2BYbq+FWd64f0b+lC8kuQuBjPG0htIdrB0LdMZVaAokvA5p5XFckhouvcjECTT/6U+R+oghnN/kFztODKLJScPWPYl0zJkLrAbSQuab7cilLzRA8EZm2DtHu0+Bgvz4v9irVjjU7zIrANtjzjEt3 daz@bils.se
-  - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCj6D2GkvSf47cKP9s/pdwGD5+2VH/xmBhEnDQfxVi9zZ/uEBWdx/7m5fDj7btcRxGgxlbBExu8uwi8rL4ua7VOtUY9TNjlh8fr2GCstFHI3JvnKif4i0zjBRYZI5dXwkC70hZeHAjMhKO4Nlf6SNP8ZIM+SljA8q4E0eAig25+Zdag5oUkbvReKl1H8E6KQOrwzNwKIxYvil+x9mo49qTLqI7Q4xgizxX8i44TRfO0NVS/XhLvNigShEmtQG2Y74qH/cFGe+m6/u17ewfDrxPtoE2ZnQWC7EN9WbFR/hPjrDauMNNCOedHXMZUJ5TSdsyjTPNXVHcgxaXfzHoruQBH jonas@chornholio
+ENDCLOUDINIT
+    for user in ${!PUBLIC_SSH_KEYS[@]}; do echo "  - ${PUBLIC_SSH_KEYS[$user]}" >> ${_VM_INIT}; done
+    cat >> ${_VM_INIT} <<ENDCLOUDINIT
+
+bootcmd:
+  - curl http://${PHONE_HOME}:$PORT/machine/$machine/starting 2>&1 > /dev/null || true
 
 write_files:
   - path: /etc/hosts
@@ -205,15 +218,17 @@ write_files:
     content: |
       127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
       ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
 ENDCLOUDINIT
-    for name in "${MACHINES[@]}"; do echo "      ${MACHINE_IPs[$name]} $name" >> ${INIT_TMP}/vm_init-$ip.yml; done
-    echo "      ${MACHINE_IPs[openstack-controller]} tos1" >> ${INIT_TMP}/vm_init-$ip.yml
+    for name in "${MACHINES[@]}"; do echo "      ${MACHINE_IPs[$name]} $name" >> ${_VM_INIT}; done
+    echo "      ${MACHINE_IPs[openstack-controller]} tos1" >> ${_VM_INIT}
     # the white spaces are important
 
     # If Data IP is not zero-length
     if [ ! -z ${DATA_IPs[$machine]} ]; then
 	local DN="--nic net-id=$DATA_NET,v4-fixed-ip=${DATA_IPs[$machine]}"
-	cat >> ${INIT_TMP}/vm_init-$ip.yml <<ENDCLOUDINIT
+	cat >> ${_VM_INIT} <<ENDCLOUDINIT
+
 write_files:
   - path: /etc/sysconfig/network-scripts/ifcfg-eth0
     owner: root:root
@@ -261,42 +276,51 @@ write_files:
 runcmd:
   - echo 'Restarting network'
   - service network restart
-
 ENDCLOUDINIT
     fi
 
-    # Final part: Phone home
-    cat >> ${INIT_TMP}/vm_init-$ip.yml <<ENDCLOUDINIT
+    # Final part: Grow partition and phone home
+    # sed -i 's/^Defaults.*requiretty/#&/g' /etc/sudoers
+    cat >> ${_VM_INIT} <<ENDCLOUDINIT
+
 runcmd:
-  - sed -i 's/^Defaults.*requiretty/#&/g' /etc/sudoers
-  - echo 'Cloudinit phone home'
-  - curl http://${PHONE_HOME}:$PORT/machine/$machine/ready
+  - echo ================================================================================
+  - echo Setting the Timezone to Stockholm
+  - echo 'Europe/Stockholm' > /etc/timezone
+  - echo ================================================================================
+  - echo Growing partition to disk size
+  - curl http://${PHONE_HOME}:$PORT/machine/$machine/growing 2>&1 > /dev/null || true
+  - growpart /dev/vda 1
+  - echo ================================================================================
+  - echo Cloudinit phone home
+  - curl http://${PHONE_HOME}:$PORT/machine/$machine/ready 2>&1 > /dev/null || true
 ENDCLOUDINIT
 
+
 # Booting a machine
-nova boot \
---flavor $flavor \
---image 'CentOS6' \
---nic net-id=${MGMT_NET},v4-fixed-ip=$ip \
-$DN \
---security-group ${OS_TENANT_NAME}-sg \
---user-data ${INIT_TMP}/vm_init-$ip.yml \
-$machine
+[ "$VERBOSE" = "yes" ] && echo -e "\t* $machine"
+nova boot --flavor $flavor --image ${_IMAGE} --security-group ${OS_TENANT_NAME}-sg \
+--nic net-id=${MGMT_NET},v4-fixed-ip=$ip $DN \
+--user-data ${_VM_INIT} \
+$machine 2>&1 > /dev/null
+
+# nova boot does not use the --key-name flag.
+# Instead, cloudinit includes several keys on first boot
+
 } # End boot_machine function
 
-[ "$VERBOSE" = "yes" ] && echo "Starting the REST phone home server"
-fuser -k $PORT/tcp
-python ${INIT_TMP}/machines.py $PORT &
-REST_PID=$!
-
+########################################################################
+# Aaaaannndddd....cue music!
+########################################################################
 [ "$VERBOSE" = "yes" ] && echo "Booting the machines"
-# Let's go
 for machine in "${MACHINES[@]}"; do boot_machine $machine; done
 
+########################################################################
 [ "$VERBOSE" = "yes" ] && echo "Waiting for the REST phone home server (PID: ${REST_PID})"
 wait ${REST_PID}
 [ "$VERBOSE" = "yes" ] && echo "The last machine just phoned home."
 
+########################################################################
 [ "$VERBOSE" = "yes" ] && echo -e "Associating floating IPs"
 for machine in "${MACHINES[@]}"
 do
@@ -305,4 +329,24 @@ do
 done
 
 echo "Initialization phase complete."
-echo "You can go on and provision the machines."
+
+########################################################################
+( # In a subshell. Exit 0 in the trap when we give up
+    trap 'echo -e "\nOr you can Ctrl-C, yes...\n"; exit 0' SIGINT INT
+    while : ; do
+	echo -n -e "\nWould you like to reboot the servers before you provision them? [y/N]"
+	read yn
+	case $yn in
+            y) for machine in "${MACHINES[@]}"
+	       do
+		   echo "Rebooting $machine"
+		   nova reboot $machine
+	       done; break;;
+            N) break;;
+            * ) echo "Eh?";;
+	esac
+    done
+)
+
+# End of the script
+exit 0
