@@ -133,7 +133,6 @@ export PROVISION=(\
     [ldap]=ldap \
     [networking-node]=openstack-network \
 )
-export COMPUTE_NODES=compute{1..3}
 
 ########################################
 export SSH_CONFIG=${PROVISION_TMP}/ssh_config.${OS_TENANT_NAME}
