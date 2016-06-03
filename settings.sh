@@ -31,17 +31,14 @@ export VERBOSE=yes
 # Making these variables immutable
 # Note: Can source this file several times
 
-[ -n "$MM_HOME" ]       || readonly MM_HOME=$HOME/mosler-micro-mosler
+[ -n "$MM_HOME" ]       || readonly MM_HOME=$HERE
 [ -n "$TL_HOME" ]       || readonly TL_HOME=/home/jonas/thinlinc
 [ -n "$MOSLER_HOME" ]   || readonly MOSLER_HOME=/home/jonas/mosler-system-scripts
 [ -n "$MOSLER_MISC" ]   || readonly MOSLER_MISC=/home/jonas/misc
 [ -n "$MOSLER_IMAGES" ] || readonly MOSLER_IMAGES=/home/jonas/mosler-images
 
-[ -n "$INIT_TMP" ]      || readonly INIT_TMP=${MM_HOME}/tmp/init
-[ -n "$PROVISION_TMP" ] || readonly PROVISION_TMP=${MM_HOME}/tmp/provision
-
-export TL_HOME MOSLER_HOME MOSLER_MISC MOSLER_IMAGES
-export INIT_TMP PROVISION_TMP
+[ -n "$INIT_TMP" ]      || readonly INIT_TMP=${HERE}/tmp/init
+[ -n "$PROVISION_TMP" ] || readonly PROVISION_TMP=${HERE}/tmp/provision
 
 #################################################################
 # Adding the public ssh keys here, so that we don't change init.sh
@@ -114,8 +111,8 @@ export FLOATING_IPs=(\
 export FLOATING_GATEWAY=10.254.0.1
 export FLOATING_CIDR=10.254.0.0/24
 
-export PHONE_HOME=${FLOATING_GATEWAY}
-export PORT=12345
+PHONE_HOME=${FLOATING_GATEWAY}
+PORT=12345
 
 ########################################
 # Scripts for provisioning

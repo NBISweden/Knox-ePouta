@@ -2,7 +2,7 @@
 ldap:{{ env['CONFIGS'] }}/ldap_conf
 
 {# Thinlinc #}
-thinlinc-master:{{ env['TL_HOME'] }} {# Make sure there is a / at the end #}
+thinlinc-master:{{ env['TL_HOME'] }}/ {# Make sure there is a / at the end #}
 thinlinc-master:{{ env['CONFIGS'] }}/tl_answers
 
 {# Openstack common files #}
@@ -15,7 +15,7 @@ thinlinc-master:{{ env['CONFIGS'] }}/tl_answers
 
 {# Openstack controller #}
 openstack-controller:{{ env['CONFIGS'] }}/openstack_db.sql
-openstack-controller:{{ env['MOSLER_MISC'] }} {# Make sure there is a / at the end #}
+openstack-controller:{{ env['MOSLER_MISC'] }}/ {# Make sure there is a / at the end #}
 
 openstack-controller:{{ env['CONFIGS'] }}/neutron.conf
 openstack-controller:{{ env['CONFIGS'] }}/keystone.conf
