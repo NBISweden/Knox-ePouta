@@ -9,7 +9,8 @@ export OS_IDENTITY_API_VERSION=3
 export OS_IMAGE_API_VERSION=2
 export OS_ENDPOINT_TYPE=internalURL # User internal URLs
 
-HERE=$(dirname ${BASH_SOURCE[0]})
+# Find the absolute path to that folder
+HERE=$(cd $(dirname ${BASH_SOURCE[0]}) && pwd -P)
 if [ -f $HERE/user.rc ]; then
     source $HERE/user.rc
 else
@@ -37,8 +38,8 @@ export VERBOSE=yes
 [ -n "$MOSLER_MISC" ]   || readonly MOSLER_MISC=/home/jonas/misc
 [ -n "$MOSLER_IMAGES" ] || readonly MOSLER_IMAGES=/home/jonas/mosler-images
 
-[ -n "$INIT_TMP" ]      || readonly INIT_TMP=${HERE}/tmp/init
-[ -n "$PROVISION_TMP" ] || readonly PROVISION_TMP=${HERE}/tmp/provision
+[ -n "$INIT_TMP" ]      || readonly INIT_TMP=${MM_HOME}/tmp/init
+[ -n "$PROVISION_TMP" ] || readonly PROVISION_TMP=${MM_HOME}/tmp/provision
 
 #################################################################
 # Adding the public ssh keys here, so that we don't change init.sh
@@ -119,16 +120,16 @@ PORT=12345
 
 declare -A PROVISION
 export PROVISION=(\
-    [openstack-controller]=openstack-controller \
+    [openstack-controller]=controller \
     [thinlinc-master]=thinlinc \
     [filsluss]=storage \
     [supernode]=supernode \
-    [compute1]=openstack-compute \
-    [compute2]=openstack-compute \
-    [compute3]=openstack-compute \
+    [compute1]=compute \
+    [compute2]=compute \
+    [compute3]=compute \
     [hnas-emulation]=storage \
     [ldap]=ldap \
-    [networking-node]=openstack-network \
+    [networking-node]=network \
 )
 
 ########################################
@@ -137,6 +138,7 @@ function mm_connect {
     local host=$1
     [ -f ${SSH_CONFIG} ] && CONF="-F ${SSH_CONFIG}"
     if [ -n "${FLOATING_IPs[$host]}" ]; then
+	echo "Connecting to $host [${FLOATING_IPs[$host]}]"
 	ssh $CONF ${FLOATING_IPs[$host]}
     else
 	echo "Unknown machine: $host"

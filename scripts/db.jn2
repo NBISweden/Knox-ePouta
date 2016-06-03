@@ -1,12 +1,5 @@
-# -*-sh-*-
-
-# This script installs mysql and configures it for openstack
-
-- name: Install Mysql package
-  yum: name={{ item }} state=installed
-  with_items:
-   - mysql-server
-   - MySQL-python
+echo "Install Mysql package"
+yum -y install mysql-server MySQL-python
 
 # - name: Start Mysql Service
 #   service: name=mysqld state=started enabled=yes
@@ -32,30 +25,42 @@
 #     - openstack-glance-registry
 #     - mysqld
     
-- service: name=mysqld state=stopped
+echo "Stopping Mysql"
+service mysqld stop
 
-- name: Create MySQL configuration file
-  template: src={{ mm_home }}/configs/my.cnf.j2 dest=/etc/my.cnf
+echo "Create MySQL configuration file"
+cat > /etc/my.cnf <<EOF
+[mysqld]
+datadir=/var/lib/mysql
+socket=/var/lib/mysql/mysql.sock
+user=mysql
+# Disabling symbolic-links is recommended to prevent assorted security risks
+symbolic-links=0
+bind-address = {{ env['DB_SERVER'] }}
+default-storage-engine = innodb
+innodb_file_per_table
+collation-server = utf8_general_ci
+init-connect = 'SET NAMES utf8'
+character-set-server = utf8
 
-- name: Removing databases by hand
-  # Or check that: http://hakunin.com/six-ansible-practices#path-to-success-3
-  shell: rm -rf /var/lib/mysql; mkdir --mode=0755 /var/lib/mysql; chown mysql:mysql /var/lib/mysql
+[mysqld_safe]
+log-error=/var/log/mysqld.log
+pid-file=/var/run/mysqld/mysqld.pid
+EOF
 
-- service: name=mysqld state=restarted
+echo "Removing databases by hand"
+# Or check that: http://hakunin.com/six-ansible-practices#path-to-success-3
+rm -rf /var/lib/mysql
+mkdir --mode=0755 /var/lib/mysql
+chown mysql:mysql /var/lib/mysql
 
-- name: MySQL root password
-  shell: /usr/bin/mysqladmin -u root -h {{ item }} password 'mysql'
-  with_items:
-    - localhost
-    - openstack-controller
-  # ignore_errors: true
+echo "Restarting MySQL server"
+service mysqld start
 
+echo "MySQL root password"
+/usr/bin/mysqladmin -u root -h localhost password 'mysql'
+/usr/bin/mysqladmin -u root -h openstack-controller password 'mysql'
 # Not dropping the .my.cnf file in /root
 
-- name: Copying MySQL database setup file
-  copy: src={{ mm_home }}/configs/mysql_db.conf dest=/tmp/openstack-db.sql
-
-- name: MySQL Databases setup
-  shell: mysql -u root -pmysql < /tmp/openstack-db.sql
-  register: db_ready
-
+echo "MySQL Databases setup"
+mysql -u root -pmysql < {{ env['VAULT'] }}/openstack-db.sql
