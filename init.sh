@@ -55,7 +55,7 @@ if [ -n ${CUSTOM_MACHINES:-''} ]; then
 	# done
     done
     if [ -n "$CUSTOM_MACHINES" ]; then
-	[ "$VERBOSE" = "yes" ] && echo "Using these machines: $CUSTOM_MACHINES"
+	[ "$VERBOSE" = "yes" ] && echo "Using these machines: ${CUSTOM_MACHINES// /,}"
 	MACHINES=($CUSTOM_MACHINES)
     else
 	echo "Error: all custom machines are unknown"
@@ -121,6 +121,12 @@ if [ ${_ALL} = "yes" ]; then
     neutron security-group-rule-create ${OS_TENANT_NAME}-sg --direction ingress --ethertype ipv4 --protocol tcp --port-range-min 443 --port-range-max 443
     neutron security-group-rule-create ${OS_TENANT_NAME}-sg --ethertype ipv4 --direction ingress --remote-group-id ${OS_TENANT_NAME}-sg
     neutron security-group-rule-create ${OS_TENANT_NAME}-sg --ethertype ipv4 --direction egress --remote-group-id ${OS_TENANT_NAME}-sg
+
+    [ "$VERBOSE" = "yes" ] && echo "Setting the quotas"
+    FACTOR=2
+    nova quota-update --instances $((10 * FACTOR)) --ram $((51200 * FACTOR)) ${TENANT_ID}
+
+    #nova quota fixing
 
 fi # End _ALL config
 
@@ -312,6 +318,9 @@ $machine 2>&1 > /dev/null
 ########################################################################
 # Aaaaannndddd....cue music!
 ########################################################################
+# [ "$VERBOSE" = "yes" ] && echo "Setting the quotas"
+# nova quota fixing
+
 [ "$VERBOSE" = "yes" ] && echo "Booting the machines"
 for machine in "${MACHINES[@]}"; do boot_machine $machine; done
 
