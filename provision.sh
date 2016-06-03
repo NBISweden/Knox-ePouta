@@ -1,8 +1,16 @@
 #!/usr/bin/env bash
 
 # Get credentials and machines settings
-source $(dirname ${BASH_SOURCE[0]})/settings.sh
+HERE=$(dirname ${BASH_SOURCE[0]})
+source $HERE/settings.sh
 
+export TL_HOME MOSLER_HOME MOSLER_MISC MOSLER_IMAGES
+
+export VAULT=vault
+export CONFIGS=${MM_HOME}/configs
+export SCRIPT_FOLDER=${MM_HOME}/scripts
+SSH_CONFIG=${PROVISION_TMP}/ssh_config.${OS_TENANT_NAME}
+SSH_KNOWN_HOSTS=${PROVISION_TMP}/ssh_known_hosts.${OS_TENANT_NAME}
 DO_COPY=yes
 
 function usage {
@@ -21,14 +29,10 @@ while [ $# -gt 0 ]; do
     shift
 done                                                                                              
 
-
 # Note: Should exit the script if machines not yet available
 # Should I test with an ssh connection (with timeout?)
 
 mkdir -p ${PROVISION_TMP}
-export SCRIPT_FOLDER=${MM_HOME}/scripts
-export SSH_CONFIG=${PROVISION_TMP}/ssh_config.${OS_TENANT_NAME}
-SSH_KNOWN_HOSTS=${PROVISION_TMP}/ssh_known_hosts.${OS_TENANT_NAME}
 
 #############################################
 ## Calling the MicroMosler setup
@@ -53,26 +57,18 @@ ENDSSHCFG
 #     touch ${SSH_KNOWN_HOSTS}
 # fi
 :> ${SSH_KNOWN_HOSTS}
-for name in ${MACHINES[@]}; do ssh-keyscan -4 ${FLOATING_IPs[$name]} >> ${SSH_KNOWN_HOSTS} 2>/dev/null; done
+#for name in ${MACHINES[@]}; do ssh-keyscan -4 ${FLOATING_IPs[$name]} >> ${SSH_KNOWN_HOSTS} 2>/dev/null; done
 # Note: I silence the errors from stderr (2) to /dev/null. Don't send them to &1.
 
 ########################################################################
 # Aaaaannndddd....cue music!
 ########################################################################
 
-export VAULT=vault
-
 if [ "$DO_COPY" = "yes" ]; then
 
     [ "$VERBOSE" = "yes" ] && echo "Copying files"
 
-    TL_HOME=${TL_HOME%%/}/
-    MOSLER_MISC=${MOSLER_MISC%%/}/ # Make sure there is a / at the end
-    export CONFIGS=${MM_HOME}/configs
-    python -c 'import os;
-import sys;
-import jinja2;
-sys.stdout.write(jinja2.Template(sys.stdin.read()).render(env=os.environ))' <files.jn2 >${PROVISION_TMP}/files
+    python -c 'import os, sys, jinja2; sys.stdout.write(jinja2.Template(sys.stdin.read()).render(env=os.environ))' <files.jn2 >${PROVISION_TMP}/files
 
     # In order to avoid many concurrent ssh connections towards the same
     # server, we gather the file to copy and cluster them per server. 
@@ -125,24 +121,31 @@ sys.stdout.write(jinja2.Template(sys.stdin.read()).render(env=os.environ))' <fil
     [ -n "$FAIL" ] && echo "Failed copying:$FAIL" && echo "Exiting..." && exit 1
 fi
 
+# Closing early today
+exit
+
 ########################################################################
 
 [ "$VERBOSE" = "yes" ] && echo "Configuring servers:"
 declare -A PROVISION_PIDS
-RENDER=${SCRIPT_FOLDER}/render.py
-pushd ${SCRIPT_FOLDER}
+# RENDER=${SCRIPT_FOLDER}/render.py
+# pushd ${SCRIPT_FOLDER}
 for machine in ldap thinlinc storage opentack-controller #openstack-controller #${!PROVISION[@]}
 do
-     _SCRIPT=${PROVISION[$machine]}.jn2
+     _SCRIPT=${SCRIPT_FOLDER}/${PROVISION[$machine]}.jn2
     if [ -f ${_SCRIPT} ]; then
 	# It will use the (exported) environment variables
-	${RENDER} ${_SCRIPT} > ${PROVISION_TMP}/run.$machine.${FLOATING_IPs[$machine]}
+
+	PYTHON_SCRIPT='import os, sys, jinja2; sys.stdout.write(jinja2.Environment(loader=jinja2.FileSystemLoader(os.environ["SCRIPT_FOLDER"]), trim_blocks=True).from_string(sys.stdin.read()).render(env=os.environ))'
+	python -c $PYTHON_SCRIPT <${_SCRIPT} >${PROVISION_TMP}/run.$machine.${FLOATING_IPs[$machine]}
+
+	#${RENDER} ${_SCRIPT} > ${PROVISION_TMP}/run.$machine.${FLOATING_IPs[$machine]}
 	ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x 2>&1' <${PROVISION_TMP}/run.$machine.${FLOATING_IPs[$machine]} 1>${PROVISION_TMP}/log.$machine.${FLOATING_IPs[$machine]} &
 	#${_SCRIPT} | base64 -D > ${PROVISION_TMP}/log.$machine.${FLOATING_IPs[$machine]} 2>&1 &
 	PROVISION_PIDS[$machine]=$!
     fi
 done
-popd
+# popd
 
 # Wait for all the copying to finish
 [ "$VERBOSE" = "yes" ] && echo -e "\tWaiting for servers to be configured (${#PROVISION_PIDS[@]} background jobs)"
