@@ -32,17 +32,17 @@ networks and security groups, prior to creating the virtual machines.
 It will start the VMs with proper IP information. In subsequent runs,
 `init.sh` will only create the VMs.
 
-Run the `provision.sh --with-packages` in order to set up the ansible
-environment and play the playbooks. This script is divided in 2
-phases: the first one installs the required packages, and the second
-one configures the VMs. You can run without the --with-packages flag
-in order to subsequently skip the package installation phase.
+Run the `provision.sh` in order to set up the ssh environment and run
+the server scripts. This script is divided in 2 phases: the first one
+copies the required files to the appropriate servers, and the second
+one configures the servers.
 
 The `clean.sh` script can be run with the --all flag, to destroy
 routers, networks, security groups and floating IPs.  Otherwise, it
 only deletes the running VMs.
 
 You can append the `-q` flag to turn off the verbose output.
+You can append the `-h` flag to see the command options.
 
 ## Example
 	git clone https://github.com/NBISweden/mosler-micro-mosler <some_dir>
@@ -52,10 +52,10 @@ You can append the `-q` flag to turn off the verbose output.
 	echo "export OS_PASSWORD=holala" >> user.rc
 	# The openstack user 'fred' must maybe be an admin on the tenant 'mmosler1'
 	./init.sh --all
-	./provision.sh --with-packages
+	./provision.sh # Wait a bit, servers are probably not done rebooting
 	
 	# Later
-	./provision.sh # to just re-configure µ-mosler
+	./provision.sh # to just re-configure µ-mosler. The task is idempotent.
 	./clean.sh     # to destroy the VMs
 	./init.sh      # to re-create them, but not the networks, routers, etc...
-	./provision.sh --with-packages # Gotta re-install the packages!
+	./provision.sh # shoot again...
