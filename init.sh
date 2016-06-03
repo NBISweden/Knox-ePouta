@@ -46,7 +46,7 @@ if [ -n ${CUSTOM_MACHINES:-''} ]; then
     CUSTOM_MACHINES="" # Filtering the ones which don't exist in settings.sh
     for cm in $CUSTOM_MACHINES_TMP; do
 	if [[ "${MACHINES[@]}" =~ "$cm" ]]; then
-	    CUSTOM_MACHINES+=" $cm"
+	    CUSTOM_MACHINES+="$cm "
 	else
 	    echo "Unknown machine: $cm"
 	fi
@@ -192,10 +192,11 @@ if __name__ == "__main__":
 
 ENDREST
 
+
 ########################################################################
 [ "$VERBOSE" = "yes" ] && echo "Starting the REST phone home server"
 fuser -k ${PORT}/tcp || true
-trap "fuser -k ${PORT}/tcp || true" SIGINT SIGTERM EXIT
+trap "fuser -k ${PORT}/tcp || true; exit 1" SIGINT SIGTERM EXIT
 python ${INIT_TMP}/machines.py $PORT &
 REST_PID=$!
 
@@ -214,9 +215,6 @@ ENDCLOUDINIT
     for user in ${!PUBLIC_SSH_KEYS[@]}; do echo "  - ${PUBLIC_SSH_KEYS[$user]}" >> ${_VM_INIT}; done
     cat >> ${_VM_INIT} <<ENDCLOUDINIT
 
-bootcmd:
-  - curl http://${PHONE_HOME}:$PORT/machine/$machine/starting 2>&1 > /dev/null || true
-
 write_files:
   - path: /etc/hosts
     owner: root:root
@@ -233,24 +231,14 @@ ENDCLOUDINIT
     # If Data IP is not zero-length
     if [ ! -z ${DATA_IPs[$machine]} ]; then
 	local DN="--nic net-id=$DATA_NET,v4-fixed-ip=${DATA_IPs[$machine]}"
+	# Note: I think I could add those routes to the DHCP server
+	# Neutron will then configure these settings automatically
 	cat >> ${_VM_INIT} <<ENDCLOUDINIT
 
-write_files:
-  - path: /etc/sysconfig/network-scripts/ifcfg-eth0
-    owner: root:root
-    permissions: '0644'
-    content: |
-      TYPE=Ethernet
-      BOOTPROTO=static
-      DEFROUTE=yes
-      NAME=eth0
-      DEVICE=eth0
-      ONBOOT=yes
-      IPADDR=$ip
-      PREFIX=24
-      GATEWAY=${MGMT_GATEWAY}
-      NM_CONTROLLED=no
+bootcmd:
+  - echo '10 data' >> /etc/iproute2/rt_tables
 
+write_files:
   - path: /etc/sysconfig/network-scripts/ifcfg-eth1
     owner: root:root
     permissions: '0644'
@@ -264,7 +252,6 @@ write_files:
       IPADDR=${DATA_IPs[$machine]}
       PREFIX=24
       GATEWAY=${DATA_GATEWAY}
-      NM_CONTROLLED=no
 
   - path: /etc/sysconfig/network-scripts/rule-eth1
     owner: root:root
@@ -279,9 +266,6 @@ write_files:
     content: |
       default via ${DATA_GATEWAY} dev eth1 table data
 
-runcmd:
-  - echo 'Restarting network'
-  - service network restart
 ENDCLOUDINIT
     fi
 
@@ -293,6 +277,15 @@ runcmd:
   - echo ================================================================================
   - echo Setting the Timezone to Stockholm
   - echo 'Europe/Stockholm' > /etc/timezone
+ENDCLOUDINIT
+    if [ ! -z ${DATA_IPs[$machine]} ]; then
+	cat >> ${_VM_INIT} <<ENDCLOUDINIT
+  - echo ================================================================================
+  - echo 'Restarting network'
+  - service network restart
+ENDCLOUDINIT
+    fi
+    cat >> ${_VM_INIT} <<ENDCLOUDINIT
   - echo ================================================================================
   - echo Growing partition to disk size
   - curl http://${PHONE_HOME}:$PORT/machine/$machine/growing 2>&1 > /dev/null || true
