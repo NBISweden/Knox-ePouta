@@ -2,42 +2,35 @@
 # -*-sh-*-
 
 #############################################################
-{% include 'modules/common.jn2' %}
-{% include 'modules/openstack-common.jn2' %}
+{% include 'openstack-common.jn2' %}
+
+{# {% include 'db.jn2' %} #}
+{% include 'rabbit.jn2' %}
 
 #############################################################
 
-{ echo "Openstack utils and more"
-  PACKAGES=\
-openstack-dashboard openstack-keystone openstack-heat-engine openstack-heat-api openstack-heat-api-cfn openstack-glance \
-memcached
-#     # - openstack-nova
-#     # - openstack-neutron
-#     # - openstack-neutron-ml2
-#     # - openstack-neutron-openvswitch
-  yum -y install $PACKAGES
-}
+echo "Openstack utils and more"
+yum -y install openstack-dashboard openstack-keystone openstack-heat-engine openstack-heat-api openstack-heat-api-cfn openstack-glance memcached
+# - openstack-nova
+# - openstack-neutron
+# - openstack-neutron-ml2
+# - openstack-neutron-openvswitch
 
 
-{ echo "Openstack Mosler dashboard"
-PACKAGES=\
-/tmp/misc/Django14-1.4.21-1.el6.noarch.rpm \
-/tmp/misc/mosler-dashboard-2-5.i386.rpm \
-/tmp/misc/nginx-1.8.1-1.el6.ngx.x86_64.rpm
-  yum -y install $PACKAGES
-}
+echo "Openstack Mosler dashboard"
+yum -y install {{ env['VAULT'] }}/{Django14-1.4.21-1.el6.noarch.rpm,mosler-dashboard-2-5.i386.rpm,nginx-1.8.1-1.el6.ngx.x86_64.rpm}
 
 echo "Copying config files"
-rsync {{ env['VAULT'] }}/neutron.conf           /etc/neutron/neutron.conf
-rsync {{ env['VAULT'] }}/keystone.conf          /etc/keystone/keystone.conf
-rsync {{ env['VAULT'] }}/plugin.ini             /etc/neutron/plugin.ini
-rsync {{ env['VAULT'] }}/ml2.ini                /etc/neutron/plugins/ml2/ml2.ini
-rsync {{ env['VAULT'] }}/ovs_neutron_plugin.ini /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
-rsync {{ env['VAULT'] }}/nova.conf              /etc/nova/nova.conf
-rsync {{ env['VAULT'] }}/glance-api.conf        /etc/glance/glance-api.conf
-rsync {{ env['VAULT'] }}/glance-registry.conf   /etc/glance/glance-registry.conf
-rsync {{ env['VAULT'] }}/heat.conf              /etc/heat/heat.conf
-rsync {{ env['VAULT'] }}/local_settings         /etc/openstack-dashboard/local_settings
+rsync -a {{ env['VAULT'] }}/neutron.conf           /etc/neutron/neutron.conf
+rsync -a {{ env['VAULT'] }}/keystone.conf          /etc/keystone/keystone.conf
+rsync -a {{ env['VAULT'] }}/plugin.ini             /etc/neutron/plugin.ini
+rsync -a {{ env['VAULT'] }}/ml2.ini                /etc/neutron/plugins/ml2/ml2.ini
+rsync -a {{ env['VAULT'] }}/ovs_neutron_plugin.ini /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
+rsync -a {{ env['VAULT'] }}/nova.conf              /etc/nova/nova.conf
+rsync -a {{ env['VAULT'] }}/glance-api.conf        /etc/glance/glance-api.conf
+rsync -a {{ env['VAULT'] }}/glance-registry.conf   /etc/glance/glance-registry.conf
+rsync -a {{ env['VAULT'] }}/heat.conf              /etc/heat/heat.conf
+rsync -a {{ env['VAULT'] }}/local_settings         /etc/openstack-dashboard/local_settings
 
 echo "Memcached service"
 service memcached restart

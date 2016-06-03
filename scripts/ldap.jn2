@@ -1,7 +1,6 @@
-#############################################################
-{% include 'modules/common.jn2' %}
+#!/usr/bin/bash
+# -*-sh-*-
 
-#############################################################
 echo "LDAP packages"
 yum -y install openldap-servers openldap-clients
 
