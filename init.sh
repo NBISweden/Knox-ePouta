@@ -252,6 +252,8 @@ write_files:
       IPADDR=${DATA_IPs[$machine]}
       PREFIX=24
       GATEWAY=${DATA_GATEWAY}
+      #MTU=1450
+
 
   - path: /etc/sysconfig/network-scripts/rule-eth1
     owner: root:root
