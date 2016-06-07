@@ -43,11 +43,11 @@ function say_fail {
     echo -e "[ \e[31m\xE2\x9C\x97\e[0m ]"
 }
 function thumb_up {
-    [ -n "$1" ] && echo -n "$1 "
+    [ -n "$1" ] && echo -ne "$1 "
     echo -e "\xF0\x9F\x91\x8D"
 }
 function oups {
-    [ -n "$1" ] && echo -n "$1 "
+    [ -n "$1" ] && echo -ne "$1 "
     echo -e "\e[31m\xF0\x9F\x9A\xAB\e[0m"
 }
 
@@ -78,17 +78,17 @@ function check_connection {
 }
 # Preparing the function. Not called yet.
 
-[ "$VERBOSE" = "yes" ] && echo -e "Checking the connections:"
-FAIL=""
-for i in ${!MACHINES[@]}; do
-    printf "\t* for %-23s" ${MACHINES[$i]}
-    ( check_connection ${MACHINES[$i]} ) || { FAIL+=" ${MACHINES[$i]},"; unset MACHINES[$i]; }
-done
-if [ -n "$FAIL" ]; then
-    oups "Filtering out:$FAIL"
-else
-    thumb_up "All connections are ready"
-fi
+# [ "$VERBOSE" = "yes" ] && echo -e "Checking the connections:"
+# FAIL=""
+# for i in ${!MACHINES[@]}; do
+#     printf "\t* for %-23s" ${MACHINES[$i]}
+#     ( check_connection ${MACHINES[$i]} ) || { FAIL+=" ${MACHINES[$i]},"; unset MACHINES[$i]; }
+# done
+# if [ -n "$FAIL" ]; then
+#     oups "Filtering out:$FAIL"
+# else
+#     thumb_up "All connections are ready"
+# fi
 
 #############################################
 ## SSH Configuration
@@ -115,7 +115,7 @@ ENDSSHCFG
 #     touch ${SSH_KNOWN_HOSTS}
 # fi
 :> ${SSH_KNOWN_HOSTS}
-for name in ${MACHINES[@]}; do ssh-keyscan -4 ${FLOATING_IPs[$name]} >> ${SSH_KNOWN_HOSTS} 2>/dev/null; done
+#for name in ${MACHINES[@]}; do ssh-keyscan -4 ${FLOATING_IPs[$name]} >> ${SSH_KNOWN_HOSTS} 2>/dev/null; done
 # Note: I silence the errors from stderr (2) to /dev/null. Don't send them to &1.
 
 ########################################################################
@@ -189,7 +189,6 @@ fi
 
 ########################################################################
 
-[ "$VERBOSE" = "yes" ] && echo "Configuring servers:"
 export SCRIPT_FOLDER=${MM_HOME}/scripts
 export DB_SERVER=${MACHINE_IPs[openstack-controller]} # Used in the templates
 declare -A PROVISION_PIDS
@@ -201,27 +200,41 @@ do
     else
 	# It will use the (exported) environment variables
 	python -c 'import os, sys, jinja2; sys.stdout.write(jinja2.Environment(loader=jinja2.FileSystemLoader(os.environ.get("SCRIPT_FOLDER")), trim_blocks=True).from_string(sys.stdin.read()).render(env=os.environ))' <${_SCRIPT} >${PROVISION_TMP}/run.$machine.${FLOATING_IPs[$machine]}
-
-	ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x 2>&1' <${PROVISION_TMP}/run.$machine.${FLOATING_IPs[$machine]} 1>${PROVISION_TMP}/log.$machine.${FLOATING_IPs[$machine]} &
+	
+	#ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x 2>&1' <${PROVISION_TMP}/run.$machine.${FLOATING_IPs[$machine]} 1>${PROVISION_TMP}/log.$machine.${FLOATING_IPs[$machine]} &
+	{ number=$RANDOM; sleep $((number % 3 + ${#machine})); exit $((number % 2)); } &
 	PROVISION_PIDS[$machine]=$!
     fi
 done
 
 # Wait for all the copying to finish
-[ "$VERBOSE" = "yes" ] && echo -e "Waiting for servers to be configured (${#PROVISION_PIDS[@]} background jobs)"
+[ "$VERBOSE" = "yes" ] && echo -e "Configuring ${#PROVISION_PIDS[@]} servers"
 declare -A PROGRESS
+FAIL=0
 for job in ${!PROVISION_PIDS[@]}; do PROGRESS[$job]="\e[34m...\e[0m"; done
 function print_progress {
-    echo -e "\r"
-    for job in ${!PROGRESS[@]}; do echo -ne "$job [ ${PROGRESS[$job]} ] "; done
+    echo -ne "\r|"
+    for job in ${!PROGRESS[@]}; do echo -ne " $job ${PROGRESS[$job]}|"; done
 }
+print_progress
 for job in ${!PROVISION_PIDS[@]}
 do
-    wait ${PROVISION_PIDS[$job]} && PROGRESS[$job]="\e[32m\xE2\x9C\x93\e[0m" || PROGRESS[$job]="\e[31m\xE2\x9C\x97\e[0m"
+    wait ${PROVISION_PIDS[$job]}
+    if [ $? = 0 ]; then 
+	PROGRESS[$job]=" \e[32m\xE2\x9C\x93\e[0m "
+    else 
+	PROGRESS[$job]=" \e[31m\xE2\x9C\x97\e[0m "
+	((FAIL++))
+    fi
+    print_progress
 done
-# if [ -n "$FAIL" ];
-#    oups "Failed configuring: $FAIL"
-# [ "$VERBOSE" = "yes" ] && thumb_up " Servers configured"
+
+if (( $FAIL > 0 )); then
+    echo "" # new line
+    oups "\a$FAIL servers failed to be configured"
+else
+    [ "$VERBOSE" = "yes" ] && echo "" && thumb_up "Servers configured"
+fi
 
 
 # [ "$VERBOSE" = "yes" ] && echo -e "Waiting for servers to be configured (${#PROVISION_PIDS[@]} background jobs)"
