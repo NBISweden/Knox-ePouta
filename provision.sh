@@ -35,20 +35,60 @@ done
 
 mkdir -p ${PROVISION_TMP}
 
+function say_ok {
+    echo -e "[ \e[32m\xE2\x9C\x93\e[0m ]"
+}
+function say_fail {
+    #echo -e " [ \e[31m\xE2\x98\xA0\e[0m ]"
+    echo -e "[ \e[31m\xE2\x9C\x97\e[0m ]"
+}
+function thumb_up {
+    [ -n "$1" ] && echo -n "$1 "
+    echo -e "\xF0\x9F\x91\x8D"
+}
+function oups {
+    [ -n "$1" ] && echo -n "$1 "
+    echo -e "\e[31m\xF0\x9F\x9A\xAB\e[0m"
+}
+
 # Note: Should exit the script if machines not yet available
 # Should I test with an ssh connection (with timeout?)
 function check_connection {
-    local host=$1
-    local MAX=1000000
-    local COUNTER=1
+    local ip=${FLOATING_IPs[$1]}
+    local MAX=10
+    local COUNTER=0
 
-    while : ; do
-	python -c "import socket;s = socket.socket(socket.AF_INET, socket.SOCK_STREAM);s.connect(('$host', 22))" > /dev/null 2>&1 && break || echo -n "."
-	if [[ ${COUNTER} == ${MAX} ]]; then echo "Could not connect"; exit 1; fi
-	(( counter++ ))
-    done
+    if python -c "import socket;s = socket.socket(socket.AF_INET, socket.SOCK_STREAM);s.settimeout(1.0); s.connect(('$ip', 22))" > /dev/null 2>&1 ; then
+	say_ok
+	exit 0
+    else
+	say_fail
+	exit 1
+    fi
+
+    # trap "say_fail && exit 1" SIGINT
+    # while : ; do
+    # 	python -c "import socket;s = socket.socket(socket.AF_INET, socket.SOCK_STREAM);s.settimeout(1.0); s.connect(('$ip', 22))" > /dev/null 2>&1 && say_ok && break
+    # 	echo -n "."
+    # 	#sleep 1 # socket.connect has already a timeout
+    # 	(( COUNTER++ ))
+    # 	(( $COUNTER > $MAX )) && say_fail && exit 1
+    # done
+    # exit 0
 }
 # Preparing the function. Not called yet.
+
+[ "$VERBOSE" = "yes" ] && echo -e "Checking the connections:"
+FAIL=""
+for i in ${!MACHINES[@]}; do
+    printf "\t* for %-23s" ${MACHINES[$i]}
+    ( check_connection ${MACHINES[$i]} ) || { FAIL+=" ${MACHINES[$i]},"; unset MACHINES[$i]; }
+done
+if [ -n "$FAIL" ]; then
+    oups "Filtering out:$FAIL"
+else
+    thumb_up "All connections are ready"
+fi
 
 #############################################
 ## SSH Configuration
@@ -86,8 +126,6 @@ export CONFIGS=${MM_HOME}/configs
 
 if [ "$DO_COPY" = "yes" ]; then
 
-    [ "$VERBOSE" = "yes" ] && echo "Copying files"
-
     python -c 'import os, sys, jinja2; sys.stdout.write(jinja2.Template(sys.stdin.read()).render(env=os.environ))' <files.jn2 >${PROVISION_TMP}/files
 
     # In order to avoid many concurrent ssh connections towards the same
@@ -111,6 +149,7 @@ if [ "$DO_COPY" = "yes" ]; then
 	fi
     done
 
+    [ "$VERBOSE" = "yes" ] && echo "Copying files"
     declare -A RSYNC_PIDS
     for machine in ${MACHINES[@]}
     do
@@ -135,15 +174,16 @@ if [ "$DO_COPY" = "yes" ]; then
     FAIL=""
     for job in ${!RSYNC_PIDS[@]}
     do
-	wait ${RSYNC_PIDS[$job]} || FAIL+=" $job (${RSYNC_PIDS[$job]}),"
+	wait ${RSYNC_PIDS[$job]} || FAIL+="$job (${RSYNC_PIDS[$job]}), "
 	echo -n "."
     done
     if [ -n "$FAIL" ]; then
-	echo "Failed copying:$FAIL"
+	oups "Failed copying"
+	echo "$FAIL"
 	echo "Exiting..." 
 	exit 1
     else
-	[ "$VERBOSE" = "yes" ] && echo " Files copied"
+	[ "$VERBOSE" = "yes" ] && thumb_up " Files copied"
     fi
 fi
 
@@ -151,15 +191,13 @@ fi
 
 [ "$VERBOSE" = "yes" ] && echo "Configuring servers:"
 export SCRIPT_FOLDER=${MM_HOME}/scripts
-export DB_SERVER=${MACHINE_IPs[openstack-controller]}
+export DB_SERVER=${MACHINE_IPs[openstack-controller]} # Used in the templates
 declare -A PROVISION_PIDS
-# RENDER=${SCRIPT_FOLDER}/render.py
-# pushd ${SCRIPT_FOLDER}
 for machine in ${MACHINES[@]}
 do
      _SCRIPT=${SCRIPT_FOLDER}/${PROVISION[$machine]}.jn2
     if [ -z "${PROVISION[$machine]}" ] || [ ! -f ${_SCRIPT} ]; then
-	echo -e "\tERROR: Provisioning script unknown for $machine."
+	oups "\tProvisioning script unknown for $machine"
     else
 	# It will use the (exported) environment variables
 	python -c 'import os, sys, jinja2; sys.stdout.write(jinja2.Environment(loader=jinja2.FileSystemLoader(os.environ.get("SCRIPT_FOLDER")), trim_blocks=True).from_string(sys.stdin.read()).render(env=os.environ))' <${_SCRIPT} >${PROVISION_TMP}/run.$machine.${FLOATING_IPs[$machine]}
@@ -168,17 +206,32 @@ do
 	PROVISION_PIDS[$machine]=$!
     fi
 done
-# popd
 
 # Wait for all the copying to finish
 [ "$VERBOSE" = "yes" ] && echo -e "Waiting for servers to be configured (${#PROVISION_PIDS[@]} background jobs)"
-for job in ${!PROVISION_PIDS[@]}; do echo -e "\t* on $job [PID: ${PROVISION_PIDS[$job]}]"; done
-FAIL=""
+declare -A PROGRESS
+for job in ${!PROVISION_PIDS[@]}; do PROGRESS[$job]="\e[34m...\e[0m"; done
+function print_progress {
+    echo -e "\r"
+    for job in ${!PROGRESS[@]}; do echo -ne "$job [ ${PROGRESS[$job]} ] "; done
+}
 for job in ${!PROVISION_PIDS[@]}
 do
-    wait ${PROVISION_PIDS[$job]} || FAIL+=" $job (${PROVISION_PIDS[$job]}),"
-    echo -n "."
+    wait ${PROVISION_PIDS[$job]} && PROGRESS[$job]="\e[32m\xE2\x9C\x93\e[0m" || PROGRESS[$job]="\e[31m\xE2\x9C\x97\e[0m"
 done
-[ "$VERBOSE" = "yes" ] && echo " Servers configured"
-[ -n "$FAIL" ] && echo "Failed configuring:$FAIL"
+# if [ -n "$FAIL" ];
+#    oups "Failed configuring: $FAIL"
+# [ "$VERBOSE" = "yes" ] && thumb_up " Servers configured"
 
+
+# [ "$VERBOSE" = "yes" ] && echo -e "Waiting for servers to be configured (${#PROVISION_PIDS[@]} background jobs)"
+# for job in ${!PROVISION_PIDS[@]}; do echo -e "\t* on $job [PID: ${PROVISION_PIDS[$job]}]"; done
+# unset FAIL
+# declare -A FAIL
+# for job in ${!PROVISION_PIDS[@]}
+# do
+#     wait ${PROVISION_PIDS[$job]} || FAIL[$job]=""
+#     echo -n "."
+# done
+# [ "$VERBOSE" = "yes" ] && thumb_up " Servers configured"
+# [ -n "$FAIL" ] && echo "Failed configuring: $FAIL"
