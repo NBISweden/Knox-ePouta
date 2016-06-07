@@ -114,19 +114,19 @@ if [ "$DO_COPY" = "yes" ]; then
     declare -A RSYNC_PIDS
     for machine in ${MACHINES[@]}
     do
-	if [ -f ${PROVISION_TMP}/copy.$machine.${FLOATING_IPs[$machine]} ]; then
-	    { # Scoping
-		set -x -e # Print commands && exit if errors
-		# Preparing the drop folder
-		ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} mkdir -p ${VAULT}
-		# Copying all files to the VAULT on that machine
-		for f in $(cat ${PROVISION_TMP}/copy.$machine.${FLOATING_IPs[$machine]})
-		do
-		    rsync -av -e "ssh -F ${SSH_CONFIG}" $f ${FLOATING_IPs[$machine]}:${VAULT}/.
-		done
-	    } > ${PROVISION_TMP}/rsync.$machine.${FLOATING_IPs[$machine]} 2>&1 &
-	    RSYNC_PIDS[$machine]=$!
-	fi
+	#if [ -f ${PROVISION_TMP}/copy.$machine.${FLOATING_IPs[$machine]} ]; then
+	{ # Scoping
+	    set -x -e # Print commands && exit if errors
+	    # Preparing the drop folder
+	    ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} mkdir -p ${VAULT}
+	    # Copying all files to the VAULT on that machine
+	    for f in $(cat ${PROVISION_TMP}/copy.$machine.${FLOATING_IPs[$machine]})
+	    do
+		rsync -av -e "ssh -F ${SSH_CONFIG}" $f ${FLOATING_IPs[$machine]}:${VAULT}/.
+	    done
+	} > ${PROVISION_TMP}/rsync.$machine.${FLOATING_IPs[$machine]} 2>&1 &
+	RSYNC_PIDS[$machine]=$!
+        #fi
     done
 
     # Wait for all the copying to finish
@@ -138,8 +138,13 @@ if [ "$DO_COPY" = "yes" ]; then
 	wait ${RSYNC_PIDS[$job]} || FAIL+=" $job (${RSYNC_PIDS[$job]}),"
 	echo -n "."
     done
-    [ "$VERBOSE" = "yes" ] && echo " Files copied"
-    [ -n "$FAIL" ] && echo "Failed copying:$FAIL" && echo "Exiting..." && exit 1
+    if [ -n "$FAIL" ]; then
+	echo "Failed copying:$FAIL"
+	echo "Exiting..." 
+	exit 1
+    else
+	[ "$VERBOSE" = "yes" ] && echo " Files copied"
+    fi
 fi
 
 ########################################################################
