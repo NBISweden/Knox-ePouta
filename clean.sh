@@ -43,7 +43,7 @@ TENANT_ID=$(openstack project list | awk '/'${OS_TENANT_NAME}'/ {print $2}')
 function delete_machine {
     local machine=$1
     [ "$VERBOSE" = "yes" ] && echo "Deleting VM: $machine"
-    nova delete $machine
+    nova delete $machine > /dev/null
 }
 
 echo "Cleaning running machines"
