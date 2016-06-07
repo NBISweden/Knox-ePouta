@@ -41,6 +41,17 @@ done
 #######################################################################
 # Logic to allow the user to specify some machines
 # Otherwise, continue with the ones in settings.sh
+mkdir -p ${INIT_TMP}
+# Create the host file first
+cat > ${INIT_TMP}/hosts <<ENDHOST
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
+ENDHOST
+for name in "${MACHINES[@]}"; do echo "${MACHINE_IPs[$name]} $name" >> ${INIT_TMP}/hosts; done
+echo "${MACHINE_IPs[openstack-controller]} tos1" >> ${INIT_TMP}/hosts
+
+
 if [ -n ${CUSTOM_MACHINES:-''} ]; then
     CUSTOM_MACHINES_TMP=${CUSTOM_MACHINES//,/ } # replace all commas with space
     CUSTOM_MACHINES="" # Filtering the ones which don't exist in settings.sh
@@ -149,8 +160,6 @@ if [ -z $MGMT_NET ] || [ -z $DATA_NET ]; then
     exit 1
 fi
 
-mkdir -p ${INIT_TMP}
-
 ########################################################################
 # Start the local REST server, to follow the progress of the machines
 echo '#!/usr/bin/env python' > $INIT_TMP/machines.py
@@ -205,28 +214,24 @@ function boot_machine {
     local ip=${MACHINE_IPs[$machine]}
     local flavor=${FLAVORS[$machine]}
     
-    _VM_INIT=${INIT_TMP}/vm-$machine-$ip.yml
-    cat > ${_VM_INIT} <<ENDCLOUDINIT
-#cloud-config
-
-# add each entry to ~/.ssh/authorized_keys for the configured user (ie centos)
-ssh_authorized_keys:
+    _VM_INIT=${INIT_TMP}/vm-$machine-$ip.sh
+    echo '#!/usr/bin/env bash' > ${_VM_INIT}
+    for user in ${!PUBLIC_SSH_KEYS[@]}; do echo "echo '${PUBLIC_SSH_KEYS[$user]}' >> /home/centos/.ssh/authorized_keys" >> ${_VM_INIT}; done
+	cat >> ${_VM_INIT} <<ENDCLOUDINIT
+echo "================================================================================"
+echo "Creating hosts file"
+cat > /etc/hosts <<EOF
 ENDCLOUDINIT
-    for user in ${!PUBLIC_SSH_KEYS[@]}; do echo "  - ${PUBLIC_SSH_KEYS[$user]}" >> ${_VM_INIT}; done
-    cat >> ${_VM_INIT} <<ENDCLOUDINIT
+	cat ${INIT_TMP}/hosts >> ${_VM_INIT}
+	cat >> ${_VM_INIT} <<ENDCLOUDINIT
+EOF
+chown root:root /etc/hosts
+chmod 0644 /etc/hosts
 
-write_files:
-  - path: /etc/hosts
-    owner: root:root
-    permissions: '0644'
-    content: |
-      127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
-      ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
-
+echo "================================================================================"
+echo "Setting the Timezone to Stockholm"
+echo 'Europe/Stockholm' > /etc/timezone
 ENDCLOUDINIT
-    for name in "${MACHINES[@]}"; do echo "      ${MACHINE_IPs[$name]} $name" >> ${_VM_INIT}; done
-    echo "      ${MACHINE_IPs[openstack-controller]} tos1" >> ${_VM_INIT}
-    # the white spaces are important
 
     # If Data IP is not zero-length
     if [ ! -z ${DATA_IPs[$machine]} ]; then
@@ -235,66 +240,52 @@ ENDCLOUDINIT
 	# Neutron will then configure these settings automatically
 	cat >> ${_VM_INIT} <<ENDCLOUDINIT
 
-bootcmd:
-  - echo '10 data' >> /etc/iproute2/rt_tables
+echo '10 data' >> /etc/iproute2/rt_tables
 
-write_files:
-  - path: /etc/sysconfig/network-scripts/ifcfg-eth1
-    owner: root:root
-    permissions: '0644'
-    content: |
-      TYPE=Ethernet
-      BOOTPROTO=static
-      DEFROUTE=no
-      NAME=eth1
-      DEVICE=eth1
-      ONBOOT=yes
-      IPADDR=${DATA_IPs[$machine]}
-      PREFIX=24
-      GATEWAY=${DATA_GATEWAY}
-      #MTU=1450
+cat > /etc/sysconfig/network-scripts/ifcfg-eth1 <<EOF
+TYPE=Ethernet
+BOOTPROTO=static
+DEFROUTE=no
+NAME=eth1
+DEVICE=eth1
+ONBOOT=yes
+IPADDR=${DATA_IPs[$machine]}
+PREFIX=24
+GATEWAY=${DATA_GATEWAY}
+#MTU=1450
+EOF
+chown root:root /etc/sysconfig/network-scripts/ifcfg-eth1
+chmod 0644 /etc/sysconfig/network-scripts/ifcfg-eth1
 
+cat > /etc/sysconfig/network-scripts/rule-eth1 <<EOF
+to ${DATA_CIDR} lookup data
+from ${DATA_CIDR} lookup data
+EOF
+chown root:root /etc/sysconfig/network-scripts/rule-eth1
+chmod 0644 /etc/sysconfig/network-scripts/rule-eth1
 
-  - path: /etc/sysconfig/network-scripts/rule-eth1
-    owner: root:root
-    permissions: '0644'
-    content: |
-      to ${DATA_CIDR} lookup data
-      from ${DATA_CIDR} lookup data
+cat > /etc/sysconfig/network-scripts/route-eth1 <<EOF
+default via ${DATA_GATEWAY} dev eth1 table data
+EOF
+chown root:root /etc/sysconfig/network-scripts/route-eth1
+chmod 0644 /etc/sysconfig/network-scripts/route-eth1
 
-  - path: /etc/sysconfig/network-scripts/route-eth1
-    owner: root:root
-    permissions: '0644'
-    content: |
-      default via ${DATA_GATEWAY} dev eth1 table data
-
+echo "================================================================================"
+echo "Restarting network"
+service network restart
 ENDCLOUDINIT
     fi
 
     # Final part: Grow partition and phone home
     # sed -i 's/^Defaults.*requiretty/#&/g' /etc/sudoers
     cat >> ${_VM_INIT} <<ENDCLOUDINIT
-
-runcmd:
-  - echo ================================================================================
-  - echo Setting the Timezone to Stockholm
-  - echo 'Europe/Stockholm' > /etc/timezone
-ENDCLOUDINIT
-    if [ ! -z ${DATA_IPs[$machine]} ]; then
-	cat >> ${_VM_INIT} <<ENDCLOUDINIT
-  - echo ================================================================================
-  - echo 'Restarting network'
-  - service network restart
-ENDCLOUDINIT
-    fi
-    cat >> ${_VM_INIT} <<ENDCLOUDINIT
-  - echo ================================================================================
-  - echo Growing partition to disk size
-  - curl http://${PHONE_HOME}:$PORT/machine/$machine/growing 2>&1 > /dev/null || true
-  - growpart /dev/vda 1
-  - echo ================================================================================
-  - echo Cloudinit phone home
-  - curl http://${PHONE_HOME}:$PORT/machine/$machine/ready 2>&1 > /dev/null || true
+echo "================================================================================"
+echo "Growing partition to disk size"
+curl http://${PHONE_HOME}:$PORT/machine/$machine/growing 2>&1 > /dev/null || true
+growpart /dev/vda 1
+echo "================================================================================"
+echo "Cloudinit phone home"
+curl http://${PHONE_HOME}:$PORT/machine/$machine/ready 2>&1 > /dev/null || true
 ENDCLOUDINIT
 
 
@@ -313,9 +304,6 @@ $machine 2>&1 > /dev/null
 ########################################################################
 # Aaaaannndddd....cue music!
 ########################################################################
-# [ "$VERBOSE" = "yes" ] && echo "Setting the quotas"
-# nova quota fixing
-
 [ "$VERBOSE" = "yes" ] && echo "Booting the machines"
 for machine in "${MACHINES[@]}"; do boot_machine $machine; done
 
@@ -335,22 +323,21 @@ done
 echo "Initialization phase complete."
 
 ########################################################################
-( # In a subshell. Exit 0 in the trap when we give up
-    trap 'echo -e "\nOr you can Ctrl-C, yes...\n"; exit 0' SIGINT INT
-    while : ; do
-	echo -n -e "\nWould you like to reboot the servers before you provision them? [y/N]"
-	read yn
-	case $yn in
-            y) for machine in "${MACHINES[@]}"
-	       do
-		   echo "Rebooting $machine"
-		   nova reboot $machine
-	       done; break;;
-            N) break;;
-            * ) echo "Eh?";;
-	esac
-    done
-)
+trap "echo -e \"\nOr you can Ctrl-C, yes...\n\"; exit 0" SIGINT INT
+while : ; do # while = In a subshell
+    echo -n -e "\nWould you like to reboot the servers before you provision them? [y/N] "
+    read -t 10 yn # timeout for 10 seconds
+    [ $? != 0 ] && echo " (timeout)" && break;
+    case $yn in
+        y) for machine in "${MACHINES[@]}"; do
+	       echo "Rebooting $machine"
+	       nova reboot $machine
+	   done; break;;
+        N) break;;
+        * ) echo "Eh?";;
+    esac
+done
 
 # End of the script
 exit 0
+
