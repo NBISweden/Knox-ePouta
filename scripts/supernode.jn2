@@ -1,3 +1,10 @@
+#!/usr/bin/bash
+# -*-sh-*-
+
+#############################################################
+{% include 'openstack-common.jn2' %}
+
+#############################################################
 echo "Copying config files"
 {% set files = [ 'fix_proj.sh',
 		 'import_user',

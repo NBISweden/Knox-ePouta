@@ -2,35 +2,42 @@
 # -*-sh-*-
 
 #############################################################
-{% include 'openstack-common.jn2' %}
-
 {% include 'db.jn2' %}
+
 {% include 'rabbit.jn2' %}
+
+{% include 'openstack-common.jn2' %}
 
 #############################################################
 
-echo "Openstack utils and more"
-yum -y install openstack-dashboard openstack-keystone openstack-heat-engine openstack-heat-api openstack-heat-api-cfn openstack-glance memcached
-# - openstack-nova
-# - openstack-neutron
-# - openstack-neutron-ml2
-# - openstack-neutron-openvswitch
-
+echo "Openstack Components"
+yum -y install openstack-nova openstack-neutron openstack-neutron-ml2 \
+openstack-dashboard openstack-keystone openstack-heat-engine openstack-heat-api openstack-heat-api-cfn openstack-glance memcached
 
 echo "Openstack Mosler dashboard"
-yum -y install {{ env['VAULT'] }}/{Django14-1.4.21-1.el6.noarch.rpm,mosler-dashboard-2-5.i386.rpm,nginx-1.8.1-1.el6.ngx.x86_64.rpm}
+# Dependencies for 
+yum -y install python-imaging python-qrcode mosler-dashboard-2-5.i386
+for package in Django14-1.4.21-1.el6.noarch mosler-dashboard-2-5.i386 nginx-1.8.1-1.el6.ngx.x86_64
+do
+    if ! rpm -q $package > /dev/null ; then # Test if installed, since rpm -Uvh returns an exit status of 1
+	rpm -ivh {{ env['VAULT'] }}/$package.rpm
+    fi
+done
 
 echo "Copying config files"
 rsync -a {{ env['VAULT'] }}/neutron.conf           /etc/neutron/neutron.conf
 rsync -a {{ env['VAULT'] }}/keystone.conf          /etc/keystone/keystone.conf
-rsync -a {{ env['VAULT'] }}/plugin.ini             /etc/neutron/plugin.ini
 rsync -a {{ env['VAULT'] }}/ml2.ini                /etc/neutron/plugins/ml2/ml2.ini
-rsync -a {{ env['VAULT'] }}/ovs_neutron_plugin.ini /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
 rsync -a {{ env['VAULT'] }}/nova.conf              /etc/nova/nova.conf
 rsync -a {{ env['VAULT'] }}/glance-api.conf        /etc/glance/glance-api.conf
 rsync -a {{ env['VAULT'] }}/glance-registry.conf   /etc/glance/glance-registry.conf
 rsync -a {{ env['VAULT'] }}/heat.conf              /etc/heat/heat.conf
 rsync -a {{ env['VAULT'] }}/local_settings         /etc/openstack-dashboard/local_settings
+
+if [ -f /etc/neutron/plugin.ini ]; then
+    rm /etc/neutron/plugin.ini
+fi
+ln -s /etc/neutron/plugins/ml2/ml2_conf.ini /etc/neutron/plugin.ini
 
 echo "Memcached service"
 service memcached restart
@@ -44,11 +51,11 @@ su -s /bin/sh -c 'heat-manage db_sync' heat
 su -s /bin/sh -c 'neutron-db-manage --config-file /etc/neutron/neutron.conf  --config-file /etc/neutron/plugin.ini upgrade 5ac1c354a051' neutron
 
 echo "Keystone service"
-service openstack-keystone restart
+service openstack-keystone start
 chkconfig openstack-keystone on
 
-OS_SERVICE_TOKEN=0123456789abcdef0123456789abcdef
-OS_SERVICE_ENDPOINT=http://openstack-controller:35357/v2.0
+export OS_SERVICE_TOKEN=0123456789abcdef0123456789abcdef
+export OS_SERVICE_ENDPOINT=http://openstack-controller:35357/v2.0
 
 echo "Keystone roles"
 keystone role-create --name=admin
@@ -88,8 +95,9 @@ echo "Keystone endpoints creation"
 	('cloudformation', '8000/v1',                 '8000/v1',                 '8000/v1'                 )
 ] -%}
 {% for service, public, internal, admin in endpoints %}
-keystone endpoint-create --service-id=$(keystone service-list | awk "/ {{ service }} / {print $2}") --publicurl=http://openstack-controller:{{ public }} --internalurl=http://openstack-controller:{{ internal }} --adminurl=http://openstack-controller:{{ admin }}
+keystone endpoint-create --service-id=$(keystone service-list | awk '/ {{ service }} / {print $2}') --publicurl=http://openstack-controller:{{ public }} --internalurl=http://openstack-controller:{{ internal }} --adminurl=http://openstack-controller:{{ admin }}
 {% endfor %}
+
 
 unset OS_SERVICE_TOKEN
 unset OS_SERVICE_ENDPOINT
@@ -108,7 +116,7 @@ echo "Starting Openstack Services"
 ] -%}
 {% for service in items %}
 service {{ service }} restart 
-chkconfid {{ service }} on
+chkconfig {{ service }} on
 {% endfor %}
 
 echo "Removing any old image from Glance"
@@ -133,5 +141,7 @@ nova flavor-create mosler.4cores  auto 500 10 1
 nova flavor-create mosler.8cores  auto 500 10 1
 nova flavor-create mosler.16cores auto 500 10 1
 
+
+exit 0 # Exiting early today
 nova aggregate-create service-and-login serv-login
 nova aggregate-add-host service-and-login compute1.novalocal

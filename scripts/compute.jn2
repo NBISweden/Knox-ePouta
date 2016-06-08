@@ -5,6 +5,10 @@
 {% include 'openstack-common.jn2' %}
 
 #############################################################
+
+echo "Openstack Components"
+yum -y install openstack-nova-compute openstack-neutron-ml2 openstack-neutron-openvswitch
+
 echo "System config"
 ## RegExp, Replacement
 {% set lines = [
@@ -19,7 +23,9 @@ echo "System config"
 sed -i -e 's/{{ regexp }}/{{ line }}/' /etc/sysctl.conf
 {% endfor %}
 
-# OpenVSwitch is already started in openstack-common
+echo "Starting OpenVSwitch"
+service openvswitch start
+chkconfig openvswitch on
     
 echo "Creating the OVS bridge"
 ovs-vsctl add-br br-eth1 || true
@@ -31,13 +37,27 @@ ovs-vsctl add-port br-eth1 eth1 || true
 
 echo "Copying config files"
 rsync -a {{ env['VAULT'] }}/neutron.conf           /etc/neutron/neutron.conf
-rsync -a {{ env['VAULT'] }}/plugin.ini             /etc/neutron/plugin.ini
 rsync -a {{ env['VAULT'] }}/ml2.ini                /etc/neutron/plugins/ml2/ml2.ini
 rsync -a {{ env['VAULT'] }}/ovs_neutron_plugin.ini /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
 rsync -a {{ env['VAULT'] }}/nova.conf              /etc/nova/nova.conf
 
+if [ -f /etc/neutron/plugin.ini ]; then
+    rm /etc/neutron/plugin.ini
+fi
+ln -s /etc/neutron/plugins/ml2/ml2_conf.ini /etc/neutron/plugin.ini
+
+if [ ! -f /etc/init.d/neutron-openvswitch-agent.orig ]; then
+    cp /etc/init.d/neutron-openvswitch-agent /etc/init.d/neutron-openvswitch-agent.orig
+    sed -i 's,plugins/openvswitch/ovs_neutron_plugin.ini,plugin.ini,g' /etc/init.d/neutron-openvswitch-agent
+fi
+
 echo "Starting Nova and Neutron agents"
-service neutron-openvswitch-agent start
-chkconfig neutron-openvswitch-agent on
+service libvirtd start
+service messagebus start
 service openstack-nova-compute start
+service neutron-openvswitch-agent start
+
+chkconfig libvirtd on
+chkconfig messagebus on
 chkconfig openstack-nova-compute on
+chkconfig neutron-openvswitch-agent on
