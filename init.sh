@@ -8,13 +8,12 @@ _ALL=no
 _IMAGE=CentOS6-micromosler
 
 function usage {
-    local defaults=${MACHINES[@]}
     echo "Usage: $0 [options]"
     echo -e "\noptions are"
     echo -e "\t--all,-a         \tCreates also networks, routers, security groups and floating IPs"
     echo -e "\t--machines <list>,"
     echo -e "\t        -m <list>\tA comma-separated list of machines"
-    echo -e "\t                 \tDefaults to: \"${defaults// /,}\"."
+    echo -e "\t                 \tDefaults to: \"${MACHINES[@]// /,}\"."
     echo -e "\t                 \tWe filter out machines that don't appear in the default list."
     echo -e "\t--image <img>,"
     echo -e "\t     -i <img>    \tGlance image to use. Defaults to ${_IMAGE}"
@@ -331,13 +330,13 @@ while : ; do # while = In a subshell
     case $yn in
         y) for machine in "${MACHINES[@]}"; do
 	       echo "Rebooting $machine"
-	       nova reboot $machine
+	       nova reboot $machine 2>&1 > /dev/null
 	   done; break;;
         N) break;;
         * ) echo "Eh?";;
     esac
 done
 
-# End of the script
+# Finito
 exit 0
 
