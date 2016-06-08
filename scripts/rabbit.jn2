@@ -1,4 +1,4 @@
-echo "Openstack utils and more"
+echo "RabbitMQ server"
 yum -y install rabbitmq-server
 
 echo "Starting the Message Broker"
