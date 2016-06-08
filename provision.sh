@@ -7,17 +7,24 @@ source $HERE/settings.sh
 export TL_HOME MOSLER_HOME MOSLER_MISC MOSLER_IMAGES
 
 export VAULT=vault
+export CONNECTION_TIMEOUT=1 #seconds
 DO_COPY=yes
 
 function usage {
     echo "Usage: $0 [options]"
     echo -e "\noptions are"
-    echo -e "\t--vault <name>   \tName of the drop folder in the servers"
-    echo -e "\t                 \tDefaults to '${VAULT}'"
-    echo -e "\t--no-copy,-n     \tSkips the steps of syncing files to the servers"
-    echo -e "\t--quiet,-q       \tRemoves the verbose output"
-    echo -e "\t--help,-h        \tOutputs this message and exits"
-    echo -e "\t-- ...           \tAny other options appearing after the -- will be ignored"
+    echo -e "\t--machines <list>,"
+    echo -e "\t        -m <list>      \tA comma-separated list of machines"
+    echo -e "\t                       \tDefaults to: \"${MACHINES[@]// /,}\"."
+    echo -e "\t                       \tWe filter out machines that don't appear in the default list."
+    echo -e "\t--vault <name>         \tName of the drop folder in the servers"
+    echo -e "\t                       \tDefaults to '${VAULT}'"
+    echo -e "\t--no-copy,-n           \tSkips the steps of syncing files to the servers"
+    echo -e "\t--timeout <seconds>,   \tSkips the steps of syncing files to the servers"
+    echo -e "\t       -t <seconds>    \tSkips the steps of syncing files to the servers"
+    echo -e "\t--quiet,-q             \tRemoves the verbose output"
+    echo -e "\t--help,-h              \tOutputs this message and exits"
+    echo -e "\t-- ...                 \tAny other options appearing after the -- will be ignored"
 }
 
 # While there are arguments or '--' is reached
@@ -25,15 +32,15 @@ while [ $# -gt 0 ]; do
     case "$1" in
         --quiet|-q) VERBOSE=no;;
         --help|-h) usage; exit 0;;
+        --machines|-m) CUSTOM_MACHINES=$2; shift;;
         --no-copy|-n) DO_COPY=no;;
         --vault) VAULT=$2; shift;;
+        --timeout|-t) CONNECTION_TIMEOUT=$2; shift;;
         --) shift; break;;
         *) echo "$0: error - unrecognized option $1" 1>&2; usage; exit 1;;
     esac
     shift
-done                                                                                              
-
-mkdir -p ${PROVISION_TMP}
+done
 
 function say_ok {
     echo -e "[ \e[32m\xE2\x9C\x93\e[0m ]"
@@ -51,6 +58,33 @@ function oups {
     echo -e "\e[31m\xF0\x9F\x9A\xAB\e[0m"
 }
 
+#######################################################################
+# Logic to allow the user to specify some machines
+if [ -n ${CUSTOM_MACHINES:-''} ]; then
+    CUSTOM_MACHINES_TMP=${CUSTOM_MACHINES//,/ } # replace all commas with space
+    CUSTOM_MACHINES="" # Filtering the ones which don't exist in settings.sh
+    for cm in $CUSTOM_MACHINES_TMP; do
+	if [[ "${MACHINES[@]}" =~ "$cm" ]]; then
+	    CUSTOM_MACHINES+="$cm "
+	else
+	    echo "Unknown machine: $cm"
+	fi
+	# for m in ${MACHINES[@]}; do
+	#     [ "$cm" = "$m" ] && CUSTOM_MACHINES+=" $cm" && break
+	# done
+    done
+    MACHINES=(${CUSTOM_MACHINES})
+
+    if [ ${#MACHINES[@]} -eq 0 ]; then
+	oups "Nothing to be done. Exiting..."
+	exit 2
+    else
+	[ "$VERBOSE" = "yes" ] && echo "Using these machines: ${CUSTOM_MACHINES// /,}"
+    fi
+fi
+
+mkdir -p ${PROVISION_TMP}
+
 # Note: Should exit the script if machines not yet available
 # Should I test with an ssh connection (with timeout?)
 function check_connection {
@@ -58,37 +92,26 @@ function check_connection {
     local MAX=10
     local COUNTER=0
 
-    if python -c "import socket;s = socket.socket(socket.AF_INET, socket.SOCK_STREAM);s.settimeout(1.0); s.connect(('$ip', 22))" > /dev/null 2>&1 ; then
+    if python -c "import socket;s = socket.socket(socket.AF_INET, socket.SOCK_STREAM);s.settimeout(${CONNECTION_TIMEOUT}.0); s.connect(('$ip', 22))" > /dev/null 2>&1 ; then
 	say_ok
 	exit 0
     else
 	say_fail
 	exit 1
     fi
-
-    # trap "say_fail && exit 1" SIGINT
-    # while : ; do
-    # 	python -c "import socket;s = socket.socket(socket.AF_INET, socket.SOCK_STREAM);s.settimeout(1.0); s.connect(('$ip', 22))" > /dev/null 2>&1 && say_ok && break
-    # 	echo -n "."
-    # 	#sleep 1 # socket.connect has already a timeout
-    # 	(( COUNTER++ ))
-    # 	(( $COUNTER > $MAX )) && say_fail && exit 1
-    # done
-    # exit 0
 }
-# Preparing the function. Not called yet.
 
-# [ "$VERBOSE" = "yes" ] && echo -e "Checking the connections:"
-# FAIL=""
-# for i in ${!MACHINES[@]}; do
-#     printf "\t* for %-23s" ${MACHINES[$i]}
-#     ( check_connection ${MACHINES[$i]} ) || { FAIL+=" ${MACHINES[$i]},"; unset MACHINES[$i]; }
-# done
-# if [ -n "$FAIL" ]; then
-#     oups "Filtering out:$FAIL"
-# else
-#     thumb_up "All connections are ready"
-# fi
+[ "$VERBOSE" = "yes" ] && echo -e "Checking the connections:"
+FAIL=""
+for i in ${!MACHINES[@]}; do
+    printf "\t* for %-23s" ${MACHINES[$i]}
+    ( check_connection ${MACHINES[$i]} ) || { FAIL+=" ${MACHINES[$i]},"; unset MACHINES[$i]; }
+done
+if [ -n "$FAIL" ]; then
+    oups "Filtering out:$FAIL"
+else
+    thumb_up "All connections are ready"
+fi
 
 #############################################
 ## SSH Configuration
@@ -108,15 +131,9 @@ Host ${FLOATING_CIDR%0/24}*
 ENDSSHCFG
 
 [ $VERBOSE = "yes" ] && echo -e "Adding the SSH keys to $SSH_KNOWN_HOSTS"
-# if [ -f ${SSH_KNOWN_HOSTS} ]; then
-#     # Cut the matching keys out
-#     sed -n -i "/${FLOATING_CIDR%0/24}/d" ${SSH_KNOWN_HOSTS}
-# else 
-#     touch ${SSH_KNOWN_HOSTS}
-# fi
 :> ${SSH_KNOWN_HOSTS}
-#for name in ${MACHINES[@]}; do ssh-keyscan -4 ${FLOATING_IPs[$name]} >> ${SSH_KNOWN_HOSTS} 2>/dev/null; done
-# Note: I silence the errors from stderr (2) to /dev/null. Don't send them to &1.
+for name in ${MACHINES[@]}; do ssh-keyscan -4 ${FLOATING_IPs[$name]} >> ${SSH_KNOWN_HOSTS} 2>/dev/null; done
+#Note: I silence the errors from stderr (2) to /dev/null. Don't send them to &1.
 
 ########################################################################
 # Aaaaannndddd....cue music!
@@ -145,7 +162,7 @@ if [ "$DO_COPY" = "yes" ]; then
 	if [ -e $src ]; then
 	    echo "$src" >> ${PROVISION_TMP}/copy.$machine.${FLOATING_IPs[$machine]}
 	else
-	    echo "\tIgnoring $src [for $machine]."
+	    echo -e "\tIgnoring $src [for $machine]."
 	fi
     done
 
@@ -201,8 +218,8 @@ do
 	# It will use the (exported) environment variables
 	python -c 'import os, sys, jinja2; sys.stdout.write(jinja2.Environment(loader=jinja2.FileSystemLoader(os.environ.get("SCRIPT_FOLDER")), trim_blocks=True).from_string(sys.stdin.read()).render(env=os.environ))' <${_SCRIPT} >${PROVISION_TMP}/run.$machine.${FLOATING_IPs[$machine]}
 	
-	#ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x 2>&1' <${PROVISION_TMP}/run.$machine.${FLOATING_IPs[$machine]} 1>${PROVISION_TMP}/log.$machine.${FLOATING_IPs[$machine]} &
-	{ number=$RANDOM; sleep $((number % 3 + ${#machine})); exit $((number % 2)); } &
+	ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x 2>&1' <${PROVISION_TMP}/run.$machine.${FLOATING_IPs[$machine]} 1>${PROVISION_TMP}/log.$machine.${FLOATING_IPs[$machine]} &
+	#{ number=$RANDOM; sleep $((number % 3 + ${#machine})); exit $((number % 2)); } &
 	PROVISION_PIDS[$machine]=$!
     fi
 done
