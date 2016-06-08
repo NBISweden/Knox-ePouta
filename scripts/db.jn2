@@ -1,30 +1,6 @@
 echo "Install Mysql package"
 yum -y install mysql-server MySQL-python
 
-# - name: Start Mysql Service
-#   service: name=mysqld state=started enabled=yes
-
-# - name: Create Application Database
-#   mysql_db: name={{ dbname }} state=present
-
-# - name: Create Application DB User
-#   mysql_user: name={{ dbuser }} password={{ upassword }} priv=*.*:ALL host='%' state=present
-
-# - name: Stopping Openstack Services
-#   service: name={{ item }} state=stopped
-#   with_items:
-#     - openstack-keystone
-#     - openstack-heat-api
-#     - openstack-heat-api-cfn
-#     - openstack-heat-engine
-#     - openstack-nova-api
-#     - openstack-nova-scheduler
-#     - openstack-nova-conductor
-#     - openstack-glance-api
-#     - neutron-server
-#     - openstack-glance-registry
-#     - mysqld
-    
 echo "Stopping Mysql"
 service mysqld stop
 
@@ -57,10 +33,12 @@ chown mysql:mysql /var/lib/mysql
 echo "Restarting MySQL server"
 service mysqld start
 
-echo "MySQL root password"
-/usr/bin/mysqladmin -u root -h localhost password 'mysql'
-/usr/bin/mysqladmin -u root -h openstack-controller password 'mysql'
-# Not dropping the .my.cnf file in /root
+# echo "MySQL root password"
+# /usr/bin/mysqladmin -u root -h localhost password 'mysql'
+# /usr/bin/mysqladmin -u root -h openstack-controller password 'mysql'
+# # Not dropping the .my.cnf file in /root
 
 echo "MySQL Databases setup"
-mysql -u root -pmysql < {{ env['VAULT'] }}/openstack-db.sql
+# Note: Root password is empty at first, then set inside openstack_db.sql.
+mysql -u root < {{ env['VAULT'] }}/openstack_db.sql
+
