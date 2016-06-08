@@ -1,4 +1,4 @@
-{# LDAP files #}
+{# LDAP #}
 ldap:{{ env['CONFIGS'] }}/ldap_conf
 
 {# Thinlinc #}
@@ -19,7 +19,6 @@ openstack-controller:{{ env['MOSLER_MISC'] }}/ {# Make sure there is a / at the 
 
 openstack-controller:{{ env['CONFIGS'] }}/neutron.conf
 openstack-controller:{{ env['CONFIGS'] }}/keystone.conf
-openstack-controller:{{ env['CONFIGS'] }}/plugin.ini
 openstack-controller:{{ env['CONFIGS'] }}/ml2.ini
 openstack-controller:{{ env['CONFIGS'] }}/ovs_neutron_plugin.ini
 openstack-controller:{{ env['CONFIGS'] }}/nova.conf
@@ -34,7 +33,6 @@ openstack-controller:{{ env['MOSLER_IMAGES'] }}/topolino-q-stable
 
 {# Openstack neutron #}
 networking-node:{{ env['CONFIGS'] }}/neutron.conf
-networking-node:{{ env['CONFIGS'] }}/plugin.ini
 networking-node:{{ env['CONFIGS'] }}/ml2.ini
 networking-node:{{ env['CONFIGS'] }}/ovs_neutron_plugin.ini
 
@@ -42,7 +40,6 @@ networking-node:{{ env['CONFIGS'] }}/ovs_neutron_plugin.ini
 {% set nodes = [ 'compute1', 'compute2', 'compute3' ] -%}
 {% for m in nodes %}
 {{ m }}:{{ env['CONFIGS'] }}/neutron.conf
-{{ m }}:{{ env['CONFIGS'] }}/plugin.ini
 {{ m }}:{{ env['CONFIGS'] }}/ml2.ini
 {{ m }}:{{ env['CONFIGS'] }}/ovs_neutron_plugin.ini
 {{ m }}:{{ env['CONFIGS'] }}/nova.conf
@@ -70,9 +67,10 @@ supernode:{{ env['MOSLER_HOME'] }}/supernode/create_heat_template.sh
 supernode:{{ env['MOSLER_HOME'] }}/supernode/create_omd_config.sh
 supernode:{{ env['MOSLER_HOME'] }}/supernode/get_vlan.sh
 supernode:{{ env['MOSLER_HOME'] }}/supernode/heat_add_compute.sh
+supernode:{{ env['CONFIGS'] }}/mosler-template-parameters
 supernode:{{ env['CONFIGS'] }}/mosler-template-resources-private_net-only
 supernode:{{ env['CONFIGS'] }}/mosler-template-resources-network
 supernode:{{ env['CONFIGS'] }}/mosler-template-resources-secgroups
 supernode:{{ env['CONFIGS'] }}/mosler-template-resources-loginnode
 supernode:{{ env['CONFIGS'] }}/mosler-template-resources-servicenode
-supernode:{{ env['CONFIGS'] }}/mosler-template-parameters
+
