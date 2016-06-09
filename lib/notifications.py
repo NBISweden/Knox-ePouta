@@ -5,12 +5,11 @@ import sys
 notifications = {key: {} for key in sys.argv[2:] }
 
 urls = (
-    '/show', 'show',
-    '/register/(?P<machine>.+)/(?P<task>.+)/(?P<status>.+)', 'register',
-    '/status/(?P<machine>.+)/(?P<task>.+)', 'status'
+    '/', 'status',
+    '/(?P<machine>.+)/(?P<task>.+)', 'task'
 )
 
-class show:
+class status:
     def GET(self):
         output = ''
         for k, v in notifications.items():
@@ -18,14 +17,7 @@ class show:
             output += '{0:>20}: {1}\n'.format(k, d)
         return output
 
-class register:
-    def GET(self, machine, task, status):
-        d = notifications.get(machine)
-        if d is None:
-            return 'Unknown machine %s' % machine
-        d[task] = status
-
-class status:
+class task:
     def GET(self, machine, task):
         d = notifications.get(machine)
         if d is None:
@@ -35,6 +27,14 @@ class status:
             return 'Unknown task %s for %s' % (task,machine)
         else:
             return s
+
+    def POST(self, machine, task):
+        status = web.data()
+        d = notifications.get(machine)
+        if d is None:
+            return 'Unknown machine %s' % machine
+        d[task] = status
+        return '[ %s | %s ] registered for %s' % (task, status, machine)
 
 if __name__ == "__main__":
     web.config.debug = False
