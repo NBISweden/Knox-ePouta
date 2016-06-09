@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 
 # Get credentials and machines settings
-source $(dirname ${BASH_SOURCE[0]})/settings.sh
+HERE=$(dirname ${BASH_SOURCE[0]})
+source $HERE/settings.sh
 
 # Default values
 _ALL=no
 _IMAGE=CentOS6-micromosler
+LIB=$HERE/lib
 
 function usage {
     echo "Usage: $0 [options]"
@@ -161,51 +163,11 @@ fi
 
 ########################################################################
 # Start the local REST server, to follow the progress of the machines
-echo '#!/usr/bin/env python' > $INIT_TMP/machines.py
-echo -e "import web\nimport sys\n\nmachines = {" >> $INIT_TMP/machines.py
-for machine in "${MACHINES[@]}"; do echo -e "'$machine': 'booting'," >> $INIT_TMP/machines.py; done
-cat >> ${INIT_TMP}/machines.py <<ENDREST
-}
-
-urls = (
-    '/status', 'status',
-    '/machine/(?P<name>.+)/(?P<v>.+)', 'update'
-)
-
-class status:
-    def GET(self):
-        output = ''
-        for k, v in machines.items():
-            output += '{0:>20}: {1}\n'.format(k, v)
-        return output
-
-class update:
-    def GET(self, name, v):
-        if name in machines:
-            machines[name] = v
-        else:
-            return 'Ignoring %s' % name
-        # Checking if we should exit
-        # Note: That'll make the server say "Oups, empty reply"
-        for k, v in machines.items():
-            if v != 'ready':
-                return 'Still waiting for %s to be ready' % k
-        print('Everybody is ready. Exiting the server')
-        sys.exit(0)
-
-if __name__ == "__main__":
-    web.config.debug = False
-    app = web.application(urls, globals())
-    app.run()
-
-ENDREST
-
-
 ########################################################################
 [ "$VERBOSE" = "yes" ] && echo "Starting the REST phone home server"
 fuser -k ${PORT}/tcp || true
 trap "fuser -k ${PORT}/tcp || true; exit 1" SIGINT SIGTERM EXIT
-python ${INIT_TMP}/machines.py $PORT &
+python $LIB/boot_progress.py $PORT "${MACHINES[@]}" &
 REST_PID=$!
 
 function boot_machine {
@@ -216,13 +178,13 @@ function boot_machine {
     _VM_INIT=${INIT_TMP}/vm-$machine-$ip.sh
     echo '#!/usr/bin/env bash' > ${_VM_INIT}
     for user in ${!PUBLIC_SSH_KEYS[@]}; do echo "echo '${PUBLIC_SSH_KEYS[$user]}' >> /home/centos/.ssh/authorized_keys" >> ${_VM_INIT}; done
-	cat >> ${_VM_INIT} <<ENDCLOUDINIT
+    cat >> ${_VM_INIT} <<ENDCLOUDINIT
 echo "================================================================================"
 echo "Creating hosts file"
 cat > /etc/hosts <<EOF
 ENDCLOUDINIT
-	cat ${INIT_TMP}/hosts >> ${_VM_INIT}
-	cat >> ${_VM_INIT} <<ENDCLOUDINIT
+    cat ${INIT_TMP}/hosts >> ${_VM_INIT}
+    cat >> ${_VM_INIT} <<ENDCLOUDINIT
 EOF
 chown root:root /etc/hosts
 chmod 0644 /etc/hosts
