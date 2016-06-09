@@ -140,10 +140,11 @@ for name in ${MACHINES[@]}; do ssh-keyscan -4 ${FLOATING_IPs[$name]} >> ${SSH_KN
 ########################################################################
 
 export CONFIGS=${MM_HOME}/configs
+export LIB=${MM_HOME}/lib
 
 if [ "$DO_COPY" = "yes" ]; then
 
-    python -c 'import os, sys, jinja2; sys.stdout.write(jinja2.Template(sys.stdin.read()).render(env=os.environ))' <files.jn2 >${PROVISION_TMP}/files
+    python -c 'import os, sys, jinja2; sys.stdout.write(jinja2.Template(sys.stdin.read()).render(env=os.environ))' <${LIB}/files.jn2 >${PROVISION_TMP}/files
 
     # In order to avoid many concurrent ssh connections towards the same
     # server, we gather the file to copy and cluster them per server. 
@@ -166,7 +167,6 @@ if [ "$DO_COPY" = "yes" ]; then
 	fi
     done
 
-    [ "$VERBOSE" = "yes" ] && echo "Copying files"
     declare -A RSYNC_PIDS
     for machine in ${MACHINES[@]}
     do
@@ -186,7 +186,7 @@ if [ "$DO_COPY" = "yes" ]; then
     done
 
     # Wait for all the copying to finish
-    [ "$VERBOSE" = "yes" ] && echo "Waiting for the files to be copied (${#RSYNC_PIDS[@]} background jobs)"
+    [ "$VERBOSE" = "yes" ] && echo "Copying files (${#RSYNC_PIDS[@]} background jobs)"
     for job in ${!RSYNC_PIDS[@]}; do echo -e "\t* on $job [PID: ${RSYNC_PIDS[$job]}]"; done
     FAIL=""
     for job in ${!RSYNC_PIDS[@]}
@@ -205,20 +205,60 @@ if [ "$DO_COPY" = "yes" ]; then
 fi
 
 ########################################################################
+# Finding a suitable port for the notification server
+_OFFSET=0
+while fuser ${PORT}/tcp ; do (( _OFFSET++ )); done
+NOTIFICATION_PORT=$(( PORT + _OFFSET ))
+[ "$VERBOSE" = "yes" ] && echo "Starting the notification server [on port ${NOTIFICATION_PORT}]"
+trap "fuser -k ${NOTIFICATION_PORT}/tcp || true; exit 1" SIGINT SIGTERM EXIT
+python $LIB/notifications.py ${NOTIFICATION_PORT} "${MACHINES[@]}" &
+REST_PID=$!
 
-export SCRIPT_FOLDER=${MM_HOME}/scripts
+########################################################################
+
 export DB_SERVER=${MACHINE_IPs[openstack-controller]} # Used in the templates
 declare -A PROVISION_PIDS
 for machine in ${MACHINES[@]}
 do
-     _SCRIPT=${SCRIPT_FOLDER}/${PROVISION[$machine]}.jn2
+     _TEMPLATE=${LIB}/${PROVISION[$machine]}.jn2
     if [ -z "${PROVISION[$machine]}" ] || [ ! -f ${_SCRIPT} ]; then
 	oups "\tProvisioning script unknown for $machine"
     else
-	# It will use the (exported) environment variables
-	python -c 'import os, sys, jinja2; sys.stdout.write(jinja2.Environment(loader=jinja2.FileSystemLoader(os.environ.get("SCRIPT_FOLDER")), trim_blocks=True).from_string(sys.stdin.read()).render(env=os.environ))' <${_SCRIPT} >${PROVISION_TMP}/run.$machine.${FLOATING_IPs[$machine]}
+
+	_SCRIPT=${PROVISION_TMP}/run.$machine.${FLOATING_IPs[$machine]}
+	_LOG=${PROVISION_TMP}/log.$machine.${FLOATING_IPs[$machine]}
 	
-	ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x 2>&1' <${PROVISION_TMP}/run.$machine.${FLOATING_IPs[$machine]} 1>${PROVISION_TMP}/log.$machine.${FLOATING_IPs[$machine]} &
+	# Common functions for notifications
+	cat > ${_SCRIPT} <<EOF
+#!/usr/bin/env bash
+
+function register {
+    curl -X POST -d completed http://${PHONE_HOME}:${NOTIFICATION_PORT}/$machine/\$1
+}
+
+function status {
+    curl http://${PHONE_HOME}:${NOTIFICATION_PORT}/\$1/\$2
+}
+
+function wait_for {
+    local _URL=http://${PHONE_HOME}:${NOTIFICATION_PORT}/\$1/\$2
+    local T_MAX=\${3:-30} # default: 30 seconds
+    local T=0
+    while (( T < T_MAX )) ; do
+        [ "\$(curl \$_URL)" == 'completed' ] && exit 0
+        sleep 1
+        (( T++ ))
+    done
+    exit 1 # Timeout
+}
+EOF
+
+	# Rendering the template
+	# It will use the (exported) environment variables
+	python -c "import os, sys, jinja2; sys.stdout.write(jinja2.Environment(loader=jinja2.FileSystemLoader(os.environ.get('LIB'))).from_string(sys.stdin.read()).render(env=os.environ))" <${_TEMPLATE} >> ${_SCRIPT}
+	
+	# Shoot
+	ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x 2>&1' <${_SCRIPT} 1>${_LOG} &
 	#{ number=$RANDOM; sleep $((number % 3 + ${#machine})); exit $((number % 2)); } &
 	PROVISION_PIDS[$machine]=$!
     fi
@@ -252,16 +292,3 @@ if (( $FAIL > 0 )); then
 else
     [ "$VERBOSE" = "yes" ] && echo "" && thumb_up "Servers configured"
 fi
-
-
-# [ "$VERBOSE" = "yes" ] && echo -e "Waiting for servers to be configured (${#PROVISION_PIDS[@]} background jobs)"
-# for job in ${!PROVISION_PIDS[@]}; do echo -e "\t* on $job [PID: ${PROVISION_PIDS[$job]}]"; done
-# unset FAIL
-# declare -A FAIL
-# for job in ${!PROVISION_PIDS[@]}
-# do
-#     wait ${PROVISION_PIDS[$job]} || FAIL[$job]=""
-#     echo -n "."
-# done
-# [ "$VERBOSE" = "yes" ] && thumb_up " Servers configured"
-# [ -n "$FAIL" ] && echo "Failed configuring: $FAIL"
