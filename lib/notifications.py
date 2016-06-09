@@ -2,6 +2,7 @@
 import web
 import sys
 
+print sys.argv[2:]
 notifications = {key: {} for key in sys.argv[2:] }
 
 urls = (

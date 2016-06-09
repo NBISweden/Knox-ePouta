@@ -86,7 +86,7 @@ runcmd:
   - yum -y update
   - echo '================================================================================'
   - echo "Installing packages we always want"
-  - yum -y install lsof strace jq tcpdump cloud-utils-growpart
+  - yum -y install lsof strace jq tcpdump nc cloud-utils-growpart
   - echo '================================================================================'
   - echo "Cloudinit phone home"
   - curl http://${PHONE_HOME}:$PORT/prepare/ready 2>&1 > /dev/null || true
