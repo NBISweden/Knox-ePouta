@@ -2,7 +2,7 @@
 import web
 import sys
 
-notifications = {key: {'booting':'completed'} for key in sys.argv[2:] }
+notifications = {key: {} for key in sys.argv[2:] }
 
 urls = (
     '/show', 'show',
@@ -23,7 +23,7 @@ class register:
         d = notifications.get(machine)
         if d is None:
             return 'Unknown machine %s' % machine
-        d[t] = s
+        d[task] = status
 
 class status:
     def GET(self, machine, task):
