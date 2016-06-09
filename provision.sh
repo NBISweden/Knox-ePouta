@@ -206,13 +206,13 @@ fi
 
 ########################################################################
 # Finding a suitable port for the notification server
-_OFFSET=0
-while fuser ${PORT}/tcp ; do (( _OFFSET++ )); done
-NOTIFICATION_PORT=$(( PORT + _OFFSET ))
-[ "$VERBOSE" = "yes" ] && echo "Starting the notification server [on port ${NOTIFICATION_PORT}]"
-trap "fuser -k ${NOTIFICATION_PORT}/tcp || true; exit 1" SIGINT SIGTERM EXIT
-python $LIB/notifications.py ${NOTIFICATION_PORT} "${MACHINES[@]}" &
-REST_PID=$!
+# _OFFSET=0
+# while fuser ${PORT}/tcp ; do (( _OFFSET++ )); done
+# NOTIFICATION_PORT=$(( PORT + _OFFSET ))
+# [ "$VERBOSE" = "yes" ] && echo "Starting the notification server [on port ${NOTIFICATION_PORT}]"
+# trap "fuser -k ${NOTIFICATION_PORT}/tcp || true; exit 1" SIGINT SIGTERM EXIT
+# python $LIB/notifications.py ${NOTIFICATION_PORT} "${MACHINES[@]}" &> ${PROVISION_TMP}/notifications.log &
+# NOTIFICATION_PID=$!
 
 ########################################################################
 
@@ -242,21 +242,39 @@ function status {
 
 function wait_for {
     local _URL=http://${PHONE_HOME}:${NOTIFICATION_PORT}/\$1/\$2
-    local T_MAX=\${3:-30} # default: 30 seconds
-    local T=0
-    while (( T < T_MAX )) ; do
-        [ "\$(curl \$_URL)" == 'completed' ] && exit 0
+    local timeout=\${3:-30} # default: 30 seconds
+    local t=0
+    while : ; do
+        res=\$(curl \$_URL)
+        if [ "\$res" = "completed" ] ; then break; fi
+        if (( t >= timeout )) ; then echo "WAIT FOR \$1 to be ready with \$2: Timeout (\$timeout seconds)"; exit 1; fi # Timeout
         sleep 1
-        (( T++ ))
+        (( t++ ))
     done
-    exit 1 # Timeout
+}
+
+# -w doesn't work on nc
+function wait_port {
+    timeout=\${3:-30}
+    t=0
+    while : ; do
+	#nc -4 -z \$1 \$2 &>/dev/null && break; # return 0
+	nc -4 -z -v \$1 \$2 && break; # return 0
+	if (( t >= timeout )) ; then exit 1; fi # Use return 1, if you don't want to also drop the shell
+	sleep 1
+	(( t++ ))
+	echo -n "."
+    done
 }
 EOF
 
 	# Rendering the template
 	# It will use the (exported) environment variables
 	python -c "import os, sys, jinja2; sys.stdout.write(jinja2.Environment(loader=jinja2.FileSystemLoader(os.environ.get('LIB'))).from_string(sys.stdin.read()).render(env=os.environ))" <${_TEMPLATE} >> ${_SCRIPT}
-	
+
+	# Report before exiting
+	#echo -e "\nregister provisioning\n" >> ${_SCRIPT}
+
 	# Shoot
 	ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x 2>&1' <${_SCRIPT} 1>${_LOG} &
 	#{ number=$RANDOM; sleep $((number % 3 + ${#machine})); exit $((number % 2)); } &
@@ -292,3 +310,5 @@ if (( $FAIL > 0 )); then
 else
     [ "$VERBOSE" = "yes" ] && echo "" && thumb_up "Servers configured"
 fi
+
+# kill -9 ${NOTIFICATION_PID}
