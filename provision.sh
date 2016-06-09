@@ -85,32 +85,65 @@ fi
 
 mkdir -p ${PROVISION_TMP}
 
-# Note: Should exit the script if machines not yet available
+#######################################################################
+# Logic to print progress and start/pause
+declare -A PROGRESS_PIDS
+declare -A PROGRESS
+
+function reset_progress { # Initialization
+    for m in ${MACHINES[@]}; do PROGRESS[$m]="\e[34m...\e[0m"; done
+}
+
+_REPORT=no
+( # in another shell
+    while : ; do
+	if [ "${_REPORT}" != "yes" ]; then sleep 1; continue; fi
+	echo -ne "\r|"
+	for m in ${!PROGRESS[@]}; do echo -ne " $m ${PROGRESS[$m]}|"; done
+	sleep 1
+    done
+) &
+REPORT_PID=$?
+trap "kill -9 ${REPORT_PID} || true; exit 1" SIGINT SIGTERM EXIT
+
+function report_progress {
+    _REPORT=yes
+}
+function stop_progress {
+    _REPORT=no
+}
+# Not testing if $1 exists. It will!
+function report_ok {
+    PROGRESS[$1]=" \e[32m\xE2\x9C\x93\e[0m "
+}
+function report_fail {
+    PROGRESS[$1]=" \e[31m\xE2\x9C\x97\e[0m "
+}
+function filter_out {
+    PROGRESS[$1]="\e[31m\xF0\x9F\x9A\xAB\e[0m"
+}
+
+#######################################################################
+# Checking if machines are available
 # Should I test with an ssh connection (with timeout?)
 function check_connection {
-    local ip=${FLOATING_IPs[$1]}
-    local MAX=10
-    local COUNTER=0
-
-    if python -c "import socket;s = socket.socket(socket.AF_INET, socket.SOCK_STREAM);s.settimeout(${CONNECTION_TIMEOUT}.0); s.connect(('$ip', 22))" > /dev/null 2>&1 ; then
-	say_ok
-	exit 0
-    else
-	say_fail
-	exit 1
-    fi
+    python -c "import socket;s = socket.socket(socket.AF_INET, socket.SOCK_STREAM);s.settimeout(${CONNECTION_TIMEOUT}.0); s.connect(('${FLOATING_IPs[$1]}', 22))" > /dev/null 2>&1
 }
 
 [ "$VERBOSE" = "yes" ] && echo -e "Checking the connections:"
+reset_progress
+report_progress
 FAIL=""
 for i in ${!MACHINES[@]}; do
-    printf "\t* for %-23s" ${MACHINES[$i]}
-    ( check_connection ${MACHINES[$i]} ) || { FAIL+=" ${MACHINES[$i]},"; unset MACHINES[$i]; }
+    check_connection ${MACHINES[$i]} && report_ok ${MACHINES[$i]} || { filter_out ${MACHINES[$i]}; FAIL+=" ${MACHINES[$i]}"; unset MACHINES[$i]; }
 done
+sleep 1
+stop_progress
+
 if [ -n "$FAIL" ]; then
-    oups "Filtering out:$FAIL"
+    oups "\nFiltering out:$FAIL"
 else
-    thumb_up "All connections are ready"
+    thumb_up "\nAll connections are ready"
 fi
 
 #############################################
@@ -312,3 +345,4 @@ else
 fi
 
 # kill -9 ${NOTIFICATION_PID}
+kill -9 ${REPORT_PID}
