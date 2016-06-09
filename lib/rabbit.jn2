@@ -1,3 +1,5 @@
+# -*-sh-*-
+
 echo "RabbitMQ server"
 yum -y install rabbitmq-server
 
