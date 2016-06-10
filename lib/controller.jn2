@@ -119,7 +119,7 @@ chkconfig {{ service }} on
 {% endfor %}
 
 # Notify that neutron is ready
-#register neutron-server
+register neutron-server ready
 
 echo "Removing any old image from Glance"
 rm -rf /var/lib/glance/images/*
