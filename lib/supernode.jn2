@@ -60,8 +60,9 @@ chmod 0755 /usr/local/heat/{{ file }}
 {% endfor %}
 
 # Wait 300 seconds max for neutron-server to be ready
-#wait_for openstack-controller neutron-server 100
-wait_port openstack-controller 9696 300
+register waiting-for neutron
+wait_for openstack-controller neutron-server ready 300
+#wait_port openstack-controller 9696 300
 
 source /root/.keystonerc
 
@@ -74,16 +75,3 @@ sed -i -e "s/__EXT_NET__/$extnet/"  /usr/local/heat/mosler-template-parameters
 
 echo "Creating public subnet network in neutron"
 neutron subnet-create public-net --name public-subnet --allocation-pool start=172.18.0.30,end=172.18.0.200 --disable-dhcp --gateway 172.18.0.1  172.18.0.0/24
-
-
-function wait_port {
-    local timeout=${3:-30}
-    local t=0
-    while : ; do
-	#nc -4 -z $1 $2 &>/dev/null && break; # return 0
-	nc -4 -z -v $1 $2 && break; # return 0
-	if (( t >= timeout )) ; then return 1; fi
-	sleep 1
-	(( t++ ))
-    done
-}
