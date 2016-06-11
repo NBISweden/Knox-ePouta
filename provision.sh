@@ -47,12 +47,10 @@ while [ $# -gt 0 ]; do
 done
 
 function thumb_up {
-    [ -n "$1" ] && echo -ne "$1 "
-    echo -e "\xF0\x9F\x91\x8D"
+    [ -n "$1" ] && echo -e "$1 \xF0\x9F\x91\x8D"
 }
 function oups {
-    [ -n "$1" ] && echo -ne "$1 "
-    echo -e "\e[31m\xF0\x9F\x9A\xAB\e[0m"
+    [ -n "$1" ] && echo -e "$1 \e[31m\xF0\x9F\x9A\xAB\e[0m"
 }
 
 #######################################################################
@@ -86,28 +84,31 @@ mkdir -p ${PROVISION_TMP}
 # Logic to print progress and start/pause
 declare -A PROGRESS
 export PROGRESS
-
-function reset_progress { # Initialization
-    for m in ${MACHINES[@]}; do PROGRESS[$m]="\e[34m...\e[0m"; done
-}
+PROGRESS_FAIL=0
 
 function print_progress {
+    #lockfile-create ${PROVISION_TMP}/lock
     echo -ne "\r|"
     for job in ${!PROGRESS[@]}; do echo -ne " $job ${PROGRESS[$job]}|"; done
+    #lockfile-remove ${PROVISION_TMP}/lock
 }
 
+function reset_progress { # Initialization
+    PROGRESS_FAIL=0
+    for m in ${MACHINES[@]}; do PROGRESS[$m]="\e[34m...\e[0m"; done
+}
 # Not testing if $1 exists. It will!
 function report_ok {
     PROGRESS[$1]=" \e[32m\xE2\x9C\x93\e[0m "
 }
 function report_fail {
     PROGRESS[$1]=" \e[31m\xE2\x9C\x97\e[0m "
+    (( PROGRESS_FAIL++ ))
 }
 function filter_out {
     PROGRESS[${MACHINES[$1]}]=" \e[31m\xF0\x9F\x9A\xAB\e[0m "
     unset MACHINES[$1]
 }
-
 function filter_out_machine {
     for i in ${!MACHINES[@]}; do
 	[ ${MACHINES[$i]} == $1 ] && filter_out $i && return 0 # Found, removed and done!
@@ -149,7 +150,7 @@ for i in ${!MACHINES[@]}; do
 done
 for machine in ${MACHINES[@]}; do ssh-keyscan -4 -T 1 ${FLOATING_IPs[$machine]} >> ${SSH_KNOWN_HOSTS} 2>/dev/null; done
 #Note: I silence the errors from stderr (2) to /dev/null. Don't send them to &1.
-# Not using ssh-keyscan because the exit status is 0 even when the connection failed.
+# The exit status of ssh-keyscan is 0 even when the connection failed: Using nc instead.
 
 if [ -n "$FAIL" ]; then
     oups "\nFiltering out:$FAIL"
@@ -161,7 +162,7 @@ fi
 ########################################################################
 # Finding a suitable port for the notification server
 NOTIFICATION_PORT=${PORT}
-while fuser ${NOTIFICATION_PORT}/tcp ; do (( NOTIFICATION_PORT++ )); done
+while fuser ${NOTIFICATION_PORT}/tcp &>/dev/null ; do (( NOTIFICATION_PORT++ )); done
 
 function kill_notifications {
     [ "$VERBOSE" = "yes" ] && echo "Stopping the notification server"
@@ -177,8 +178,20 @@ python $LIB/notifications.py ${NOTIFICATION_PORT} "${MACHINES[@]}" &> ${PROVISIO
 NOTIFICATION_PID=$!
 
 ########################################################################
+# For the parallel execution
+########################################################################
+#set -e # exit if errors
+declare -A JOB_PIDS
+function kill_bg_jobs {
+    [ "$VERBOSE" = "yes" ] && echo -e "\nStopping background jobs"
+    for job in ${JOB_PIDS[@]}; do kill -9 $job &>/dev/null; done
+}
+trap "kill_bg_jobs" ERR
+
+########################################################################
 # Copying files
 ########################################################################
+    
 if [ "$DO_COPY" = "yes" ]; then
 
     export CONFIGS=${MM_HOME}/configs
@@ -212,34 +225,27 @@ if [ "$DO_COPY" = "yes" ]; then
     [ "$VERBOSE" = "yes" ] && echo "Copying files"
     reset_progress
     print_progress
-    declare -A RSYNC_PIDS
     for machine in ${MACHINES[@]}
     do
-	( # scoping
-	    exec 3>&1 4>&2 # redirection
-	    exec &>${PROVISION_TMP}/rsync.$machine
-	    set -x -e # Print commands && exit if errors
-	    # Preparing the drop folder
-	    ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} mkdir -p ${VAULT}
-	    # Copying all files to the VAULT on that machine
-	    while read -r f ; do
-		rsync -av -e "ssh -F ${SSH_CONFIG}" $f ${FLOATING_IPs[$machine]}:${VAULT}/.
-	    done < ${PROVISION_TMP}/copy.$machine 
-	    set +x +e
-	    exec >&3 2>&4
+	{ 
+	    ( # scoping 
+		exec &>${PROVISION_TMP}/rsync.$machine
+		set -x -e # Print commands && exit if errors
+		# Preparing the drop folder
+		ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} mkdir -p ${VAULT}
+		# Copying all files to the VAULT on that machine
+		while read -r f ; do
+		    rsync -av -e "ssh -F ${SSH_CONFIG}" $f ${FLOATING_IPs[$machine]}:${VAULT}/.
+		done < ${PROVISION_TMP}/copy.$machine 
+	    ) && report_ok $machine || report_fail $machine
 	    print_progress
-	) &
-	RSYNC_PIDS[$machine]=$!
+	} &
+	JOB_PIDS[$machine]=$!
     done
-    
     # Wait for all the copying to finish
-    FAIL=0
-    for machine in ${!RSYNC_PIDS[@]}
-    do
-	wait ${RSYNC_PIDS[$machine]} && report_ok $machine || { (( FAIL++ )); report_fail $machine; }
-	print_progress
-    done
-    if (( FAIL > 0 )) ; then
+    for job in ${JOB_PIDS[@]}; do wait ${job}; done
+    print_progress
+    if (( PROGRESS_FAIL > 0 )) ; then
 	oups "\nFailed copying"
 	echo "Exiting..." 
 	kill_notifications
@@ -255,19 +261,6 @@ fi
 [ "$VERBOSE" = "yes" ] && echo -e "Configuring servers:"
 reset_progress
 print_progress
-declare -A PROVISION_PIDS
-
-function major_booboo {
-    for machine in ${!PROVISION_PIDS[@]}
-    do
-	kill -9 ${PROVISION_PIDS[$machine]} &>/dev/null || true
-    done
-    print_progress
-    oups "\a\nProvisioning of some servers failed"
-}
-set -e # exit if errors
-trap "major_booboo" ERR
-
 export DB_SERVER=${MACHINE_IPs[openstack-controller]} # Used in the templates
 for machine in ${MACHINES[@]}
 do
@@ -324,24 +317,20 @@ EOF
 	       >> ${_SCRIPT}
 
 	{
-	    ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x 2>&1' <${_SCRIPT} &>${_LOG} && print_progress
-	    #number=$RANDOM; sleep $((number % 3 + ${#machine})); ( exit $((number % 2)) );
+	    ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x 2>&1' <${_SCRIPT} &>${_LOG} \
+		&& report_ok $machine || report_fail $machine
+	    print_progress
 	} &
-	PROVISION_PIDS[$machine]=$!
+	JOB_PIDS[$machine]=$!
     fi
 done
     
-FAIL=0
-for machine in ${!PROVISION_PIDS[@]}
-do
-    wait ${PROVISION_PIDS[$machine]} && report_ok $machine || { (( FAIL++ )); report_fail $machine; }
-    print_progress
-done
+for job in ${JOB_PIDS[@]}; do wait $job; done
+print_progress
 
-if (( FAIL > 0 )); then
-    echo "" # new line
-    oups "\a$FAIL servers failed to be configured"
+if (( PROGRESS_FAIL > 0 )); then
+    oups "\a\n${PROGRESS_FAIL} servers failed to be configured"
 else
-    [ "$VERBOSE" = "yes" ] && echo "" && thumb_up "Servers configured"
+    [ "$VERBOSE" = "yes" ] && thumb_up "\nServers configured"
 fi
-# kill_notifications # already trapped
+# kill_notifications # already trapped on EXIT
