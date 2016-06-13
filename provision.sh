@@ -82,31 +82,49 @@ fi
 
 mkdir -p ${PROVISION_TMP}
 
+########################################################################
+# Finding a suitable port for the notification server
+NOTIFICATION_PORT=${PORT}
+while fuser ${NOTIFICATION_PORT}/tcp &>/dev/null ; do (( NOTIFICATION_PORT++ )); done
+NOTIFICATION_URL=http://${PHONE_HOME}:${NOTIFICATION_PORT}
+
+function kill_notifications {
+    [ "$VERBOSE" = "yes" ] && echo "Stopping the notification server"
+    fuser -k ${NOTIFICATION_PORT}/tcp &>/dev/null
+    #kill -9 ${NOTIFICATION_PID}
+}
+
+[ "$VERBOSE" = "yes" ] && echo "Starting the notification server [on port ${NOTIFICATION_PORT}]"
+python $LIB/notifications.py ${NOTIFICATION_PORT} "${MACHINES[@]}" &> ${PROVISION_TMP}/notifications.log &
+NOTIFICATION_PID=$!
+sleep 1
+
+
 #######################################################################
 # Logic to print progress and start/pause
-PROGRESS_FAIL=0
+export FAIL=0
 
 function print_progress {
-    ans=$(curl http://${PHONE_HOME}:${NOTIFICATION_PORT}/progress 2>/dev/null) # silence the progress bar
+    ans=$(curl ${NOTIFICATION_URL}/progress 2>/dev/null) # silence the progress bar
     echo -ne "\r$ans"
 }
 
 function reset_progress { # Initialization
-    PROGRESS_FAIL=0
+    FAIL=0
     for m in ${MACHINES[@]}; do
-	curl -X POST -d '\e[34m...\e[0m' http://${PHONE_HOME}:${NOTIFICATION_PORT}/$m/progress &>/dev/null 
+	curl -X POST -d '\e[34m...\e[0m' ${NOTIFICATION_URL}/$m/progress &>/dev/null 
     done
 }
 # Not testing if $1 exists. It will!
 function report_ok {
-    curl -X POST -d ' \e[32m\xE2\x9C\x93\e[0m ' http://${PHONE_HOME}:${NOTIFICATION_PORT}/$1/progress &>/dev/null 
+    curl -X POST -d ' \e[32m\xE2\x9C\x93\e[0m ' ${NOTIFICATION_URL}/$1/progress &>/dev/null 
 }
 function report_fail {
-    curl -X POST -d ' \e[31m\xE2\x9C\x97\e[0m ' http://${PHONE_HOME}:${NOTIFICATION_PORT}/$1/progress &>/dev/null
-    (( PROGRESS_FAIL++ ))
+    curl -X POST -d ' \e[31m\xE2\x9C\x97\e[0m ' ${NOTIFICATION_URL}/$1/progress &>/dev/null
+    curl -X POST ${NOTIFICATION_URL}/fail/$1 &>/dev/null
 }
 function filter_out {
-    curl -X POST -d ' \e[31m\xF0\x9F\x9A\xAB\e[0m ' http://${PHONE_HOME}:${NOTIFICATION_PORT}/${MACHINES[$1]}/progress &>/dev/null 
+    curl -X POST -d ' \e[31m\xF0\x9F\x9A\xAB\e[0m ' ${NOTIFICATION_URL}/${MACHINES[$1]}/progress &>/dev/null 
     unset MACHINES[$1]
 }
 
@@ -127,7 +145,7 @@ SSH_KNOWN_HOSTS=${PROVISION_TMP}/ssh_known_hosts.${OS_TENANT_NAME}
 
 [ "$VERBOSE" = "yes" ] && echo -e "Checking the connections:"
 reset_progress
-FAIL=""
+CONNECTION_FAIL=""
 cat > ${SSH_CONFIG} <<ENDSSHCFG
 Host ${FLOATING_CIDR%0/24}*
 	User centos
@@ -146,17 +164,17 @@ for i in ${!MACHINES[@]}; do
     #            s.connect(('${FLOATING_IPs[${MACHINES[$i]}]}', 22))" &> /dev/null \
     nc -4 -z -w ${CONNECTION_TIMEOUT} ${FLOATING_IPs[${MACHINES[$i]}]} 22 \
 	&& report_ok ${MACHINES[$i]} \
-	    || { FAIL+=" ${MACHINES[$i]}"; filter_out $i; }
+	    || { CONNECTION_FAIL+=" ${MACHINES[$i]}"; filter_out $i; }
     print_progress
 done
 for machine in ${MACHINES[@]}; do ssh-keyscan -4 -T 1 ${FLOATING_IPs[$machine]} >> ${SSH_KNOWN_HOSTS} 2>/dev/null; done
 #Note: I silence the errors from stderr (2) to /dev/null. Don't send them to &1.
 # Not using ssh-keyscan because the exit status is 0 even when the connection failed.
 
-if [ -n "$FAIL" ]; then
-    oups "\nFiltering out:$FAIL"
-else
-    thumb_up "\nAll connections are ready"
+if [ -n "$CONNECTION_FAIL" ]; then
+    oups "\nFiltering out:$CONNECTION_FAIL"
+# else
+#     thumb_up "\nAll connections are ready"
 fi
 
 
@@ -177,6 +195,27 @@ trap "echo; kill_notifications || true; exit 1" EXIT #INT TERM ERR
 [ "$VERBOSE" = "yes" ] && echo "Starting the notification server [on port ${NOTIFICATION_PORT}]"
 python $LIB/notifications.py ${NOTIFICATION_PORT} "${MACHINES[@]}" &> ${PROVISION_TMP}/notifications.log &
 NOTIFICATION_PID=$!
+
+########################################################################
+# For the parallel execution
+
+declare -A JOB_PIDS
+# function kill_bg_jobs {
+#     [ "$VERBOSE" = "yes" ] && echo -e "\nStopping background jobs"
+#     for job in ${JOB_PIDS[@]}; do kill -9 $job &>/dev/null; done
+# }
+function cleanup {
+    [ "$VERBOSE" = "yes" ] && echo -e "\nStopping background jobs"
+    kill -9 $(jobs -p) &>/dev/null
+    #kill_notifications
+}
+#set -e # exit if errors
+# Cleaning up after us. Catching EXIT is enough. Even on errors
+# shopt -qs huponexit
+trap 'cleanup' INT TERM #EXIT #HUP ERR
+
+# Or just kill the parent. That should kill the processes in that process group
+# trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
 ########################################################################
 # Copying files
@@ -217,30 +256,32 @@ if [ "$DO_COPY" = "yes" ]; then
     declare -A RSYNC_PIDS
     for machine in ${MACHINES[@]}
     do
-	( # scoping
-	    exec 3>&1 4>&2 # redirection
-	    exec &>${PROVISION_TMP}/rsync.$machine
-	    set -x -e # Print commands && exit if errors
-	    # Preparing the drop folder
-	    ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} mkdir -p ${VAULT}
-	    # Copying all files to the VAULT on that machine
-	    while read -r f ; do
-		rsync -av -e "ssh -F ${SSH_CONFIG}" $f ${FLOATING_IPs[$machine]}:${VAULT}/.
-	    done < ${PROVISION_TMP}/copy.$machine 
-	    set +x +e
-	    exec >&3 2>&4
+	{ # scoping, in that current shell
+	    ( # In a subshell
+		exec &>${PROVISION_TMP}/rsync.$machine
+		set -x -e # Print commands && exit if errors
+		# Preparing the drop folder
+		ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} mkdir -p ${VAULT}
+		# Copying all files to the VAULT on that machine
+		while read -r f ; do
+		    rsync -av -e "ssh -F ${SSH_CONFIG}" $f ${FLOATING_IPs[$machine]}:${VAULT}/.
+		done < ${PROVISION_TMP}/copy.$machine
+	    )
+	    RET=$?
+	    if [ $RET -eq 0 ]; then
+		report_ok $machine 
+	    else
+		report_fail $machine
+	    fi
 	    print_progress
-	) &
-	RSYNC_PIDS[$machine]=$!
+	    exit $RET
+	} &
+	JOB_PIDS[$machine]=$!
     done
     
     # Wait for all the copying to finish
-    FAIL=0
-    for machine in ${!RSYNC_PIDS[@]}
-    do
-	wait ${RSYNC_PIDS[$machine]} && report_ok $machine || { (( FAIL++ )); report_fail $machine; }
-	print_progress
-    done
+    for job in ${JOB_PIDS[@]}; do wait ${job} || ((FAIL++)); print_progress; done
+    print_progress # to have a clear picture
     if (( FAIL > 0 )) ; then
 	oups "\nFailed copying"
 	echo "Exiting..." 
@@ -287,34 +328,44 @@ do
 #!/usr/bin/env bash
 
 function register {
-    curl -X POST -d \$2 http://${PHONE_HOME}:${NOTIFICATION_PORT}/$machine/\$1
+    curl -X POST -d \$2 ${NOTIFICATION_URL}/$machine/\$1 2>/dev/null
 }
 
 function wait_for {
-    local _URL=http://${PHONE_HOME}:${NOTIFICATION_PORT}/\$1/\$2
-    local timeout=\${4:-30} # default: 30 seconds
-    local t=0
-    while : ; do
-        res=\$(curl \$_URL)
-        if [ "\$res" = "$3" ] ; then break; fi
-        if (( t >= timeout )) ; then echo "WAIT FOR \$1 to be ready with \$2: Timeout (\$timeout seconds)"; exit 1; fi # Timeout
-        sleep 1
-        (( t++ ))
+    local -r -i timeout=\${4:-30} # default: 30 seconds
+    local -i t=0 # local integer variable
+    local -i backoff=1
+
+    while (( (t++) <= timeout )) ; do
+	echo -e "Try \$t \\tTimeout: \$timeout"
+        res=\$(curl ${NOTIFICATION_URL}/\$1/\$2 2>/dev/null)
+        if [ \$? -ne 0 ] ; then echo "Unable to get status for \$2 on \$1"; break; fi
+        if [ "\$res" == "\$3" ] ; then echo "Task \$2 is \$3 on \$1 (after \$t seconds)"; return 0; fi
+        if [ "\$res" == "ERR" ] ; then echo "Task \$2 failed on \$1: Exiting..."; break; fi
+        if (( (t % 10) == 0 )); then (( backoff*=2 )); fi
+        echo "backoff: $backoff"
+	sleep $backoff
     done
+    exit 1
 }
 
 # -w doesn't work on nc
 function wait_port {
-    timeout=\${3:-30}
-    t=0
-    while : ; do
-	#nc -4 -z \$1 \$2 &>/dev/null && break; # return 0
-	nc -4 -z -v \$1 \$2 && break; # return 0
-	if (( t >= timeout )) ; then exit 1; fi # Use return 1, if you don't want to also drop the shell
+    local -r -i timeout=\${3:-30} # default: 30 seconds
+    local -i t=0 # local integer variable
+    local -i backoff=1
+    while (( (t++) <= timeout )) ; do
+	echo -e "Try \$t \\tTimeout: \$timeout"
+	nc -4 -z -v \$1 \$2 && return 0
+        res=\$(curl ${NOTIFICATION_URL}/fail/\$1 2>/dev/null)
+        if [ \$? -ne 0 ] ; then echo "Unable to get contact to \$1"; break; fi
+        if [ "\$res" == "FAIL" ] ; then echo "\$1 has already failed: Giving up here..."; break; fi
+        #if (( (t % 10) == 0 )); then (( backoff*=2 )); fi
+        #echo "backoff: $backoff"
+	#sleep $backoff
 	sleep 1
-	(( t++ ))
-	echo -n "."
     done
+    exit 1
 }
 EOF
 
@@ -325,25 +376,27 @@ EOF
 	       <${_TEMPLATE} \
 	       >> ${_SCRIPT}
 
-	{
-	    ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x 2>&1' <${_SCRIPT} &>${_LOG} && print_progress
-	    #number=$RANDOM; sleep $((number % 3 + ${#machine})); ( exit $((number % 2)) );
+	{ # Scoping, in that current shell
+	    ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x -v 2>&1' <${_SCRIPT} &>${_LOG}
+	    RET=$?
+	    if [ $RET -eq 0 ]; then
+		report_ok $machine 
+	    else
+		report_fail $machine
+	    fi
+	    print_progress
+	    exit $RET
 	} &
 	PROVISION_PIDS[$machine]=$!
     fi
 done
     
-FAIL=0
-for machine in ${!PROVISION_PIDS[@]}
-do
-    wait ${PROVISION_PIDS[$machine]} && report_ok $machine || { (( FAIL++ )); report_fail $machine; }
-    print_progress
-done
+for job in ${JOB_PIDS[@]}; do wait $job || ((FAIL++)); done
+print_progress
 
 if (( FAIL > 0 )); then
-    echo "" # new line
-    oups "\a$FAIL servers failed to be configured"
+    oups "\a\n${FAIL} servers failed to be configured"
 else
     [ "$VERBOSE" = "yes" ] && echo "" && thumb_up "Servers configured"
 fi
-# kill_notifications # already trapped
+kill_notifications
