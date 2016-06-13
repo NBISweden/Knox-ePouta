@@ -46,6 +46,7 @@ while [ $# -gt 0 ]; do
     shift
 done
 
+#######################################################################
 function thumb_up {
     [ -n "$1" ] && echo -e "$1 \xF0\x9F\x91\x8D"
 }
@@ -79,34 +80,46 @@ if [ -n ${CUSTOM_MACHINES:-''} ]; then
 fi
 
 mkdir -p ${PROVISION_TMP}
+########################################################################
+# Finding a suitable port for the notification server
+NOTIFICATION_PORT=${PORT}
+while fuser ${NOTIFICATION_PORT}/tcp &>/dev/null ; do (( NOTIFICATION_PORT++ )); done
+
+function kill_notifications {
+    [ "$VERBOSE" = "yes" ] && echo "Stopping the notification server"
+    fuser -k ${NOTIFICATION_PORT}/tcp &>/dev/null
+    #kill -9 ${NOTIFICATION_PID}
+}
+
+[ "$VERBOSE" = "yes" ] && echo "Starting the notification server [on port ${NOTIFICATION_PORT}]"
+python $LIB/notifications.py ${NOTIFICATION_PORT} "${MACHINES[@]}" &> ${PROVISION_TMP}/notifications.log &
+NOTIFICATION_PID=$!
+sleep 1
 
 #######################################################################
 # Logic to print progress and start/pause
-declare -A PROGRESS
-export PROGRESS
 PROGRESS_FAIL=0
+declare -Ag PROGRESS
 
 function print_progress {
-    #lockfile-create ${PROVISION_TMP}/lock
     echo -ne "\r|"
-    for job in ${!PROGRESS[@]}; do echo -ne " $job ${PROGRESS[$job]}|"; done
-    #lockfile-remove ${PROVISION_TMP}/lock
+    for m in ${!PROGRESS[@]}; do echo -ne " $m ${PROGRESS[$m]}|"; done
 }
 
 function reset_progress { # Initialization
     PROGRESS_FAIL=0
-    for m in ${MACHINES[@]}; do PROGRESS[$m]="\e[34m...\e[0m"; done
+    for m in ${MACHINES[@]}; do	PROGRESS[$m]=$'\e[34m...\e[0m'; done
 }
 # Not testing if $1 exists. It will!
 function report_ok {
-    PROGRESS[$1]=" \e[32m\xE2\x9C\x93\e[0m "
+    PROGRESS[$1]=$' \e[32m\xE2\x9C\x93\e[0m '
 }
 function report_fail {
-    PROGRESS[$1]=" \e[31m\xE2\x9C\x97\e[0m "
+    PROGRESS[$1]=$' \e[31m\xE2\x9C\x97\e[0m '
     (( PROGRESS_FAIL++ ))
 }
 function filter_out {
-    PROGRESS[${MACHINES[$1]}]=" \e[31m\xF0\x9F\x9A\xAB\e[0m "
+    PROGRESS[${MACHINES[$1]}]=$' \e[31m\xF0\x9F\x9A\xAB\e[0m '
     unset MACHINES[$1]
 }
 function filter_out_machine {
@@ -158,35 +171,23 @@ else
     thumb_up "\nAll connections are ready"
 fi
 
-
-########################################################################
-# Finding a suitable port for the notification server
-NOTIFICATION_PORT=${PORT}
-while fuser ${NOTIFICATION_PORT}/tcp &>/dev/null ; do (( NOTIFICATION_PORT++ )); done
-
-function kill_notifications {
-    [ "$VERBOSE" = "yes" ] && echo "Stopping the notification server"
-    fuser -k ${NOTIFICATION_PORT}/tcp &>/dev/null
-    #kill -9 ${NOTIFICATION_PID}
-}
-
-# Cleaning up after us. Catching EXIT is enough. Even on errors
-trap "echo; kill_notifications || true; exit 1" EXIT #INT TERM ERR 
-
-[ "$VERBOSE" = "yes" ] && echo "Starting the notification server [on port ${NOTIFICATION_PORT}]"
-python $LIB/notifications.py ${NOTIFICATION_PORT} "${MACHINES[@]}" &> ${PROVISION_TMP}/notifications.log &
-NOTIFICATION_PID=$!
-
 ########################################################################
 # For the parallel execution
 ########################################################################
 #set -e # exit if errors
+
 declare -A JOB_PIDS
-function kill_bg_jobs {
-    [ "$VERBOSE" = "yes" ] && echo -e "\nStopping background jobs"
-    for job in ${JOB_PIDS[@]}; do kill -9 $job &>/dev/null; done
-}
-trap "kill_bg_jobs" ERR
+# function kill_bg_jobs {
+#     [ "$VERBOSE" = "yes" ] && echo -e "\nStopping background jobs"
+#     for job in ${JOB_PIDS[@]}; do kill -9 $job &>/dev/null; done
+# }
+# trap "kill_bg_jobs" ERR
+
+# Cleaning up after us. Catching EXIT is enough. Even on errors
+# shopt -qs huponexit
+# trap 'echo killing bg jobs; kill $(jobs -p) &>/dev/null' HUP #INT TERM ERR 
+# trap 'echo; kill_notifications || true; kill $(jobs -p); exit 1' INT ERR #TERM EXIT 
+trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
 ########################################################################
 # Copying files
@@ -236,15 +237,15 @@ if [ "$DO_COPY" = "yes" ]; then
 		# Copying all files to the VAULT on that machine
 		while read -r f ; do
 		    rsync -av -e "ssh -F ${SSH_CONFIG}" $f ${FLOATING_IPs[$machine]}:${VAULT}/.
-		done < ${PROVISION_TMP}/copy.$machine 
+		done < ${PROVISION_TMP}/copy.$machine
 	    ) && report_ok $machine || report_fail $machine
 	    print_progress
 	} &
 	JOB_PIDS[$machine]=$!
     done
     # Wait for all the copying to finish
-    for job in ${JOB_PIDS[@]}; do wait ${job}; done
-    print_progress
+    for job in ${JOB_PIDS[@]}; do wait ${job}; print_progress; done
+    print_progress # to have a clear picture
     if (( PROGRESS_FAIL > 0 )) ; then
 	oups "\nFailed copying"
 	echo "Exiting..." 
@@ -325,7 +326,7 @@ EOF
     fi
 done
     
-for job in ${JOB_PIDS[@]}; do wait $job; done
+for job in ${JOB_PIDS[@]}; do wait $job; print_progress; done
 print_progress
 
 if (( PROGRESS_FAIL > 0 )); then
@@ -333,4 +334,5 @@ if (( PROGRESS_FAIL > 0 )); then
 else
     [ "$VERBOSE" = "yes" ] && thumb_up "\nServers configured"
 fi
-# kill_notifications # already trapped on EXIT
+
+kill_notifications
