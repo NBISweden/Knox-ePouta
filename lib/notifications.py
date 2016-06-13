@@ -7,6 +7,7 @@ notifications = {key: {} for key in sys.argv[2:] }
 urls = (
     '/', 'status',
     '/progress', 'progress',
+    '/fail/(?P<machine>.+)', 'fail',
     '/(?P<machine>.+)/(?P<task>.+)', 'task'
 )
 
@@ -22,10 +23,12 @@ class task:
     def GET(self, machine, task):
         d = notifications.get(machine)
         if d is None:
-            return 'Unknown machine %s' % machine
+            sys.stderr.write('[ERROR: %s | %s ] Unknown machine\n' % (machine,task))
+            return 'ERR'
         s = d.get(task)
         if s is None:
-            return 'Unknown task %s for %s' % (task,machine)
+            sys.stderr.write('[ERROR: %s | %s ] Unknown task\n' % (machine,task))
+            return 'ERR'
         else:
             return s
 
@@ -33,9 +36,29 @@ class task:
         status = web.data()
         d = notifications.get(machine)
         if d is None:
-            return 'Unknown machine %s' % machine
+            sys.stderr.write('[ERROR: %s | %s ] Unknown machine\n' % (machine,task))
+            return 'ERR'
         d[task] = status
         return '[ %s | %s ] registered for %s' % (task, status, machine)
+
+class fail:
+    def GET(self, machine):
+        d = notifications.get(machine)
+        if d is None:
+            sys.stderr.write('[ERROR: %s ] Unknown machine\n' % machine)
+            return 'ERR'
+        return d.get('fail')
+
+    def POST(self, machine):
+        d = notifications.get(machine)
+        if d is None:
+            sys.stderr.write('[ERROR: %s | %s ] Unknown machine\n' % (machine,task))
+            return 'ERR'
+        for k in d.iterkeys():
+            if k is not 'progress':
+                d[k] = 'FAIL'
+        d['fail'] = 'FAIL'
+        return '[ %s ] failure registered' % machine
 
 class progress:
     def GET(self):

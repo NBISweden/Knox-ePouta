@@ -166,7 +166,7 @@ fi
 ########################################################################
 [ "$VERBOSE" = "yes" ] && echo "Starting the REST phone home server"
 fuser -k ${PORT}/tcp || true
-trap "fuser -k ${PORT}/tcp || true; exit 1" SIGINT SIGTERM EXIT
+trap "fuser -k ${PORT}/tcp &>/dev/null || true; exit 1" SIGINT SIGTERM EXIT
 python $LIB/boot_progress.py $PORT "${MACHINES[@]}" &
 REST_PID=$!
 
