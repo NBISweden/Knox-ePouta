@@ -7,6 +7,7 @@ notifications = {key: {} for key in sys.argv[2:] }
 
 urls = (
     '/', 'status',
+    '/progress', 'progress',
     '/(?P<machine>.+)/(?P<task>.+)', 'task'
 )
 
@@ -36,6 +37,10 @@ class task:
             return 'Unknown machine %s' % machine
         d[task] = status
         return '[ %s | %s ] registered for %s' % (task, status, machine)
+
+class progress:
+    def GET(self):
+        return '|' + ' '.join(['{0} {1}|'.format(k, v.get("progress",'.?.')) for k, v in notifications.items()])
 
 if __name__ == "__main__":
     web.config.debug = False

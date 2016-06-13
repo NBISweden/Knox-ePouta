@@ -84,27 +84,29 @@ mkdir -p ${PROVISION_TMP}
 
 #######################################################################
 # Logic to print progress and start/pause
-declare -A PROGRESS
-export PROGRESS
-
-function reset_progress { # Initialization
-    for m in ${MACHINES[@]}; do PROGRESS[$m]="\e[34m...\e[0m"; done
-}
+PROGRESS_FAIL=0
 
 function print_progress {
-    echo -ne "\r|"
-    for job in ${!PROGRESS[@]}; do echo -ne " $job ${PROGRESS[$job]}|"; done
+    ans=$(curl http://${PHONE_HOME}:${NOTIFICATION_PORT}/progress 2>/dev/null) # silence the progress bar
+    echo -ne "\r$ans"
 }
 
+function reset_progress { # Initialization
+    PROGRESS_FAIL=0
+    for m in ${MACHINES[@]}; do
+	curl -X POST -d '\e[34m...\e[0m' http://${PHONE_HOME}:${NOTIFICATION_PORT}/$m/progress &>/dev/null 
+    done
+}
 # Not testing if $1 exists. It will!
 function report_ok {
-    PROGRESS[$1]=" \e[32m\xE2\x9C\x93\e[0m "
+    curl -X POST -d ' \e[32m\xE2\x9C\x93\e[0m ' http://${PHONE_HOME}:${NOTIFICATION_PORT}/$1/progress &>/dev/null 
 }
 function report_fail {
-    PROGRESS[$1]=" \e[31m\xE2\x9C\x97\e[0m "
+    curl -X POST -d ' \e[31m\xE2\x9C\x97\e[0m ' http://${PHONE_HOME}:${NOTIFICATION_PORT}/$1/progress &>/dev/null
+    (( PROGRESS_FAIL++ ))
 }
 function filter_out {
-    PROGRESS[${MACHINES[$1]}]=" \e[31m\xF0\x9F\x9A\xAB\e[0m "
+    curl -X POST -d ' \e[31m\xF0\x9F\x9A\xAB\e[0m ' http://${PHONE_HOME}:${NOTIFICATION_PORT}/${MACHINES[$1]}/progress &>/dev/null 
     unset MACHINES[$1]
 }
 
