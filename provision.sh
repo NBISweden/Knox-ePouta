@@ -287,15 +287,15 @@ if [ "$DO_COPY" = "yes" ]; then
 	echo "Exiting..." 
 	kill_notifications
 	exit 1
-    else
-	[ "$VERBOSE" = "yes" ] && thumb_up "\nFiles copied"
+    # else
+    # 	[ "$VERBOSE" = "yes" ] && thumb_up "\nFiles copied"
     fi
 fi
 
 #######################################################################
 # Aaaaannnnnddd...... cue music!
 ########################################################################
-[ "$VERBOSE" = "yes" ] && echo -e "Configuring servers:"
+[ "$VERBOSE" = "yes" ] && echo -e "\nConfiguring servers:"
 reset_progress
 print_progress
 declare -A PROVISION_PIDS
@@ -400,3 +400,4 @@ else
     [ "$VERBOSE" = "yes" ] && echo "" && thumb_up "Servers configured"
 fi
 kill_notifications
+
