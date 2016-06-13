@@ -1,5 +1,0 @@
-- name: Installing NFS utils
-  yum: state=latest name=nfs-utils
-
-- name: Placeholder
-  shell: echo 'hello' > hello.txt

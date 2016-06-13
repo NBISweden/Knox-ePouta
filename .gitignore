@@ -3,9 +3,4 @@
 test/
 micromosler.rc
 user.rc
-cloudinit/*
-**/vm_init-*.yml
-**/machines.py*
-ansible/config.*
-ansible/inventory.*
-ansible/log*
+tmp/
