@@ -40,7 +40,13 @@ service mysqld start
 # /usr/bin/mysqladmin -u root -h openstack-controller password 'mysql'
 # # Not dropping the .my.cnf file in /root
 
+
+{% if env['DO_CHEAT'] == 'yes' %}
+echo "MySQL Databases setup (cheat)"
+mysql -u root < {{ env['VAULT'] }}/openstack_db_dump.sql
+service mysqld restart
+{% else %}
 echo "MySQL Databases setup"
 # Note: Root password is empty at first, then set inside openstack_db.sql.
 mysql -u root < {{ env['VAULT'] }}/openstack_db.sql
-
+{% endif %}

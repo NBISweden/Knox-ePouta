@@ -2,26 +2,33 @@
 import web
 import sys
 
-notifications = {key: {} for key in sys.argv[2:] }
+_notifications = {key: {} for key in sys.argv[2:] }
+_progress = {key: '.?.' for key in sys.argv[2:] }
+_failures = {key: None for key in sys.argv[2:] }
 
 urls = (
-    '/', 'status',
-    '/progress', 'progress',
-    '/fail/(?P<machine>.+)', 'fail',
-    '/(?P<machine>.+)/(?P<task>.+)', 'task'
+    '/', 'Status',
+    '/show_progress', 'Show_Progress',
+    '/progress/(?P<machine>.+)', 'Progress',
+    '/fail/(?P<machine>.+)', 'Fail',
+    '/(?P<machine>.+)/(?P<task>.+)', 'Task'
 )
 
-class status:
+class Status:
     def GET(self):
-        output = ''
-        for k, v in notifications.items():
+        output = '======= Notifications =======\n'
+        for k, v in _notifications.items():
             d = ' '.join(['[ %s | %s ]' % (key, value) for (key, value) in v.items()])
             output += '{0:>20}: {1}\n'.format(k, d)
+        output += '\n======= Failures =======\n'
+        output += ' '.join(['{0:>20}: {1}\n'.format(k, v) for (k, v) in _failures.items()])
+        output += '\n======= Progress =======\n'
+        output += ' '.join(['{0:>20}: {1}\n'.format(k, v) for (k, v) in _progress.items()])
         return output
 
-class task:
+class Task:
     def GET(self, machine, task):
-        d = notifications.get(machine)
+        d = _notifications.get(machine)
         if d is None:
             sys.stderr.write('[ERROR: %s | %s ] Unknown machine\n' % (machine,task))
             return 'ERR'
@@ -33,36 +40,39 @@ class task:
             return s
 
     def POST(self, machine, task):
-        status = web.data()
-        d = notifications.get(machine)
+        d = _notifications.get(machine)
         if d is None:
             sys.stderr.write('[ERROR: %s | %s ] Unknown machine\n' % (machine,task))
             return 'ERR'
+        status = web.data()
         d[task] = status
         return '[ %s | %s ] registered for %s' % (task, status, machine)
 
-class fail:
+class Fail:
     def GET(self, machine):
-        d = notifications.get(machine)
-        if d is None:
-            sys.stderr.write('[ERROR: %s ] Unknown machine\n' % machine)
-            return 'ERR'
-        return d.get('fail')
+        return _failures.get(machine,'ERR')
 
     def POST(self, machine):
-        d = notifications.get(machine)
-        if d is None:
-            sys.stderr.write('[ERROR: %s | %s ] Unknown machine\n' % (machine,task))
+        if machine not in _failures:
+            sys.stderr.write('[ERROR: %s ] Unknown machine\n' % (machine))
             return 'ERR'
-        for k in d.iterkeys():
-            if k is not 'progress':
-                d[k] = 'FAIL'
-        d['fail'] = 'FAIL'
+        _failures[machine]='FAIL'
         return '[ %s ] failure registered' % machine
 
-class progress:
+class Progress:
+    def GET(self, machine):
+        return _progress.get(machine,'ERR')
+
+    def POST(self, machine):
+        if machine not in _progress:
+            sys.stderr.write('[ERROR: %s ] Unknown machine\n' % (machine))
+            return 'ERR'
+        _progress[machine] = web.data()
+        return '[ %s ] progress registered' % machine
+
+class Show_Progress:
     def GET(self):
-        return '|' + ' '.join(['{0} {1}|'.format(k, v.get("progress",'.?.')) for k, v in notifications.items()])
+        return '|' + ' '.join(['{0} {1}|'.format(k, v) for k, v in _progress.items()])
 
 if __name__ == "__main__":
     web.config.debug = False
