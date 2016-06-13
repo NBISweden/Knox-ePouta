@@ -14,8 +14,12 @@ thinlinc-master:{{ env['CONFIGS'] }}/tl_answers
 {% endfor %}
 
 {# Openstack controller #}
-openstack-controller:{{ env['CONFIGS'] }}/openstack_db.sql
 openstack-controller:{{ env['MOSLER_MISC'] }}/ {# Make sure there is a / at the end #}
+{% if env['DO_CHEAT'] == 'yes' %}
+openstack-controller:{{ env['CONFIGS'] }}/openstack_db_dump.sql
+{% else %}
+openstack-controller:{{ env['CONFIGS'] }}/openstack_db.sql
+{% endif %}
 
 openstack-controller:{{ env['CONFIGS'] }}/neutron.conf
 openstack-controller:{{ env['CONFIGS'] }}/keystone.conf
