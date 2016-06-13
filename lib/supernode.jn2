@@ -60,9 +60,8 @@ chmod 0755 /usr/local/heat/{{ file }}
 {% endfor %}
 
 # Wait 300 seconds max for neutron-server to be ready
-register waiting-for neutron
-wait_for openstack-controller neutron-server ready 300
-#wait_port openstack-controller 9696 300
+#wait_for openstack-controller neutron-server ready 300
+wait_port openstack-controller 9696 300
 
 source /root/.keystonerc
 

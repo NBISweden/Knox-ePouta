@@ -42,6 +42,22 @@ echo "Memcached service"
 service memcached restart
 chkconfig memcached on
 
+echo "Stopping Openstack Services"
+{% set items = [ 'openstack-heat-api',
+		 'openstack-heat-api-cfn',
+		 'openstack-heat-engine',
+		 'openstack-nova-api',
+		 'openstack-nova-scheduler',
+		 'openstack-nova-conductor',
+		 'openstack-glance-api',
+		 'neutron-server',
+		 'openstack-glance-registry',
+		 'httpd',
+] -%}
+{% for service in items %}
+service {{ service }} stop
+{% endfor %}
+
 echo "Preparing the databases"
 su -s /bin/sh -c 'keystone-manage db_sync' keystone
 su -s /bin/sh -c 'glance-manage db_sync' glance
@@ -50,7 +66,7 @@ su -s /bin/sh -c 'heat-manage db_sync' heat
 su -s /bin/sh -c 'neutron-db-manage --config-file /etc/neutron/neutron.conf  --config-file /etc/neutron/plugin.ini upgrade 5ac1c354a051' neutron
 
 echo "Keystone service"
-service openstack-keystone start
+service openstack-keystone restart
 chkconfig openstack-keystone on
 
 export OS_SERVICE_TOKEN=0123456789abcdef0123456789abcdef
