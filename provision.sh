@@ -10,7 +10,7 @@ export LIB=${MM_HOME}/lib
 export VAULT=vault
 export CONNECTION_TIMEOUT=1 #seconds
 DO_COPY=yes
-export FAST=false
+export DO_CHEAT=no
 
 function usage {
     echo "Usage: $0 [options]"
@@ -24,7 +24,7 @@ function usage {
     echo -e "\t--no-copy,-n           \tSkips the steps of syncing files to the servers"
     echo -e "\t--timeout <seconds>,   \tSkips the steps of syncing files to the servers"
     echo -e "\t       -t <seconds>    \tSkips the steps of syncing files to the servers"
-    echo -e "\t--fast                 \tUses tricks to provision machines faster (like mysql pre-dumps)"
+    echo -e "\t--cheat                \tUses tricks to provision machines faster (like mysql pre-dumps)"
     echo -e "\t--quiet,-q             \tRemoves the verbose output"
     echo -e "\t--help,-h              \tOutputs this message and exits"
     echo -e "\t-- ...                 \tAny other options appearing after the -- will be ignored"
@@ -37,7 +37,7 @@ while [ $# -gt 0 ]; do
         --help|-h) usage; exit 0;;
         --machines|-m) CUSTOM_MACHINES=$2; shift;;
         --no-copy|-n) DO_COPY=no;;
-        --fast) FAST=true;;
+        --cheat) DO_CHEAT=yes;;
         --vault) VAULT=$2; shift;;
         --timeout|-t) CONNECTION_TIMEOUT=$2; shift;;
         --) shift; break;;
@@ -105,26 +105,26 @@ sleep 1
 export FAIL=0
 
 function print_progress {
-    ans=$(curl ${NOTIFICATION_URL}/progress 2>/dev/null) # silence the progress bar
+    ans=$(curl ${NOTIFICATION_URL}/show_progress 2>/dev/null) # silence the progress bar
     echo -ne "\r$ans"
 }
 
 function reset_progress { # Initialization
     FAIL=0
     for m in ${MACHINES[@]}; do
-	curl -X POST -d '\e[34m...\e[0m' ${NOTIFICATION_URL}/$m/progress &>/dev/null 
+	curl -X POST -d '\e[34m...\e[0m' ${NOTIFICATION_URL}/progress/$m &>/dev/null 
     done
 }
 # Not testing if $1 exists. It will!
 function report_ok {
-    curl -X POST -d ' \e[32m\xE2\x9C\x93\e[0m ' ${NOTIFICATION_URL}/$1/progress &>/dev/null 
+    curl -X POST -d ' \e[32m\xE2\x9C\x93\e[0m ' ${NOTIFICATION_URL}/progress/$1 &>/dev/null 
 }
 function report_fail {
-    curl -X POST -d ' \e[31m\xE2\x9C\x97\e[0m ' ${NOTIFICATION_URL}/$1/progress &>/dev/null
+    curl -X POST -d ' \e[31m\xE2\x9C\x97\e[0m ' ${NOTIFICATION_URL}/progress/$1 &>/dev/null
     curl -X POST ${NOTIFICATION_URL}/fail/$1 &>/dev/null
 }
 function filter_out {
-    curl -X POST -d ' \e[31m\xF0\x9F\x9A\xAB\e[0m ' ${NOTIFICATION_URL}/${MACHINES[$1]}/progress &>/dev/null 
+    curl -X POST -d ' \e[31m\xF0\x9F\x9A\xAB\e[0m ' ${NOTIFICATION_URL}/progress/${MACHINES[$1]} &>/dev/null 
     unset MACHINES[$1]
 }
 
@@ -342,9 +342,9 @@ function wait_for {
         if [ \$? -ne 0 ] ; then echo "Unable to get status for \$2 on \$1"; break; fi
         if [ "\$res" == "\$3" ] ; then echo "Task \$2 is \$3 on \$1 (after \$t seconds)"; return 0; fi
         if [ "\$res" == "ERR" ] ; then echo "Task \$2 failed on \$1: Exiting..."; break; fi
+	sleep \$backoff
         if (( (t % 10) == 0 )); then (( backoff*=2 )); fi
-        echo "backoff: $backoff"
-	sleep $backoff
+        echo "backoff: \$backoff"
     done
     exit 1
 }
@@ -360,10 +360,11 @@ function wait_port {
         res=\$(curl ${NOTIFICATION_URL}/fail/\$1 2>/dev/null)
         if [ \$? -ne 0 ] ; then echo "Unable to get contact to \$1"; break; fi
         if [ "\$res" == "FAIL" ] ; then echo "\$1 has already failed: Giving up here..."; break; fi
-        #if (( (t % 10) == 0 )); then (( backoff*=2 )); fi
-        #echo "backoff: $backoff"
-	#sleep $backoff
-	sleep 1
+	sleep \$backoff
+        if (( (t % 10) == 0 )); then
+	    backoff=\$(( backoff * 2 ))
+            echo "new backoff: \$backoff"
+	fi
     done
     exit 1
 }
@@ -400,4 +401,3 @@ else
     [ "$VERBOSE" = "yes" ] && echo "" && thumb_up "Servers configured"
 fi
 kill_notifications
-
