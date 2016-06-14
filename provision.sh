@@ -173,8 +173,9 @@ for machine in ${MACHINES[@]}; do ssh-keyscan -4 -T 1 ${FLOATING_IPs[$machine]} 
 
 if [ -n "$CONNECTION_FAIL" ]; then
     oups "\nFiltering out:$CONNECTION_FAIL"
-# else
-#     thumb_up "\nAll connections are ready"
+else
+    echo ""
+    #thumb_up "\nAll connections are ready"
 fi
 
 
