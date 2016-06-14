@@ -54,6 +54,7 @@ You can append the `-h` flag to see the command options.
 	export OS_USERNAME=fred
 	export OS_PASSWORD=holala
 	EOF
+	
 	# The openstack user 'fred' must maybe be an admin on the tenant 'mmosler1'
 	./init.sh --all # You'll be prompted at the end for a reboot.
 	                # Rebooting will help the partition to correctly resize to the disk size
