@@ -1,7 +1,7 @@
 # µ-Mosler setup on Knox
 
 This set of scripts allows you to (re)create the Mosler environment in an Openstack cluster.
-This created set set of virtual machines is called µ-Mosler (*micro-mosler*). Our openstack cluster is called Knox.
+This created set of virtual machines is called µ-Mosler (*micro-mosler*). Our openstack cluster is called Knox.
 
 ## Requirements
 You first need to create a file (named 'user.rc') in order to set up your openstack credentials. That file will contain 3 variables:
@@ -13,7 +13,7 @@ You first need to create a file (named 'user.rc') in order to set up your openst
 This user must have the admin role for the given tenant/project. These settings will probably be given to you by your _openstack administrator_.
 
 The scripts define some variables (in `settings.sh`)
-* `MM_HOME` (currently pointing to `$HOME/mosler-micro-mosler`)
+* `MM_HOME` (that currently folder)
 * `TL_HOME` (currently pointing to `/home/jonas/thinlinc`)
 * `MOSLER_HOME` (currently pointing to `/home/jonas/mosler-system-scripts`)
 * `MOSLER_MISC` (currently pointing to `/home/jonas/misc`)
@@ -32,10 +32,10 @@ networks and security groups, prior to creating the virtual machines.
 It will start the VMs with proper IP information. In subsequent runs,
 `init.sh` will only create the VMs.
 
-Run the `provision.sh` in order to set up the ssh environment and run
-the server scripts. This script is divided in 2 phases: the first one
-copies the required files to the appropriate servers, and the second
-one configures the servers.
+Run `provision.sh` in order to set up the ssh environment and run the
+provisioning scripts for each VM. This script is divided in 2 phases:
+the first one copies the required files to the appropriate servers,
+and the second one configures the servers.
 
 The `clean.sh` script can be run with the --all flag, to destroy
 routers, networks, security groups and floating IPs.  Otherwise, it
@@ -47,11 +47,14 @@ You can append the `-h` flag to see the command options.
 ## Example
 	git clone https://github.com/NBISweden/mosler-micro-mosler <some_dir>
 	cd <that_dir>
-	echo "export OS_TENANT_NAME=mmosler1" > user.rc
-	echo "export OS_USERNAME=fred" >> user.rc
-	echo "export OS_PASSWORD=holala" >> user.rc
+	cat > user.rc <<EOF
+	export OS_TENANT_NAME=mmosler1 
+	export OS_USERNAME=fred
+	export OS_PASSWORD=holala
+	EOF
 	# The openstack user 'fred' must maybe be an admin on the tenant 'mmosler1'
-	./init.sh --all
+	./init.sh --all # You'll be prompted at the end for a reboot.
+	                # Rebooting will help the partition to correctly resize to the disk size
 	./provision.sh # Wait a bit, servers are probably not done rebooting
 	
 	# Later
