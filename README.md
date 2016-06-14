@@ -1,7 +1,9 @@
 # µ-Mosler setup on Knox
 
-This set of scripts allows you to (re)create the Mosler environment in an Openstack cluster.
-This created set of virtual machines is called µ-Mosler (*micro-mosler*). Our openstack cluster is called Knox.
+This set of scripts allows you to (re)create the
+[Mosler environment](https://mosler.bils.se) in an Openstack cluster.
+This created set of virtual machines is called µ-Mosler
+(*micro-mosler*). Our openstack cluster is called Knox.
 
 ## Requirements
 You first need to create a file (named 'user.rc') in order to set up your openstack credentials. That file will contain 3 variables:
@@ -10,7 +12,9 @@ You first need to create a file (named 'user.rc') in order to set up your openst
 	export OS_USERNAME=<username>
 	export OS_PASSWORD=<password>
 
-This user must have the admin role for the given tenant/project. These settings will probably be given to you by your _openstack administrator_.
+This user must have the admin role for the given tenant/project. These
+settings will probably be given to you by your _openstack
+administrator_.
 
 The scripts define some variables (in `settings.sh`)
 * `MM_HOME` (that currently folder)
