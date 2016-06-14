@@ -1,9 +1,15 @@
 {# LDAP #}
 ldap:{{ env['CONFIGS'] }}/ldap_conf
+ldap:{{ env['MOSLER_HOME'] }}/ldap/ldap
+ldap:{{ env['MOSLER_HOME'] }}/ldap/import_uppmax_user
+ldap:{{ env['MOSLER_HOME'] }}/ldap/pamauth
+ldap:{{ env['MOSLER_HOME'] }}/thinlinc-master/auth_token
+ldap:{{ env['MOSLER_HOME'] }}/thinlinc-master/pam_auth_token
 
 {# Thinlinc #}
 thinlinc-master:{{ env['TL_HOME'] }}/ {# Make sure there is a / at the end #}
 thinlinc-master:{{ env['CONFIGS'] }}/tl_answers
+thinlinc-master:{{ env['MOSLER_HOME'] }}/thinlinc-master/
 
 {# Openstack common files #}
 {% set machines = [ 'openstack-controller', 'networking-node', 'supernode', 'compute1', 'compute2', 'compute3' ] -%}
@@ -34,6 +40,9 @@ openstack-controller:{{ env['CONFIGS'] }}/local_settings
 openstack-controller:{{ env['MOSLER_IMAGES'] }}/project-computenode-stable
 openstack-controller:{{ env['MOSLER_IMAGES'] }}/project-loginnode-stable
 openstack-controller:{{ env['MOSLER_IMAGES'] }}/topolino-q-stable
+
+openstack-controller:{{ env['MOSLER_HOME'] }}/bastion/map_thinlinc_nginx
+openstack-controller:{{ env['MOSLER_HOME'] }}/bastion/nginx_tl_template.conf
 
 {# Openstack neutron #}
 networking-node:{{ env['CONFIGS'] }}/neutron.conf
@@ -77,4 +86,12 @@ supernode:{{ env['CONFIGS'] }}/mosler-template-resources-network
 supernode:{{ env['CONFIGS'] }}/mosler-template-resources-secgroups
 supernode:{{ env['CONFIGS'] }}/mosler-template-resources-loginnode
 supernode:{{ env['CONFIGS'] }}/mosler-template-resources-servicenode
+supernode:{{ env['CONFIGS'] }}/create_nfs_share.sh
+supernode:{{ env['CONFIGS'] }}/nfs_san_check.sh
+
+{# Filsluss #}
+filsluss:{{ env['MOSLER_HOME'] }}/filsluss/getusers
+filsluss:{{ env['MOSLER_HOME'] }}/filsluss/sshd_config
+
+{# END #}
 
