@@ -122,7 +122,7 @@ declare -A PROVISION
 export PROVISION=(\
     [openstack-controller]=controller \
     [thinlinc-master]=thinlinc \
-    [filsluss]=storage \
+    [filsluss]=filsluss \
     [supernode]=supernode \
     [compute1]=compute \
     [compute2]=compute \
@@ -131,6 +131,9 @@ export PROVISION=(\
     [ldap]=ldap \
     [networking-node]=network \
 )
+
+########################################
+export MAILTO=jonas.hagberg@bils.se
 
 ########################################
 export SSH_CONFIG=${PROVISION_TMP}/ssh_config.${OS_TENANT_NAME}

@@ -21,6 +21,8 @@ function usage {
     echo -e "\t                       \tWe filter out machines that don't appear in the default list."
     echo -e "\t--vault <name>         \tName of the drop folder in the servers"
     echo -e "\t                       \tDefaults to '${VAULT}'"
+    echo -e "\t--mail-to <email>      \tContact email for the cron jobs"
+    echo -e "\t                       \tDefaults to '${MAILTO}'"
     echo -e "\t--no-copy,-n           \tSkips the steps of syncing files to the servers"
     echo -e "\t--timeout <seconds>,   \tSkips the steps of syncing files to the servers"
     echo -e "\t       -t <seconds>    \tSkips the steps of syncing files to the servers"
@@ -39,6 +41,7 @@ while [ $# -gt 0 ]; do
         --no-copy|-n) DO_COPY=no;;
         --cheat) DO_CHEAT=yes;;
         --vault) VAULT=$2; shift;;
+        --mail-to) MAILTO=$2; shift;;
         --timeout|-t) CONNECTION_TIMEOUT=$2; shift;;
         --) shift; break;;
         *) echo "$0: error - unrecognized option $1" 1>&2; usage; exit 1;;
@@ -285,6 +288,7 @@ fi
 reset_progress
 print_progress
 export DB_SERVER=${MACHINE_IPs[openstack-controller]} # Used in the templates
+
 for machine in ${MACHINES[@]}
 do
     # Selecting the template

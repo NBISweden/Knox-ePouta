@@ -9,3 +9,34 @@ echo "Setting up Thinlinc"
 echo "Configuring Thinlinc web access"
 sed -i 's/^listen=.*$/listen=443/' /opt/thinlinc/etc/conf.d/webaccess.hconf
 
+echo "Copying config files"
+{% set files = [ 'auth_token',
+		 'mapproj',
+		 'pam_auth_token',
+		 'vsmconfigurator.sh'
+	       ] -%}
+{% for file in files %}
+rsync -a {{ env['VAULT'] }}/{{ file }}  /usr/local/sbin/{{ file }}
+chown root:root /usr/local/bin/{{ file }}
+chmod 0755 /usr/local/bin/{{ file }}
+{% endfor %}
+
+# Not found
+# /usr/local/sbin/establish_user
+# /usr/local/sbin/ssh_auth_token
+# /usr/local/sbin/vsmconfig.sh
+
+# Unused
+# {{ env['VAULT'] }}/thinlinc-master/project
+# {{ env['VAULT'] }}/thinlinc-master/projectallowed
+# {{ env['VAULT'] }}/thinlinc-master/sshd
+# {{ env['VAULT'] }}/thinlinc-master/thinlinc
+
+cat > /etc/cron.d/tl-statistics-cron <<EOF
+# ThinLinc Licence statistics collector.
+*/5 * * * * root /opt/thinlinc/sbin/tl-collect-licensestats
+EOF
+
+cat > /etc/cron.d/vsmconfigurator <<EOF
+* * * * * root pgrep -f '^/bin/sh /usr/local/sbin/vsmconfigurator.sh' >/dev/null || /usr/local/sbin/vsmconfigurator.sh </dev/null   >/dev/null 2>/dev/null
+EOF

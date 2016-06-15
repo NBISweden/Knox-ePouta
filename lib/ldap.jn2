@@ -25,8 +25,20 @@ sed -i -e 's/ by dn.base="cn[^"]"/by dn.base="cn=Manager,dc=mosler,dc=bils,dc=se
 service slapd restart
 chkconfig slapd on
 
+echo "Copying config files"
+{% set files = [ 'passwd_line',
+		 'import_uppmax_user',
+		 'auth_token',
+		 'pam_auth_token'
+	       ] -%}
+{% for file in files %}
+rsync -a {{ env['VAULT'] }}/{{ file }}  /usr/local/sbin/{{ file }}
+chown root:root /usr/local/sbin/{{ file }}
+chmod 0755 /usr/local/sbin/{{ file }}
+{% endfor %}
 
 echo "LDAP Configuration"
 if ! ldapadd -c -D cn=Manager,dc=mosler,dc=bils,dc=se -w ldap -f {{ env['VAULT'] }}/ldap_conf ; then
     echo "Error with LDAP configuration"
 fi
+
