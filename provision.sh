@@ -46,6 +46,7 @@ while [ $# -gt 0 ]; do
     shift
 done
 
+#######################################################################
 function thumb_up {
     [ -n "$1" ] && echo -ne "$1 "
     echo -e "\xF0\x9F\x91\x8D"
@@ -89,10 +90,13 @@ while fuser ${NOTIFICATION_PORT}/tcp &>/dev/null ; do (( NOTIFICATION_PORT++ ));
 NOTIFICATION_URL=http://${PHONE_HOME}:${NOTIFICATION_PORT}
 
 function kill_notifications {
-    [ "$VERBOSE" = "yes" ] && echo "Stopping the notification server"
+    [ "$VERBOSE" = "yes" ] && echo -e "\nStopping the notification server"
     fuser -k ${NOTIFICATION_PORT}/tcp &>/dev/null
     #kill -9 ${NOTIFICATION_PID}
 }
+
+# Cleaning up after us. Catching EXIT is enough. Even on errors
+trap "kill_notifications" EXIT #INT TERM ERR 
 
 [ "$VERBOSE" = "yes" ] && echo "Starting the notification server [on port ${NOTIFICATION_PORT}]"
 python $LIB/notifications.py ${NOTIFICATION_PORT} "${MACHINES[@]}" &> ${PROVISION_TMP}/notifications.log &
@@ -169,7 +173,7 @@ for i in ${!MACHINES[@]}; do
 done
 for machine in ${MACHINES[@]}; do ssh-keyscan -4 -T 1 ${FLOATING_IPs[$machine]} >> ${SSH_KNOWN_HOSTS} 2>/dev/null; done
 #Note: I silence the errors from stderr (2) to /dev/null. Don't send them to &1.
-# Not using ssh-keyscan because the exit status is 0 even when the connection failed.
+# The exit status of ssh-keyscan is 0 even when the connection failed: Using nc instead.
 
 if [ -n "$CONNECTION_FAIL" ]; then
     oups "\nFiltering out:$CONNECTION_FAIL"
@@ -178,27 +182,9 @@ else
     #thumb_up "\nAll connections are ready"
 fi
 
-
-########################################################################
-# Finding a suitable port for the notification server
-NOTIFICATION_PORT=${PORT}
-while fuser ${NOTIFICATION_PORT}/tcp ; do (( NOTIFICATION_PORT++ )); done
-
-function kill_notifications {
-    [ "$VERBOSE" = "yes" ] && echo "Stopping the notification server"
-    fuser -k ${NOTIFICATION_PORT}/tcp &>/dev/null
-    #kill -9 ${NOTIFICATION_PID}
-}
-
-# Cleaning up after us. Catching EXIT is enough. Even on errors
-trap "echo; kill_notifications || true; exit 1" EXIT #INT TERM ERR 
-
-[ "$VERBOSE" = "yes" ] && echo "Starting the notification server [on port ${NOTIFICATION_PORT}]"
-python $LIB/notifications.py ${NOTIFICATION_PORT} "${MACHINES[@]}" &> ${PROVISION_TMP}/notifications.log &
-NOTIFICATION_PID=$!
-
 ########################################################################
 # For the parallel execution
+########################################################################
 
 declare -A JOB_PIDS
 # function kill_bg_jobs {
@@ -221,6 +207,7 @@ trap 'cleanup' INT TERM #EXIT #HUP ERR
 ########################################################################
 # Copying files
 ########################################################################
+
 if [ "$DO_COPY" = "yes" ]; then
 
     export CONFIGS=${MM_HOME}/configs
@@ -254,7 +241,6 @@ if [ "$DO_COPY" = "yes" ]; then
     [ "$VERBOSE" = "yes" ] && echo "Copying files"
     reset_progress
     print_progress
-    declare -A RSYNC_PIDS
     for machine in ${MACHINES[@]}
     do
 	{ # scoping, in that current shell
@@ -279,14 +265,13 @@ if [ "$DO_COPY" = "yes" ]; then
 	} &
 	JOB_PIDS[$machine]=$!
     done
-    
     # Wait for all the copying to finish
     for job in ${JOB_PIDS[@]}; do wait ${job} || ((FAIL++)); print_progress; done
     print_progress # to have a clear picture
     if (( FAIL > 0 )) ; then
 	oups "\nFailed copying"
+	#kill_notifications # already trapped
 	echo "Exiting..." 
-	kill_notifications
 	exit 1
     # else
     # 	[ "$VERBOSE" = "yes" ] && thumb_up "\nFiles copied"
@@ -299,19 +284,6 @@ fi
 [ "$VERBOSE" = "yes" ] && echo -e "\nConfiguring servers:"
 reset_progress
 print_progress
-declare -A PROVISION_PIDS
-
-function major_booboo {
-    for machine in ${!PROVISION_PIDS[@]}
-    do
-	kill -9 ${PROVISION_PIDS[$machine]} &>/dev/null || true
-    done
-    print_progress
-    oups "\a\nProvisioning of some servers failed"
-}
-set -e # exit if errors
-trap "major_booboo" ERR
-
 export DB_SERVER=${MACHINE_IPs[openstack-controller]} # Used in the templates
 for machine in ${MACHINES[@]}
 do
@@ -344,8 +316,10 @@ function wait_for {
         if [ "\$res" == "\$3" ] ; then echo "Task \$2 is \$3 on \$1 (after \$t seconds)"; return 0; fi
         if [ "\$res" == "ERR" ] ; then echo "Task \$2 failed on \$1: Exiting..."; break; fi
 	sleep \$backoff
-        if (( (t % 10) == 0 )); then (( backoff*=2 )); fi
-        echo "backoff: \$backoff"
+        if (( (t % 10) == 0 )); then
+	    backoff=\$(( backoff * 2 ))
+            echo "new backoff: \$backoff"
+	fi
     done
     exit 1
 }
@@ -389,7 +363,7 @@ EOF
 	    print_progress
 	    exit $RET
 	} &
-	PROVISION_PIDS[$machine]=$!
+	JOB_PIDS[$machine]=$!
     fi
 done
     
@@ -399,6 +373,7 @@ print_progress
 if (( FAIL > 0 )); then
     oups "\a\n${FAIL} servers failed to be configured"
 else
-    [ "$VERBOSE" = "yes" ] && echo "" && thumb_up "Servers configured"
+    [ "$VERBOSE" = "yes" ] && thumb_up "\nServers configured"
 fi
-kill_notifications
+
+#kill_notifications # already trapped
