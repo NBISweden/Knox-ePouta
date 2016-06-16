@@ -141,3 +141,11 @@ sed -i -e "s/__EXT_NET__/$extnet/"  /usr/local/heat/mosler-template-parameters
 
 echo "Creating public subnet network in neutron"
 neutron subnet-create public-net --name public-subnet --allocation-pool start=172.18.0.30,end=172.18.0.200 --disable-dhcp --gateway 172.18.0.1  172.18.0.0/24
+
+
+##############################################################
+# Wait for keystone anyway?
+# wait_port openstack-controller 500 300
+
+# Create project NBIS. Users come from ldap.
+/usr/local/bin/create_project.sh NBIS
