@@ -18,13 +18,11 @@ settings will probably be given to you by your _openstack administrator_.
 The scripts define some variables (in `settings.sh`)
 * `MM_HOME` (that currently folder)
 * `TL_HOME` (currently pointing to `/home/jonas/thinlinc`)
-* `MOSLER_HOME` (currently pointing to `/home/jonas/mosler-system-scripts`)
 * `MOSLER_MISC` (currently pointing to `/home/jonas/misc`)
 * `MOSLER_IMAGES` (currently pointing to `/home/jonas/mosler-images`)
 
 The scripts assume that 
 * A CentOS6 glance image is installed
-* The [mosler-system-scripts](https://github.com/NBISweden/mosler-system-scripts) are available in `$MOSLER_HOME`
 * The Thinlinc packages are available in `$TL_HOME`
 * Some misc packages are available in `$MOSLER_MISC`
 * And the mosler images are available in `$MOSLER_IMAGES`

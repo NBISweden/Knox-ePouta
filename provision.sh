@@ -4,7 +4,7 @@
 HERE=$(dirname ${BASH_SOURCE[0]})
 source $HERE/settings.sh
 
-export TL_HOME MOSLER_HOME MOSLER_MISC MOSLER_IMAGES
+export TL_HOME MOSLER_MISC MOSLER_IMAGES
 export LIB=${MM_HOME}/lib
 
 export VAULT=vault
