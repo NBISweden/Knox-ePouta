@@ -213,34 +213,6 @@ trap 'cleanup' INT TERM #EXIT #HUP ERR
 
 if [ "$DO_COPY" = "yes" ]; then
 
-    export CONFIGS=${MM_HOME}/configs
-
-    python -c "import os, sys, jinja2; \
-               sys.stdout.write(jinja2.Template(sys.stdin.read()).render(env=os.environ))" \
-	   <${LIB}/files.jn2 \
-	   >${PROVISION_TMP}/files
-
-    # In order to avoid many concurrent ssh connections towards the same
-    # server, we gather the file to copy and cluster them per server. 
-    #
-    # We will launch a new process, per machine, that copies the listed
-    # files for that machine.
-    
-    # Cleaning the listings
-    [ "$VERBOSE" = "yes" ] && echo "Preparing listings"
-    for machine in ${MACHINES[@]}; do : > ${PROVISION_TMP}/copy.$machine; done
-
-    # Ignore empty lines and cluster the files per machine
-    sed '/^$/d' ${PROVISION_TMP}/files | while IFS='' read -r line; do
-	src=${line#*:}
-	machine=${line%%:*}
-	if [ -e $src ]; then
-	    echo "$src" >> ${PROVISION_TMP}/copy.$machine
-	else
-	    echo -e "\tIgnoring $src [for $machine]."
-	fi
-    done
-
     [ "$VERBOSE" = "yes" ] && echo "Copying files"
     reset_progress
     print_progress
@@ -248,14 +220,20 @@ if [ "$DO_COPY" = "yes" ]; then
     do
 	{ # scoping, in that current shell
 	    ( # In a subshell
-		exec &>${PROVISION_TMP}/rsync.$machine
+		RSYNC=""
+		exec &>${PROVISION_TMP}/copy.$machine
 		set -x -e # Print commands && exit if errors
 		# Preparing the drop folder
 		ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} mkdir -p ${VAULT}
 		# Copying all files to the VAULT on that machine
-		while read -r f ; do
-		    rsync -av -e "ssh -F ${SSH_CONFIG}" $f ${FLOATING_IPs[$machine]}:${VAULT}/.
-		done < ${PROVISION_TMP}/copy.$machine
+		rsync -avL -e "ssh -F ${SSH_CONFIG}" ${MM_HOME}/configs/${PROVISION[$machine]}/ ${FLOATING_IPs[$machine]}:${VAULT}/.
+		[ "$machine" == "thinlinc-master" ] && rsync -avL -e "ssh -F ${SSH_CONFIG}" $TL_HOME/ ${FLOATING_IPs[$machine]}:${VAULT}/.
+		if [ "$machine" == "openstack-controller" ]; then
+		    rsync -avL -e "ssh -F ${SSH_CONFIG}" $MOSLER_MISC/ ${FLOATING_IPs[$machine]}:${VAULT}/.
+		    rsync -avL -e "ssh -F ${SSH_CONFIG}" $MOSLER_IMAGES/project-computenode-stable ${FLOATING_IPs[$machine]}:${VAULT}/.
+		    rsync -avL -e "ssh -F ${SSH_CONFIG}" $MOSLER_IMAGES/project-loginnode-stable ${FLOATING_IPs[$machine]}:${VAULT}/.
+		    rsync -avL -e "ssh -F ${SSH_CONFIG}" $MOSLER_IMAGES/topolino-q-stable ${FLOATING_IPs[$machine]}:${VAULT}/.
+		fi
 	    )
 	    RET=$?
 	    if [ $RET -eq 0 ]; then

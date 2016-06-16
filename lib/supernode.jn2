@@ -84,6 +84,10 @@ chmod 0755 /usr/local/heat/{{ file }}
 ##############################################################
 #}
 
+echo "Script adjustments"
+sed -i -e "s/.keystonercv2/.keystonerc/g" /usr/local/sbin/fix_hostdata
+sed -i -e "s/.keystonercv2/.keystonerc/g" /usr/local/sbin/project_ips
+
 ##############################################################
 echo "Cron configuration"
 
@@ -100,6 +104,7 @@ EOF
 cat > /etc/cron.d/project_mapping <<EOF
 */15 * * * * root /usr/local/sbin/thinlinc_proj_setup
 EOF
+
 cat > /etc/cron.d/queue <<EOF
 */8 * * * * root flock -n /tmp/queue_responder /usr/local/bin/queue_responder
 EOF
