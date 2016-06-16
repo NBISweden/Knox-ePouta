@@ -36,20 +36,20 @@ if [ ${LOGIN_NODE_FLOATING_IP} == "255.255.255.255" ]; then
    exit 1
 fi
 
-cat <<EOF > /usr/local/omd/${PROJECT_NAME}.mk
-all_hosts += [
-'${PROJECT_NAME}-login_node|virtual|${PROJECT_NAME}',
-]
+# cat <<EOF > /usr/local/omd/${PROJECT_NAME}.mk
+# all_hosts += [
+# '${PROJECT_NAME}-login_node|virtual|${PROJECT_NAME}',
+# ]
 
-host_groups += [
-   ( "${PROJECT_NAME}", ["${PROJECT_NAME}", "virtual"], ALL_HOSTS ),
-]
+# host_groups += [
+#    ( "${PROJECT_NAME}", ["${PROJECT_NAME}", "virtual"], ALL_HOSTS ),
+# ]
 
-ipaddresses['${PROJECT_NAME}-login_node'] = '${LOGIN_NODE_FLOATING_IP}'
-EOF
+# ipaddresses['${PROJECT_NAME}-login_node'] = '${LOGIN_NODE_FLOATING_IP}'
+# EOF
 
-chown nobody /usr/local/omd/${PROJECT_NAME}.mk
-chgrp nobody /usr/local/omd/${PROJECT_NAME}.mk
-#rsync -rv --delete /usr/local/omd/*.mk igeleye::OMD/
-rsync -rv --delete --exclude *.md5sum /usr/local/omd/ igeleye::OMD/
+# chown nobody /usr/local/omd/${PROJECT_NAME}.mk
+# chgrp nobody /usr/local/omd/${PROJECT_NAME}.mk
+# #rsync -rv --delete /usr/local/omd/*.mk igeleye::OMD/
+# rsync -rv --delete --exclude *.md5sum /usr/local/omd/ igeleye::OMD/
 
