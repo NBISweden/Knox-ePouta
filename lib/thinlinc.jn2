@@ -17,8 +17,8 @@ echo "Copying config files"
 	       ] -%}
 {% for file in files %}
 rsync -a {{ env['VAULT'] }}/{{ file }}  /usr/local/sbin/{{ file }}
-chown root:root /usr/local/bin/{{ file }}
-chmod 0755 /usr/local/bin/{{ file }}
+chown root:root /usr/local/sbin/{{ file }}
+chmod 0755 /usr/local/sbin/{{ file }}
 {% endfor %}
 
 # Not found

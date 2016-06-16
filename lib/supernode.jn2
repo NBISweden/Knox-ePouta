@@ -148,4 +148,6 @@ neutron subnet-create public-net --name public-subnet --allocation-pool start=17
 # wait_port openstack-controller 500 300
 
 # Create project NBIS. Users come from ldap.
-/usr/local/bin/create_project.sh NBIS
+if ! keystone tenant-get NBIS; then
+    /usr/local/bin/create_project.sh NBIS
+fi
