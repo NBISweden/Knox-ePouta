@@ -1,6 +1,6 @@
 #!/bin/sh
 
-. /root/.keystonercv2
+. /root/.keystonerc
 
 neutron floatingip-list  | tr -d ' ' | fgrep '|' | fgrep -v fixed_ip | cut -d'|' -f2 | while read ipid; do 
   if  neutron floatingip-show "$ipid" | fgrep -q ACTIVE;  then

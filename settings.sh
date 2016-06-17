@@ -34,7 +34,6 @@ export VERBOSE=yes
 
 [ -n "$MM_HOME" ]       || readonly MM_HOME=$HERE
 [ -n "$TL_HOME" ]       || readonly TL_HOME=/home/jonas/thinlinc
-[ -n "$MOSLER_MISC" ]   || readonly MOSLER_MISC=/home/jonas/misc
 [ -n "$MOSLER_IMAGES" ] || readonly MOSLER_IMAGES=/home/jonas/mosler-images
 
 [ -n "$INIT_TMP" ]      || readonly INIT_TMP=${MM_HOME}/tmp/init

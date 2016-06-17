@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. /root/.keystonercv2
+. /root/.keystonerc
 PATH=/usr/local/sbin:/usr/local/bin:$PATH
 
 cd /meles/v1 || exit 1
