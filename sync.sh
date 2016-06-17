@@ -8,7 +8,6 @@ export TL_HOME MOSLER_IMAGES
 export LIB=${MM_HOME}/lib
 
 export VAULT=vault
-CONNECTION_TIMEOUT=1 #seconds
 
 function usage {
     echo "Usage: $0 [options]"
@@ -19,11 +18,6 @@ function usage {
     echo -e "\t                       \tWe filter out machines that don't appear in the default list."
     echo -e "\t--vault <name>         \tName of the drop folder in the servers"
     echo -e "\t                       \tDefaults to '${VAULT}'"
-    echo -e "\t--mail-to <email>      \tContact email for the cron jobs"
-    echo -e "\t                       \tDefaults to '${MAILTO}'"
-    echo -e "\t--timeout <seconds>,   \tSkips the steps of syncing files to the servers"
-    echo -e "\t       -t <seconds>    \tSkips the steps of syncing files to the servers"
-    echo -e "\t--cheat                \tUses tricks to provision machines faster (like mysql pre-dumps)"
     echo -e "\t--quiet,-q             \tRemoves the verbose output"
     echo -e "\t--help,-h              \tOutputs this message and exits"
     echo -e "\t-- ...                 \tAny other options appearing after the -- will be ignored"
@@ -35,10 +29,7 @@ while [ $# -gt 0 ]; do
         --quiet|-q) VERBOSE=no;;
         --help|-h) usage; exit 0;;
         --machines|-m) CUSTOM_MACHINES=$2; shift;;
-        --cheat) DO_CHEAT=yes;;
         --vault) VAULT=$2; shift;;
-        --mail-to) MAILTO=$2; shift;;
-        --timeout|-t) CONNECTION_TIMEOUT=$2; shift;;
         --) shift; break;;
         *) echo "$0: error - unrecognized option $1" 1>&2; usage; exit 1;;
     esac
@@ -70,58 +61,64 @@ if [ -n ${CUSTOM_MACHINES:-''} ]; then
     fi
 fi
 
+
+#######################################################################
 mkdir -p ${PROVISION_TMP}
-
-#######################################################################
-# Logic to print progress and start/pause
 source $LIB/utils.sh
-
-#######################################################################
-# Checking if machines are available. Filtering them out otherwise
 source $LIB/ssh_connections.sh
 
 #######################################################################
-# Aaaaannnnnddd...... cue music!
-########################################################################
-[ "$VERBOSE" = "yes" ] && echo -e "\nConfiguring servers:"
+[ "$VERBOSE" = "yes" ] && echo "Copying files"
 FAIL=0
 reset_progress
 print_progress
-export DB_SERVER=${MACHINE_IPs[openstack-controller]} # Used in the templates
-
 for machine in ${MACHINES[@]}
 do
-    # Selecting the template
-    _TEMPLATE=${LIB}/${PROVISION[$machine]}/provision.jn2
-    if [ ! -f ${_TEMPLATE} ]; then
-	oups "\tProvisioning script unknown for $machine"
-	filter_out_machine $machine
-    else
+    { # scoping, in that current shell
+	( # In a subshell
 
-	_SCRIPT=${PROVISION_TMP}/run.$machine
-	_LOG=${PROVISION_TMP}/log.$machine
-	# Rendering the template
-	# It will use the (exported) environment variables
-	render_template $machine ${_TEMPLATE} ${_SCRIPT}
+	    FOLDER=$LIB/${PROVISION[$machine]}
+	    [ ! -d ${FOLDER} ] && oups "\nProvisioning folder unknown for $machine" && exit 1
 
-	{ # Scoping, in that current shell
-	    ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x -v 2>&1' <${_SCRIPT} &>${_LOG}
-	    RET=$?
-	    if [ $RET -eq 0 ]; then report_ok $machine; else report_fail $machine; fi
-	    print_progress
-	    exit $RET
-	} &
-	JOB_PIDS[$machine]=$!
-    fi
+	    exec &>${PROVISION_TMP}/sync-log.$machine
+	    set -x -e # Print commands && exit if errors
+
+	    # Preparing the drop folder
+	    ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} mkdir -p ${VAULT}
+	    
+	    # Copying all files to the VAULT on that machine
+	    rsync -avL -e "ssh -F ${SSH_CONFIG}" ${FOLDER}/files/ ${FLOATING_IPs[$machine]}:${VAULT}/.
+	    
+	    [ "$machine" == "thinlinc-master" ] && rsync -av -e "ssh -F ${SSH_CONFIG}" $TL_HOME/ ${FLOATING_IPs[$machine]}:${VAULT}/.
+	    
+	    if [ "$machine" == "openstack-controller" ]; then
+		for img in project-computenode-stable project-loginnode-stable topolino-q-stable; do
+		    rsync -av -e "ssh -F ${SSH_CONFIG}" ${MOSLER_IMAGES}/$img ${FLOATING_IPs[$machine]}:${VAULT}/.
+		done
+	    fi
+	    
+	    # Phase 2: running some commands
+	    _SCRIPT=${PROVISION_TMP}/sync.$machine
+	    render_template $machine ${FOLDER}/sync.jn2 ${_SCRIPT}
+	    ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x -v 2>&1' <${_SCRIPT}
+	)
+	RET=$?
+	if [ $RET -eq 0 ]; then report_ok $machine; else report_fail $machine; fi
+	print_progress
+	exit $RET
+    } &
+    JOB_PIDS[$machine]=$!
 done
-    
-for job in ${JOB_PIDS[@]}; do wait $job || ((FAIL++)); done
-print_progress
-
-if (( FAIL > 0 )); then
-    oups "\a\n${FAIL} servers failed to be configured"
-else
-    [ "$VERBOSE" = "yes" ] && thumb_up "\nServers configured"
+# Wait for all the copying to finish
+for job in ${JOB_PIDS[@]}; do wait ${job} || ((FAIL++)); print_progress; done
+print_progress # to have a clear picture
+if (( FAIL > 0 )) ; then
+    oups "\nFailed copying"
+    #kill_notifications # already trapped
+    echo "Exiting..." 
+    exit 1
+    # else
+    # 	[ "$VERBOSE" = "yes" ] && thumb_up "\nFiles copied"
 fi
 
 #kill_notifications # already trapped
