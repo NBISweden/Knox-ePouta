@@ -6,6 +6,7 @@ source $HERE/settings.sh
 
 export VAULT=vault
 CONNECTION_TIMEOUT=1 #seconds
+export DO_CHEAT=no
 
 function usage {
     echo "Usage: $0 [options]"
@@ -68,12 +69,27 @@ if [ -n ${CUSTOM_MACHINES:-''} ]; then
 fi
 
 #######################################################################
+# Prepare the tmp folders
+for machine in ${MACHINES[@]}; do mkdir -p ${MM_TMP}/$machine/provision; done
+
+#######################################################################
+export TL_HOME MOSLER_IMAGES
 export LIB=${MM_HOME}/lib
-mkdir -p ${PROVISION_TMP}
 source $LIB/utils.sh
 
 #######################################################################
 source $LIB/ssh_connections.sh
+
+#######################################################################
+
+declare -A JOB_PIDS
+function cleanup {
+    [ "$VERBOSE" = "yes" ] && echo -e "\nStopping background jobs"
+    kill -9 $(jobs -p) &>/dev/null
+}
+trap 'cleanup' INT TERM #EXIT #HUP ERR
+# Or just kill the parent. That should kill the processes in that process group
+# trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
 #######################################################################
 # Aaaaannnnnddd...... cue music!
@@ -84,6 +100,9 @@ reset_progress
 print_progress
 export DB_SERVER=${MACHINE_IPs[openstack-controller]} # Used in the templates
 
+# set -e # exit in errors
+# trap 'print_progress; oups "\a\nErrors found: Aborting"' ERR
+
 for machine in ${MACHINES[@]}
 do
     # Selecting the template
@@ -93,14 +112,20 @@ do
 	filter_out_machine $machine
     else
 
-	_SCRIPT=${PROVISION_TMP}/run.$machine
-	_LOG=${PROVISION_TMP}/log.$machine
+	_SCRIPT=${MM_TMP}/$machine/provision/run.sh
+	_LOG=${MM_TMP}/$machine/provision/log
 	# Rendering the template
 	# It will use the (exported) environment variables
-	render_template $machine ${_TEMPLATE} ${_SCRIPT}
+	cat $LIB/preamble.sh > ${_SCRIPT}
+	python -c "import os, sys, jinja2; \
+                   sys.stdout.write(jinja2.Environment( loader=jinja2.FileSystemLoader(os.environ.get('LIB')) ) \
+                             .from_string(sys.stdin.read()) \
+                             .render(env=os.environ))" \
+	       < ${_TEMPLATE} \
+	       >>${_SCRIPT}
 
 	{ # Scoping, in that current shell
-	    ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x -v 2>&1' <${_SCRIPT} &>${_LOG}
+	    ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x 2>&1' <${_SCRIPT} &>${_LOG}
 	    RET=$?
 	    if [ $RET -eq 0 ]; then report_ok $machine; else report_fail $machine; fi
 	    print_progress
@@ -111,7 +136,6 @@ do
 done
     
 for job in ${JOB_PIDS[@]}; do wait $job || ((FAIL++)); done
-print_progress
 
 if (( FAIL > 0 )); then
     oups "\a\n${FAIL} servers failed to be configured"

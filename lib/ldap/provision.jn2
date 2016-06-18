@@ -26,5 +26,3 @@ echo "LDAP Configuration"
 if ! ldapadd -c -D cn=Manager,dc=mosler,dc=bils,dc=se -w ldap -f {{ env['VAULT'] }}/users ; then
     echo "Error with configuring the LDAP users"
 fi
-
-register ldap ready

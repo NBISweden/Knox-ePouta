@@ -1,17 +1,17 @@
 # -*-sh-*-
 
 echo "Stopping Services (if existing)"
-{% set items = [ 'openstack-heat-api',
-		 'openstack-heat-api-cfn',
-		 'openstack-heat-engine',
+{% set items = [ 'openstack-keystone',
+		 'neutron-server',
 		 'openstack-nova-api',
 		 'openstack-nova-scheduler',
 		 'openstack-nova-conductor',
 		 'openstack-glance-api',
-		 'neutron-server',
 		 'openstack-glance-registry',
+		 'openstack-heat-api',
+		 'openstack-heat-api-cfn',
+		 'openstack-heat-engine',
 		 'httpd',
-		 'openstack-keystone',
 		 'mysqld'
 ] -%}
 {% for service in items %}
@@ -53,7 +53,7 @@ chkconfig rabbitmq-server on
 
 echo "Preparing the RabbitMQ user"
 rabbitmqctl add_user openstack rabbit || true
-rabbitmqctl set_permissions openstack ".*" ".*" ".*" || true
+rabbitmqctl set_permissions openstack ".*" ".*" ".*"
 
 #############################################################
 
@@ -155,9 +155,6 @@ echo "Starting Openstack Services"
 service {{ service }} restart 
 chkconfig {{ service }} on
 {% endfor %}
-
-# Notify that neutron is ready
-register neutron-server ready
 
 echo "Removing any old image from Glance"
 rm -rf /var/lib/glance/images/*

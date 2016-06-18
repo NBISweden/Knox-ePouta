@@ -48,7 +48,7 @@ EOF
 ##############################################################
 
 # Wait 300 seconds max for neutron-server to be ready
-#wait_for openstack-controller neutron-server ready 300
+# Note: this should happen after keystone is ready
 wait_port openstack-controller 9696 300
 
 source /root/.keystonerc
@@ -65,10 +65,14 @@ neutron subnet-create public-net --name public-subnet --allocation-pool start=17
 
 
 ##############################################################
-# Wait for keystone anyway?
-# wait_port openstack-controller 500 300
-
 # Create project NBIS. Users come from ldap.
+
+wait_port openstack-controller 9697 300
+nova image-flavor
+--flavor mosler.8cores --image project-computenode-stable
+FLAVOR mosler.8cores does not exist
+
+
 if ! keystone tenant-get NBIS; then
     /usr/local/bin/create_project.sh NBIS
 fi
