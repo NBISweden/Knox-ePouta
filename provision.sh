@@ -136,11 +136,10 @@ do
 done
     
 for job in ${JOB_PIDS[@]}; do wait $job || ((FAIL++)); done
+print_progress
 
 if (( FAIL > 0 )); then
     oups "\a\n${FAIL} servers failed to be configured"
 else
     [ "$VERBOSE" = "yes" ] && thumb_up "\nServers configured"
 fi
-
-#kill_notifications # already trapped

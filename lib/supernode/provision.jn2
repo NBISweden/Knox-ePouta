@@ -49,6 +49,7 @@ EOF
 
 # Wait 300 seconds max for neutron-server to be ready
 # Note: this should happen after keystone is ready
+sleep 5 # On the openstack-controller, neutron-server is first closing. Let's sleep
 wait_port openstack-controller 9696 300
 
 source /root/.keystonerc
@@ -67,11 +68,38 @@ neutron subnet-create public-net --name public-subnet --allocation-pool start=17
 ##############################################################
 # Create project NBIS. Users come from ldap.
 
-wait_port openstack-controller 9697 300
-nova image-flavor
---flavor mosler.8cores --image project-computenode-stable
-FLAVOR mosler.8cores does not exist
+# Wait for the 3 glance images
+function wait_for_images {
+    local -i t=${1:-30} # default: 30 seconds, well...if you don't count the backoff...
+    local -i backoff=1
+    local -i stride=20
+    while (( t > 0 )) ; do
+	echo -e "Time left: $t"
+	ans=$(glance image-list | awk '/ active /' | wc -l)
+	[ "$ans" -eq 3 ] && return 0
+	(( t-=backoff ))
+	sleep $backoff
+        if (( (t % stride) == 0 )); then (( backoff*=2 )); fi
+    done
+    exit 1
+}
+wait_for_images 300
 
+function wait_for_flavors {
+    local -i t=${1:-30} # default: 30 seconds, well...if you don't count the backoff...
+    local -i backoff=1
+    local -i stride=20
+    while (( t > 0 )) ; do
+	echo -e "Time left: $t"
+	ans=$(nova flavor-list | awk '/ mosler\./' | wc -l)
+	[ "$ans" -eq 5 ] && return 0
+	(( t-=backoff ))
+	sleep $backoff
+        if (( (t % stride) == 0 )); then (( backoff*=2 )); fi
+    done
+    exit 1
+}
+wait_for_flavors 300
 
 if ! keystone tenant-get NBIS; then
     /usr/local/bin/create_project.sh NBIS
