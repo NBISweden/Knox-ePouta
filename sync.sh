@@ -5,6 +5,7 @@ HERE=$(dirname ${BASH_SOURCE[0]})
 source $HERE/settings.sh
 
 export VAULT=vault
+CONNECTION_TIMEOUT=1 #seconds
 
 function usage {
     echo "Usage: $0 [options]"
@@ -15,6 +16,8 @@ function usage {
     echo -e "\t                       \tWe filter out machines that don't appear in the default list."
     echo -e "\t--vault <name>         \tName of the drop folder in the servers"
     echo -e "\t                       \tDefaults to '${VAULT}'"
+    echo -e "\t--timeout <seconds>,   \tSkips the steps of syncing files to the servers"
+    echo -e "\t       -t <seconds>    \tSkips the steps of syncing files to the servers"
     echo -e "\t--quiet,-q             \tRemoves the verbose output"
     echo -e "\t--help,-h              \tOutputs this message and exits"
     echo -e "\t-- ...                 \tAny other options appearing after the -- will be ignored"
@@ -27,6 +30,7 @@ while [ $# -gt 0 ]; do
         --help|-h) usage; exit 0;;
         --machines|-m) CUSTOM_MACHINES=$2; shift;;
         --vault) VAULT=$2; shift;;
+        --timeout|-t) CONNECTION_TIMEOUT=$2; shift;;
         --) shift; break;;
         *) echo "$0: error - unrecognized option $1" 1>&2; usage; exit 1;;
     esac
@@ -59,16 +63,29 @@ if [ -n ${CUSTOM_MACHINES:-''} ]; then
 fi
 
 #######################################################################
+# Prepare the tmp folders
+for machine in ${MACHINES[@]}; do mkdir -p ${MM_TMP}/$machine/sync; done
+
+#######################################################################
 export TL_HOME MOSLER_IMAGES
 export LIB=${MM_HOME}/lib
-mkdir -p ${PROVISION_TMP}
 source $LIB/utils.sh
 
 #######################################################################
 source $LIB/ssh_connections.sh
 
 #######################################################################
-[ "$VERBOSE" = "yes" ] && echo "Copying files"
+
+declare -A JOB_PIDS
+function cleanup {
+    [ "$VERBOSE" = "yes" ] && echo -e "\nStopping background jobs"
+    kill -9 $(jobs -p) &>/dev/null
+}
+trap 'cleanup' INT TERM #EXIT #HUP ERR
+# Or just kill the parent. That should kill the processes in that process group
+# trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
+
+[ "$VERBOSE" = "yes" ] && echo "Syncing servers"
 FAIL=0
 reset_progress
 print_progress
@@ -80,26 +97,35 @@ do
 	    FOLDER=$LIB/${PROVISION[$machine]}
 	    [ ! -d ${FOLDER} ] && oups "\nProvisioning folder unknown for $machine" && exit 1
 
-	    exec &>${PROVISION_TMP}/sync-log.$machine
+	    exec &>${MM_TMP}/$machine/sync/log
 	    set -x -e # Print commands && exit if errors
 
 	    # Preparing the drop folder
 	    ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} mkdir -p ${VAULT}
 	    
 	    # Copying all files to the VAULT on that machine
-	    rsync -avL -e "ssh -F ${SSH_CONFIG}" ${FOLDER}/files/ ${FLOATING_IPs[$machine]}:${VAULT}/.
+	    [ -d ${FOLDER}/files ] &&
+		rsync -avL -e "ssh -F ${SSH_CONFIG}" ${FOLDER}/files/ ${FLOATING_IPs[$machine]}:${VAULT}/.
 	    
-	    [ "$machine" == "thinlinc-master" ] && rsync -av -e "ssh -F ${SSH_CONFIG}" $TL_HOME/ ${FLOATING_IPs[$machine]}:${VAULT}/.
+	    [ "$machine" == "thinlinc-master" ] && [ -d $TL_HOME ] &&
+		rsync -av -e "ssh -F ${SSH_CONFIG}" $TL_HOME/ ${FLOATING_IPs[$machine]}:${VAULT}/.
 	    
 	    if [ "$machine" == "openstack-controller" ]; then
 		for img in project-computenode-stable project-loginnode-stable topolino-q-stable; do
-		    rsync -av -e "ssh -F ${SSH_CONFIG}" ${MOSLER_IMAGES}/$img ${FLOATING_IPs[$machine]}:${VAULT}/.
+		    [ -f ${MOSLER_IMAGES}/$img ] &&
+			rsync -av -e "ssh -F ${SSH_CONFIG}" ${MOSLER_IMAGES}/$img ${FLOATING_IPs[$machine]}:${VAULT}/.
 		done
 	    fi
 	    
 	    # Phase 2: running some commands
-	    _SCRIPT=${PROVISION_TMP}/sync.$machine
-	    render_template $machine ${FOLDER}/sync.jn2 ${_SCRIPT}
+	    _SCRIPT=${MM_TMP}/$machine/sync/run.sh
+	    # Render the template
+	    python -c "import os, sys, jinja2; \
+                       sys.stdout.write(jinja2.Environment( loader=jinja2.FileSystemLoader(os.environ.get('LIB')) ) \
+                                 .from_string(sys.stdin.read()) \
+                                 .render(env=os.environ))" \
+		   <${FOLDER}/sync.jn2 \
+		   >${_SCRIPT}
 	    ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x -v 2>&1' <${_SCRIPT}
 	)
 	RET=$?
@@ -111,14 +137,12 @@ do
 done
 # Wait for all the copying to finish
 for job in ${JOB_PIDS[@]}; do wait ${job} || ((FAIL++)); print_progress; done
-print_progress # to have a clear picture
+#print_progress # to have a clear picture
 if (( FAIL > 0 )) ; then
     oups "\nFailed copying"
     #kill_notifications # already trapped
     echo "Exiting..." 
     exit 1
-    # else
-    # 	[ "$VERBOSE" = "yes" ] && thumb_up "\nFiles copied"
+else
+    [ "$VERBOSE" = "yes" ] && thumb_up "\nSyncing successful"
 fi
-
-#kill_notifications # already trapped

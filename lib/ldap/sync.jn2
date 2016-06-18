@@ -4,8 +4,7 @@ echo "LDAP packages"
 yum -y install openldap-servers openldap-clients
 
 echo "Copying config files"
-{% set files = [ 'passwd_line',
-		 'import_uppmax_user',
+{% set files = [ 'import_uppmax_user',
 		 'auth_token',
 		 'pam_auth_token'
 	       ] -%}
@@ -15,3 +14,5 @@ chown root:root /usr/local/sbin/{{ file }}
 chmod 0755 /usr/local/sbin/{{ file }}
 {% endfor %}
 
+
+{# 'passwd_line' #}
