@@ -4,9 +4,8 @@
 # Checking if machines are available
 # Filtering them out otherwise
 #######################################################################
-mkdir -p ${PROVISION_TMP}
-SSH_CONFIG=${PROVISION_TMP}/ssh_config.${OS_TENANT_NAME}
-SSH_KNOWN_HOSTS=${PROVISION_TMP}/ssh_known_hosts.${OS_TENANT_NAME}
+SSH_CONFIG=${MM_TMP}/ssh_config.${OS_TENANT_NAME}
+SSH_KNOWN_HOSTS=${MM_TMP}/ssh_known_hosts.${OS_TENANT_NAME}
 
 [ "$VERBOSE" = "yes" ] && echo -e "Checking the connections:"
 reset_progress

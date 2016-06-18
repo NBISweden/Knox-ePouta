@@ -36,8 +36,9 @@ export VERBOSE=yes
 [ -n "$TL_HOME" ]       || readonly TL_HOME=/home/jonas/thinlinc
 [ -n "$MOSLER_IMAGES" ] || readonly MOSLER_IMAGES=/home/jonas/mosler-images
 
-[ -n "$INIT_TMP" ]      || readonly INIT_TMP=${MM_HOME}/tmp/init
-[ -n "$PROVISION_TMP" ] || readonly PROVISION_TMP=${MM_HOME}/tmp/provision
+[ -n "$MM_TMP" ]      || readonly MM_TMP=${MM_HOME}/tmp
+mkdir -p ${MM_TMP}
+export MM_TMP
 
 #################################################################
 # Adding the public ssh keys here, so that we don't change init.sh
@@ -134,7 +135,7 @@ export PROVISION=(\
 export MAILTO=jonas.hagberg@bils.se
 
 ########################################
-export SSH_CONFIG=${PROVISION_TMP}/ssh_config.${OS_TENANT_NAME}
+export SSH_CONFIG=${MM_TMP}/ssh_config.${OS_TENANT_NAME}
 function mm_connect {
     local host=$1
     [ -f ${SSH_CONFIG} ] && CONF="-F ${SSH_CONFIG}"
