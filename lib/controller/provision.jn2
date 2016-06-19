@@ -198,6 +198,10 @@ nova flavor-create mosler.4cores  auto 500 10 1
 nova flavor-create mosler.8cores  auto 500 10 1
 nova flavor-create mosler.16cores auto 500 10 1
 
+echo "Adding availability zone and aggregate"
+nova aggregate-create service-and-login serv-login
+nova aggregate-add-host service-and-login compute1.novalocal
+# exists anyway on errors
 
 echo "Cron configuration"
 # rsync -a {{ env['VAULT'] }}/token_flush_cron         /usr/local/sbin/token_flush_cron
@@ -216,8 +220,3 @@ cat > /etc/cron.d/update_user_password <<EOF
 # Check for updated passwords once every five minutes
 */5 * * * * root /root/update_user_password.py
 EOF
-
-
-exit 0 # Exiting early today
-nova aggregate-create service-and-login serv-login
-nova aggregate-add-host service-and-login compute1.novalocal
