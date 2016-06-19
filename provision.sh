@@ -94,7 +94,7 @@ trap 'cleanup' INT TERM #EXIT #HUP ERR
 #######################################################################
 # Aaaaannnnnddd...... cue music!
 ########################################################################
-[ "$VERBOSE" = "yes" ] && echo -e "\nConfiguring servers:"
+[ "$VERBOSE" = "yes" ] && echo -e "Configuring servers:"
 FAIL=0
 reset_progress
 print_progress
