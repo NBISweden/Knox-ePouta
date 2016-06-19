@@ -12,11 +12,6 @@ service iptables restart
 ##############################################################
 echo "Cron configuration"
 
-cat > /etc/cron.d/backup <<EOF
-MAILTO={{ env['MAILTO'] }}
-3 4 * * * root flock -n /tmp/backuprunning /usr/local/sbin/backup
-EOF
-
 cat > /etc/cron.d/filsluss <<EOF
 */2 * * * * root flock -n /tmp/filsluss_import_run /usr/local/sbin/filsluss_cron_import 2>/dev/null >/dev/null 
 */2 * * * * root flock -n /tmp/filsluss_export_run /usr/local/sbin/filsluss_cron_export 2>/dev/null >/dev/null
