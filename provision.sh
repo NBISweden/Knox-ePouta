@@ -160,8 +160,8 @@ else
 fi
 
 [ "$VERBOSE" = "yes" ] && echo "Generating SSH key pair for supernode"
-rm -rf ${MM_TMP}/ssh_key.${OS_TENANT_NAME} ${MM_TMP}/ssh_key.${OS_TENANT_NAME}.pub
-ssh-keygen -t rsa -N "" -f ${MM_TMP}/ssh_key.${OS_TENANT_NAME} -C supernode >/dev/null
+rm -f ${MM_TMP}/ssh_key.${OS_TENANT_NAME} ${MM_TMP}/ssh_key.${OS_TENANT_NAME}.pub
+ssh-keygen -q -t rsa -N "micromosler" -f ${MM_TMP}/ssh_key.${OS_TENANT_NAME} -C supernode
 scp -q -F ${SSH_CONFIG} ${MM_TMP}/ssh_key.${OS_TENANT_NAME} ${FLOATING_IPs[supernode]}:${VAULT}/id_rsa
 for machine in ${MACHINES[@]}
 do
@@ -171,7 +171,7 @@ done
 ssh -F ${SSH_CONFIG} ${FLOATING_IPs[supernode]} "sudo mv ${VAULT}/id_rsa ${VAULT}/id_rsa.pub /root/.ssh/."
 for machine in ${MACHINES[@]}
 do
-    [ $machine == "supernode" ] && continue
+    [ "$machine" == "supernode" ] && continue
     ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x 2>&1' <<EOF &>/dev/null
 sudo sed -i -e '/supernode/d' /root/.ssh/authorized_keys
 cat ${VAULT}/id_rsa.pub >> /root/.ssh/authorized_keys
