@@ -79,7 +79,8 @@ export OS_TENANT_NAME
 # fi
 
 
-bash -x /usr/local/bin/create_heat_template.sh "${PROJECT_NAME}"
+set -x -e
+/usr/local/bin/create_heat_template.sh "${PROJECT_NAME}"
 
 /usr/local/sbin/thinlinc_proj_setup
 

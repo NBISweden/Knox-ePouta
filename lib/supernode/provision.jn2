@@ -113,7 +113,9 @@ function wait_for_flavors {
 }
 wait_for_flavors 300
 
-exit 0 # Exiting early today...
+echo "Exiting early today..."
+exit 0
+
 if ! keystone tenant-get NBIS; then
     /usr/local/bin/create_project.sh NBIS
 fi
