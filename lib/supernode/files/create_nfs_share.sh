@@ -19,7 +19,7 @@ if [ -z "${VLAN}" ]; then
 fi
 
 SUBNET=$((VLAN%1000))
-IP="192.168.${SUBNET}.254"
+IP="192.168.${SUBNET}.254" # Note: should be the floating ip. Not yet there!
 NETMASK=255.255.255.0
 PREFIX=24
 
@@ -53,7 +53,7 @@ if ! grep ${PROJECT_NAME} /etc/exports; then
 echo "/mnt/nfs/${PROJECT_NAME} ${IP%.254}.0/${PREFIX}(rw,sync,no_root_squash,no_subtree_check)" >> /etc/exports
 fi
 
-exportfs -a
+showmount -e
 EOF
 
 echo "Project share set up."
