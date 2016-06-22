@@ -16,7 +16,7 @@ tmpfil=/tmp/nfssan.$$
 
 test -e "$tmpfil" && exit 1
 
-ssh manager@meles-smu ssc -u "$SMUUSER" -p "$SMUPASS" 192.0.2.7 > "$tmpfil" <<EOF
+ssh root@hnas-emulation <<EOF > "$tmpfil"
 console-context --evs MEVS1
 nfs-export list
 
