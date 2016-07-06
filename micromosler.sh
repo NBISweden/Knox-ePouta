@@ -7,7 +7,9 @@ function usage {
     echo -e "\tclean        \tRemoves allocated resources"
     echo -e "\tsync         \tCopies relevant files to the VMs"
     echo -e "\tprovision    \tConfigures the infracstructure"
+
     echo -e "\nSupply --help (or -h) to see the options for each command"
+
     echo -e "\nThe typical order to set up MicroMosler is to call:"
     echo -e "\t$0 init --all   # --all to create networks too"
     echo -e "\t$0 sync"
