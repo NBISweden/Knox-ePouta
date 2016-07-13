@@ -69,6 +69,11 @@ keystone endpoint-create --service-id=$(keystone service-list | awk '/ {{ servic
 unset OS_SERVICE_TOKEN
 unset OS_SERVICE_ENDPOINT
 
+source /root/.keystonerc
+echo "Correcting the Nova admin tenant id for Neutron"
+nova_admin_tenant_id=$(keystone tenant-list | awk '/ services /{print $2}')
+sed -i -e "s/nova_admin_tenant_id=.*/nova_admin_tenant_id=${nova_admin_tenant_id}/" /etc/neutron/neutron.conf
+
 echo "Starting Openstack Services"
 {% set items = [ 'openstack-heat-api',
 		 'openstack-heat-api-cfn',
@@ -101,11 +106,11 @@ do
            --name "${IMG[$i]}" \
            --file {{ env['VAULT'] }}/${IMG[$i]} \
            --disk-format qcow2 --container-format bare --is-public True
-    # Saving space
-    rm -f $img
-    ln -s /home/centos/{{ env['VAULT'] }}/${IMG[$i]} $img
-    chown glance:glance $img
-    chmod 640 $img
+    # # Saving space
+    # rm -f /var/lib/glance/images/$img
+    # ln -s /home/centos/{{ env['VAULT'] }}/${IMG[$i]} /var/lib/glance/images/$img
+    # chown glance:glance /var/lib/glance/images/$img
+    # chmod 640 /var/lib/glance/images/$img
 done
 
 echo "Removing existing Mosler flavors"

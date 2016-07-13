@@ -33,6 +33,21 @@ ovs-vsctl add-br br-eth1 || true
 echo "Adding eth1 to the OVS bridge"
 ovs-vsctl add-port br-eth1 eth1 || true
 
+{% if env['DO_CHEAT'] != 'yes' %}
+echo "Correcting the Nova admin tenant id for Neutron"
+source /root/.keystonerc
+T=0
+while (( ++T < 300 )) ; do
+    nova_admin_tenant_id=$(keystone tenant-list | awk '/ services /{print $2}')
+    [ $? -eq 0 ] && [ -n "${nova_admin_tenant_id}" ] && break;
+    sleep 1
+done
+(( T >= 300 )) && exit 1
+[ -z "${nova_admin_tenant_id}" ] && exit 1
+sed -i -e "s/nova_admin_tenant_id=.*/nova_admin_tenant_id=${nova_admin_tenant_id}/" /etc/neutron/neutron.conf
+{% endif %}
+
+
 echo "Starting Nova and Neutron agents"
 service libvirtd restart
 service messagebus restart
