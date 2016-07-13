@@ -48,9 +48,14 @@ sed -i -e "s/nova_admin_tenant_id=.*/nova_admin_tenant_id=${nova_admin_tenant_id
 {% endif %}
 
 
-echo "Starting Nova and Neutron agents"
+echo "Starting Libvirt"
 service libvirtd restart
 service messagebus restart
+
+# Wait for Message Broker. Don't want to loose the messages
+wait_port openstack-controller 5672 300
+
+echo "Starting Nova and Neutron agents"
 service openstack-nova-compute restart
 service neutron-openvswitch-agent restart
 
