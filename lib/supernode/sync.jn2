@@ -17,6 +17,7 @@ echo "Copying config files"
 		 'import_user',
 		 'nfs_san_check.sh',
 		 'queue_responder',
+		 'remove_project.sh',
 		 'remove_stack.sh',
 		 'sync_exporters',
 		 'sync_grantfile',

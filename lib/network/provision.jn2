@@ -6,7 +6,9 @@ sed -i "/^-A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/')
 # Insert it before the other line
 sed -i "/^-A INPUT -m state --state NEW .*/ i \
 -A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT" /etc/sysconfig/iptables
-service iptables restart
+#service iptables restart # Not sure why this fails sometimes.
+service iptables stop || true
+service iptables start
     
 
 echo "System config"

@@ -166,12 +166,19 @@ if [ $WITH_KEY = yes ]; then
 	rm -f ${MM_TMP}/ssh_key.${OS_TENANT_NAME} ${MM_TMP}/ssh_key.${OS_TENANT_NAME}.pub
 	ssh-keygen -q -t rsa -N "" -f ${MM_TMP}/ssh_key.${OS_TENANT_NAME} -C supernode
     fi
-    scp -q -F ${SSH_CONFIG} ${MM_TMP}/ssh_key.${OS_TENANT_NAME} ${MM_TMP}/ssh_key.${OS_TENANT_NAME}.pub ${FLOATING_IPs[supernode]}:${VAULT}/.
+    cat > ${MM_TMP}/ssh_key.${OS_TENANT_NAME}.config <<EOF
+Host ${MACHINES[@]// /,}
+        User root
+        StrictHostKeyChecking no
+        UserKnownHostsFile /dev/null
+EOF
+    scp -q -F ${SSH_CONFIG} ${MM_TMP}/ssh_key.${OS_TENANT_NAME}* ${FLOATING_IPs[supernode]}:${VAULT}/.
     ssh -F ${SSH_CONFIG} ${FLOATING_IPs[supernode]} 'sudo bash -e -x 2>&1' <<EOF &>/dev/null
 mv ${VAULT}/ssh_key.${OS_TENANT_NAME} /root/.ssh/id_rsa
 mv ${VAULT}/ssh_key.${OS_TENANT_NAME}.pub /root/.ssh/id_rsa.pub
 chmod 600 /root/.ssh/id_rsa
 chmod 644 /root/.ssh/id_rsa.pub
+mv ${VAULT}/ssh_key.${OS_TENANT_NAME}.config /root/.ssh/config
 EOF
     for machine in ${MACHINES[@]}
     do

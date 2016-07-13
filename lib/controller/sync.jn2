@@ -69,3 +69,6 @@ do
     chmod 640 {{ env['VAULT'] }}/$img
 done
 
+rsync -a --no-perms {{ env['VAULT'] }}/update_user_password.py  /root/update_user_password.py
+chown root:root /root/update_user_password.py
+chmod 0755 /root/update_user_password.py
