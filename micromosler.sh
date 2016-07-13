@@ -22,7 +22,7 @@ case "$1" in
     init|clean|sync|provision|prepare) _CMD=$1;;
     *) echo "$0: error - unrecognized command $1" 1>&2; usage; exit 1;;
 esac
-shift
+shift # Remove the command name from $@ (and keep the other arguments)
 
 export MM_CMD="$0 ${_CMD}"
 $(dirname ${BASH_SOURCE[0]})/lib/${_CMD}.sh $@

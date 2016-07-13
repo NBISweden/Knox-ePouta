@@ -171,7 +171,7 @@ rsync /home/centos/rdo-release.repo /etc/yum.repos.d/rdo-release.repo
 rsync /home/centos/RPM-GPG-KEY-Icehouse-SIG /etc/pki/rpm-gpg/RPM-GPG-KEY-Icehouse-SIG
 yum clean all
 yum -y install rabbitmq-server python-imaging python-qrcode MySQL-python
-yum -y install openstack-nova openstack-nova-compute openstack-neutron openstack-neutron-ml2 python-novaclient python-keystoneclient python-neutronclient python-glanceclient python-heatclient python-neutronclient
+yum -y install openstack-nova openstack-nova-compute openstack-neutron openstack-neutron-ml2 python-novaclient python-keystoneclient python-neutronclient python-glanceclient python-heatclient python-neutronclient python-ceilometerclient python-glance python-keystone python-swiftclient python-troveclient
 EOF
 
     # Removing the floating IP
