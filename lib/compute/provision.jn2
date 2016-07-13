@@ -48,6 +48,11 @@ sed -i -e "s/nova_admin_tenant_id=.*/nova_admin_tenant_id=${nova_admin_tenant_id
 {% endif %}
 
 
+echo "Deleting VMs in Libvirt"
+already=$(virsh list | grep -v "Id" | grep -v '^-----' | awk '{print $1}')
+if [ $? -eq 0 ]; then
+    for domain in $already; do virsh destroy $domain; done
+fi
 echo "Starting Libvirt"
 service libvirtd restart
 service messagebus restart
