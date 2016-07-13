@@ -104,13 +104,13 @@ do
     glance image-create \
            --id $img \
            --name "${IMG[$i]}" \
-           --file {{ env['VAULT'] }}/${IMG[$i]} \
+           --file /home/centos/{{ env['VAULT'] }}/${IMG[$i]} \
            --disk-format qcow2 --container-format bare --is-public True
-    # # Saving space
-    # rm -f /var/lib/glance/images/$img
-    # ln -s /home/centos/{{ env['VAULT'] }}/${IMG[$i]} /var/lib/glance/images/$img
-    # chown glance:glance /var/lib/glance/images/$img
-    # chmod 640 /var/lib/glance/images/$img
+    # Saving space
+    rm -f /var/lib/glance/images/$img
+    ln /home/centos/{{ env['VAULT'] }}/${IMG[$i]} /var/lib/glance/images/$img
+    chown glance:glance /var/lib/glance/images/$img
+    chmod 640 /var/lib/glance/images/$img
 done
 
 echo "Removing existing Mosler flavors"
