@@ -159,9 +159,10 @@ EOF
     ssh -F ${SSH_CONFIG} ${FLOATING_IPs[supernode]} 'sudo bash -e -x 2>&1' <<EOF &>/dev/null
 mv ${VAULT}/ssh_key.${OS_TENANT_NAME} /root/.ssh/id_rsa
 mv ${VAULT}/ssh_key.${OS_TENANT_NAME}.pub /root/.ssh/id_rsa.pub
-chmod 600 /root/.ssh/id_rsa
-chmod 644 /root/.ssh/id_rsa.pub
 mv ${VAULT}/ssh_key.${OS_TENANT_NAME}.config /root/.ssh/config
+chown root:root /root/.ssh/config /root/.ssh/id_rsa /root/.ssh/id_rsa.pub
+chmod 600 /root/.ssh/id_rsa /root/.ssh/config
+chmod 644 /root/.ssh/id_rsa.pub
 EOF
     for machine in ${MACHINES[@]}
     do
