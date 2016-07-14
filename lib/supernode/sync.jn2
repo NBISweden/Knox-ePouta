@@ -70,7 +70,7 @@ mkdir -p /etc/mosler
 declare -A FILES
 FILES=(\
 ['mosler_groups']='/etc/mosler/groups' \
-['granfile']='/etc/mosler/granfile' \
+['grantfile']='/etc/mosler/grantfile' \
 ['filsluss_exportmembers']='/etc/mosler/filsluss_exportmembers' \
 ['bils_tokenadmins']='/etc/mosler/bils_tokenadmins' \
 )
