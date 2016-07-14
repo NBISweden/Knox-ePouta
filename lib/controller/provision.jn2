@@ -12,7 +12,8 @@ echo "Stopping Services (if existing)"
 		 'openstack-heat-api-cfn',
 		 'openstack-heat-engine',
 		 'httpd',
-		 'mysqld'
+		 'mysqld',
+		 'rabbitmq-server'
 ] -%}
 {% for service in items %}
 if service {{ service }} status; then
