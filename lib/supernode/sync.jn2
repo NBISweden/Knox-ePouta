@@ -22,9 +22,7 @@ echo "Copying config files"
 		 'sync_exporters',
 		 'sync_grantfile',
 		 'sync_tokenadmin',
-		 'tenant-valid',
-		 'uppmax-links.sh',
-		 'uppmax-sync.sh'
+		 'tenant-valid'
 	       ] -%}
 {% for file in files %}
 rsync -a {{ env['VAULT'] }}/{{ file }}  /usr/local/bin/{{ file }}
@@ -32,15 +30,13 @@ chown root:root /usr/local/bin/{{ file }}
 chmod 0755 /usr/local/bin/{{ file }}
 {% endfor %}
 
-{% set files = [ 'approveimage',
-		 'filsluss_cron_export',
+{% set files = [ 'filsluss_cron_export',
 		 'filsluss_cron_import',
 		 'fix_hostdata',
 		 'fix_userdata',
 		 'project_gid',
 		 'project_ips',
 		 'project_members',
-		 'refreshimage',
 		 'remove_project.sh',
 		 'setup_homedir.sh',
 		 'thinlinc_proj_setup'
@@ -65,4 +61,23 @@ rsync -a {{ env['VAULT'] }}/{{ file }} /usr/local/heat/{{ file }}
 chmod 0755 /usr/local/heat/{{ file }}
 {% endfor %}
 
-{# 'mosler-template-parameters' is used in a different way #}
+{# 'mosler-template-parameters' is used in a different way, in provision.jn2 #}
+
+
+echo "Configuring the Mosler permissions"
+mkdir -p /etc/mosler
+
+declare -A FILES
+FILES=(\
+['mosler_groups']='/etc/mosler/groups' \
+['granfile']='/etc/mosler/granfile' \
+['filsluss_exportmembers']='/etc/mosler/filsluss_exportmembers' \
+['bils_tokenadmins']='/etc/mosler/bils_tokenadmins' \
+)
+
+for f in ${!FILES[@]}
+do
+    rsync -a --no-perms {{ env['VAULT'] }}/$f ${FILES[$f]}
+    chown root:root ${FILES[$f]}
+    chmod 644 ${FILES[$f]}
+done
