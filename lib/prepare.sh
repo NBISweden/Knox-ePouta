@@ -176,18 +176,18 @@ yum -y install python-novaclient python-keystoneclient python-neutronclient pyth
 EOF
 
     # Removing the floating IP
-    nova floating-ip-disassociate "${VM_NAME}" ${FLOATING_IP}
+    nova floating-ip-disassociate ${VM_NAME} ${FLOATING_IP}
     nova floating-ip-delete ${FLOATING_IP}
 fi # End extra packages
 
 echo "Stopping it before snapshoting."
-nova stop "${VM_NAME}"
+nova stop ${VM_NAME}
 # Note: There should be only one
 
 T_MAX=10 # seconds
 T=0
 STRIDE=3
-until [ "$(nova show \"${VM_NAME}\" | awk '/ status / {print $4}')" == 'SHUTOFF' ] || [ $? -ne 0 ] || (( ++T >= T_MAX ))
+until [ "$(nova show ${VM_NAME} | awk '/ status / {print $4}')" == 'SHUTOFF' ] || [ $? -ne 0 ] || (( ++T >= T_MAX ))
 do
     sleep $STRIDE
 done
@@ -196,7 +196,7 @@ cleanup
 
 if (( T < T_MAX )); then
     echo "Creating the ${IMAGE_NAME} snapshot"
-    nova image-create --poll "${VM_NAME}" "${IMAGE_NAME}"
+    nova image-create --poll ${VM_NAME} ${IMAGE_NAME}
     
     ########################################################################
     exec 1>${ORG_FD1}
