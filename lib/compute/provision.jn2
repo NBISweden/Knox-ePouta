@@ -59,6 +59,7 @@ service messagebus restart
 
 # Wait for Message Broker. Don't want to loose the messages
 wait_port openstack-controller 5672 300
+wait_port openstack-controller 9696 300
 
 echo "Starting Nova and Neutron agents"
 service openstack-nova-compute restart
