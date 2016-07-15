@@ -29,7 +29,7 @@ truncate --size 0 /var/log/heat/*
 
 echo "Starting the Message Broker"
 service rabbitmq-server stop
-truncate --size 0 /var/log/rabbitmq/rabbit@openstack-controller.log
+[ -f /var/log/rabbitmq/rabbit@openstack-controller.log ] && rm -f /var/log/rabbitmq/rabbit@openstack-controller.log
 service rabbitmq-server start
 chkconfig rabbitmq-server on
 

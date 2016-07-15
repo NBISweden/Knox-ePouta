@@ -43,6 +43,10 @@ chmod 0755 /usr/local/heat/mosler-template-parameters
 echo "Creating public subnet network in neutron"
 neutron subnet-create public-net --name public-subnet --allocation-pool start=172.18.0.30,end=172.18.0.200 --disable-dhcp --gateway 172.18.0.1  172.18.0.0/24
 
+##############################################################
+keystone role-create --name heat_stack_user
+# Wait for heat
+wait_port openstack-controller 8000 300
 
 exit 0 # Exiting early today...
 ##############################################################
