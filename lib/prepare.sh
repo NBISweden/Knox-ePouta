@@ -170,8 +170,9 @@ if [ -n $PACKAGES ]; then
 rsync /home/centos/rdo-release.repo /etc/yum.repos.d/rdo-release.repo
 rsync /home/centos/RPM-GPG-KEY-Icehouse-SIG /etc/pki/rpm-gpg/RPM-GPG-KEY-Icehouse-SIG
 yum clean all
-yum -y install rabbitmq-server python-imaging python-qrcode MySQL-python
-yum -y install openstack-nova openstack-nova-compute openstack-neutron openstack-neutron-ml2 python-novaclient python-keystoneclient python-neutronclient python-glanceclient python-heatclient python-neutronclient python-ceilometerclient python-glance python-keystone python-swiftclient python-troveclient
+yum -y install rabbitmq-server mysql-server python-imaging python-qrcode MySQL-python
+yum -y install openstack-nova openstack-nova-compute openstack-neutron openstack-neutron-ml2 openstack-dashboard openstack-glance openstack-heat-api openstack-heat-api-cfn openstack-heat-engine openstack-keystone
+yum -y install python-novaclient python-keystoneclient python-neutronclient python-glanceclient python-heatclient python-neutronclient python-ceilometerclient python-glance python-keystone python-swiftclient python-troveclient
 EOF
 
     # Removing the floating IP
