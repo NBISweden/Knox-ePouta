@@ -49,6 +49,9 @@ done
 sed -i -e "s/nova_admin_tenant_id=.*/nova_admin_tenant_id=${nova_admin_tenant_id}/" /etc/neutron/neutron.conf
 {% endif %}
 
+echo "Deleting the virtual routers"
+ip netns | while read ns; do ip netns del $ns; done
+echo "Cleaning the logs"
 truncate --size 0 /var/log/neutron/*
 
 # Wait for Message Broker. Don't want to loose the messages
