@@ -49,13 +49,15 @@ done
 sed -i -e "s/nova_admin_tenant_id=.*/nova_admin_tenant_id=${nova_admin_tenant_id}/" /etc/neutron/neutron.conf
 {% endif %}
 
-echo "Deleting the virtual routers"
-ip netns | while read ns; do ip netns del $ns; done
+# echo "Deleting the virtual routers"
+# ip netns | while read ns; do ip netns del $ns; done
 echo "Cleaning the logs"
 truncate --size 0 /var/log/neutron/*
 
 # Wait for Message Broker. Don't want to loose the messages
 wait_port openstack-controller 5672 300
+sleep 5 # On the openstack-controller, neutron-server is first closing. Let's sleep
+wait_port openstack-controller 9696 300
 
 echo "Starting Neutron services"
 {% set services = [ 'dhcp-agent',
