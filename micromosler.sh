@@ -19,7 +19,7 @@ function usage {
 }
 
 case "$1" in
-    init|clean|sync|provision|prepare)
+    init|clean|sync|provision|prepare|ping)
 	_CMD=$1
 	shift # Remove the command name from $@
 	export MM_CMD="$0 ${_CMD}"
