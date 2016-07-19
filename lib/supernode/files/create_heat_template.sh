@@ -165,17 +165,17 @@ neutron net-delete ${PROJECT_NAME}-private_net_dummy
 
 sleep 15
 
-# #
-# # Add login node resources
-# #
-# echo "" >> ${TEMPLATE_DIR}/heat-${PROJECT_NAME}.template
-# cat ${TEMPLATE_DIR}/mosler-template-resources-loginnode >> ${TEMPLATE_DIR}/heat-${PROJECT_NAME}.template
+#
+# Add login node resources
+#
+echo "" >> ${TEMPLATE_DIR}/heat-${PROJECT_NAME}.template
+cat ${TEMPLATE_DIR}/mosler-template-resources-loginnode >> ${TEMPLATE_DIR}/heat-${PROJECT_NAME}.template
 
-# #
-# # Add service node resources
-# #
-# echo "" >> ${TEMPLATE_DIR}/heat-${PROJECT_NAME}.template
-# cat ${TEMPLATE_DIR}/mosler-template-resources-servicenode >> ${TEMPLATE_DIR}/heat-${PROJECT_NAME}.template
+#
+# Add service node resources
+#
+echo "" >> ${TEMPLATE_DIR}/heat-${PROJECT_NAME}.template
+cat ${TEMPLATE_DIR}/mosler-template-resources-servicenode >> ${TEMPLATE_DIR}/heat-${PROJECT_NAME}.template
 
 #
 # Add compute node resources
