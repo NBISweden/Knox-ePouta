@@ -150,7 +150,7 @@ if [ $WITH_KEY = yes ]; then
 	ssh-keygen -q -t rsa -N "" -f ${MM_TMP}/ssh_key.${OS_TENANT_NAME} -C supernode
     fi
     cat > ${MM_TMP}/ssh_key.${OS_TENANT_NAME}.config <<EOF
-Host ${MACHINES[@]// /,}
+Host ${MACHINES[@]// /,} tos1
         User root
         StrictHostKeyChecking no
         UserKnownHostsFile /dev/null

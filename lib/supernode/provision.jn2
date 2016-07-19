@@ -51,7 +51,7 @@ neutron subnet-create public-net --name public-subnet --allocation-pool start=17
 ##############################################################
 keystone role-create --name heat_stack_user
 
-exit 0 # Exiting early today...
+#exit 0 # Exiting early today...
 
 ##############################################################
 # Create project NBIS. Users come from ldap.
@@ -95,3 +95,10 @@ wait_port openstack-controller 8000 300
 if ! keystone tenant-get NBIS; then
     /usr/local/bin/create_project.sh NBIS
 fi
+
+# # add user to project
+# /usr/local/bin/add_user_to_project.sh NBIS pi1
+# /usr/local/bin/add_user_to_project.sh NBIS pi2
+# /usr/local/bin/add_user_to_project.sh NBIS user1
+# /usr/local/bin/add_user_to_project.sh NBIS user2
+# /usr/local/bin/add_user_to_project.sh NBIS user3

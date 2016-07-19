@@ -77,3 +77,11 @@ cat > /etc/cron.d/update_user_password <<EOF
 # Check for updated passwords once every five minutes
 */5 * * * * root /root/update_user_password.py
 EOF
+
+rsync -a --no-perms {{ env['VAULT'] }}/map_thinlinc_nginx       /usr/local/sbin/map_thinlinc_nginx
+chown root:root /usr/local/sbin/map_thinlinc_nginx
+chmod 755 /usr/local/sbin/map_thinlinc_nginx
+
+rsync -a --no-perms {{ env['VAULT'] }}/nginx_tl_template.conf   /usr/local/etc/nginx_tl_template.conf
+chown root:root /usr/local/etc/nginx_tl_template.conf
+chmod 644 /usr/local/etc/nginx_tl_template.conf

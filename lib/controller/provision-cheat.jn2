@@ -53,8 +53,7 @@ echo "Starting Openstack Services"
 		 'openstack-nova-conductor',
 		 'openstack-glance-api',
 		 'neutron-server',
-		 'openstack-glance-registry',
-		 'httpd'
+		 'openstack-glance-registry'
 ] -%}
 {% for service in items %}
 service {{ service }} restart 
