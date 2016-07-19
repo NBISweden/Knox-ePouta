@@ -17,7 +17,7 @@ function usage {
     echo -e "\t--vault <name>         \tName of the drop folder in the servers"
     echo -e "\t                       \tDefaults to '${VAULT}'"
     echo -e "\t--timeout <seconds>,"
-    echo -e "\t       -t <seconds>    \tSkips the steps of syncing files to the servers"
+    echo -e "\t       -t <seconds>    \tMaximal waiting time for each server connection"
     echo -e "\t--cheat                \tUses tricks to provision machines faster (like mysql pre-dumps)"
     echo -e "\t--quiet,-q             \tRemoves the verbose output"
     echo -e "\t--help,-h              \tOutputs this message and exits"

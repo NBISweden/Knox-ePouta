@@ -14,7 +14,12 @@ mkdir -p /meles
 if mount | grep -q meles ;then
     umount /meles
 fi
-mount -t nfs {{ env['NFS_SERVER'] }}:/mnt/nfs /meles
+t=0
+while : ; do # make it retry in case the nfs server is not up
+    if mount -t nfs {{ env['NFS_SERVER'] }}:/mnt/nfs /meles; then break; fi
+    ((t++))
+    [ $t -eq 300 ] && exit 1
+done
 
 if ! grep -q "{{ env['NFS_SERVER'] }}" /etc/fstab; then
     cat >> /etc/fstab<<EOF
@@ -45,10 +50,9 @@ neutron subnet-create public-net --name public-subnet --allocation-pool start=17
 
 ##############################################################
 keystone role-create --name heat_stack_user
-# Wait for heat
-wait_port openstack-controller 8000 300
 
 exit 0 # Exiting early today...
+
 ##############################################################
 # Create project NBIS. Users come from ldap.
 
@@ -84,6 +88,9 @@ function wait_for_flavors {
     exit 1
 }
 wait_for_flavors 300
+
+# Wait for heat
+wait_port openstack-controller 8000 300
 
 if ! keystone tenant-get NBIS; then
     /usr/local/bin/create_project.sh NBIS
