@@ -1,6 +1,6 @@
 #!/bin/sh
 
-KEYSTONETHREE=https://172.27.0.32:5000/v3
+KEYSTONETHREE=https://openstack-controller:5000/v3
 
 if [ "$#" -ne 2 ]; then
   exit 1
