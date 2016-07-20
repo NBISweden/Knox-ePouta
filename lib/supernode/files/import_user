@@ -1,8 +1,0 @@
-#!/bin/sh
-
-echo 'Fixing users for thinlinc.'
-ldapsearch  -h ldap -b ou=Users,dc=mosler,dc=bils,dc=se uid -x | grep ^uid: | while read a b; do
-  ssh root@thinlinc-master establish_user "$b" < /dev/null
-done
-
-echo 'All done.'
