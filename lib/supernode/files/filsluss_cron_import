@@ -2,7 +2,7 @@
 
 cd /meles/import/home || exit 1
 
-tmplocation="/meles/v1/incoming"
+tmplocation="/meles/incoming"
 
 runtime=`date +%Y%m%d%H%M`
 
@@ -21,7 +21,7 @@ find . -type f -mmin '+5'  | while read fname; do
 
       logger "Importing $fname for user $uname in project $project"
       
-      dstbase="/meles/v1/$project/proj/$project/INBOX"
+      dstbase="/meles/$project/proj/$project/INBOX"
       dst="$dstbase/$runtime/$user/"
       # Get on the right filesystem
       mv "$fname" "$tmplocation/$newname"

@@ -7,7 +7,7 @@ PATH=$PATH:/usr/local/sbin
 tmplocation="/meles/import/outgoing"
 
 
-cd /meles/v1 || exit 1
+cd /meles || exit 1
 
 for proj in *; do
 

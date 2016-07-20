@@ -5,7 +5,7 @@ PATH=/usr/local/sbin:/usr/local/bin:$PATH
 
 imp=/meles/import/home
 
-cd /meles/v1 || exit 1
+cd /meles || exit 1
 
 for proj in *; do 
 
@@ -58,7 +58,7 @@ for proj in *; do
 
     users=''
     # Loop over all users of project
-    for user in lka `project_members "$proj"`; do
+    for user in `project_members "$proj"`; do
         line=`passwd_line "$user"`
 
         echo $line >> "$proj/misc/etc/passwd.new"
@@ -93,7 +93,7 @@ for proj in *; do
 
         chown root.root "$imp/$user"
 
-        if keystone --os-tenant-name "$proj" user-role-list --user "$user" | tr -d ' ' | grep -q '|778c12ac40ed4990a9f72655b2abc267|exporter|' ; then
+        if keystone --os-tenant-name "$proj" user-role-list --user "$user" | grep -q 'exporter' ; then
             # User has export permissions
             mkdir -p "$proj/proj/$proj/OUTBOX/$user"
             chown "$uid" "$proj/proj/$proj/OUTBOX/$user"

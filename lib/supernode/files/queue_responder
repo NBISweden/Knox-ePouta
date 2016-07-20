@@ -11,7 +11,7 @@ fi
 
 . /root/.keystonerc
 
-cd /meles/v1
+cd /meles
 
 tmpname=/tmp/queuer.$$
 
