@@ -13,7 +13,6 @@ echo "Copying config files"
 		 'NBIS.sh',
 		 'get_vlan.sh',
 		 'heat_add_compute.sh',
-		 'import_user',
 		 'nfs_san_check.sh',
 		 'queue_responder',
 		 'remove_project.sh',
