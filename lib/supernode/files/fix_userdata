@@ -52,8 +52,8 @@ for proj in *; do
     chmod g+s "$proj/proj/${proj}_nobackup"
  
     groupline="$proj:x:$gid:"
-    echo lka:*:40004:lka > "$proj/misc/etc/group.new"
-    echo lka:x:40004:40000:Lennart Karlsson:/home/lka:/bin/bash > "$proj/misc/etc/passwd.new"
+    : > "$proj/misc/etc/group.new"
+    : > "$proj/misc/etc/passwd.new"
 
 
     users=''

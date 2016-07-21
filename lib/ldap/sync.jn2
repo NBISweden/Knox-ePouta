@@ -13,8 +13,3 @@ rsync -a {{ env['VAULT'] }}/{{ file }}  /usr/local/sbin/{{ file }}
 chown root:root /usr/local/sbin/{{ file }}
 chmod 0755 /usr/local/sbin/{{ file }}
 {% endfor %}
-
-
-rsync -a {{ env['VAULT'] }}/ldapcred  /root/ldapcred
-chown root:root /root/ldapcred
-chmod 0400 /root/ldapcred
