@@ -26,7 +26,7 @@ PREFIX=24
 echo "Setting up project share, you may see failures if it exists already."
 
 set -e # exit on errors
-ssh root@nfs 'bash -x -e' <<EOF
+ssh root@storage 'bash -x -e' <<EOF
 
 cat > /etc/sysconfig/network-scripts/ifcfg-eth1.${VLAN} <<ENDCFG
 TYPE=Ethernet

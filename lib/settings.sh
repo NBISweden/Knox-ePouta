@@ -64,7 +64,7 @@ export FLAVORS=(\
     [compute1]=m1.large \
     [compute2]=m1.large \
     [compute3]=m1.large \
-    [nfs]=m1.small \
+    [storage]=m1.small \
     [ldap]=m1.small \
     [networking-node]=m1.small \
 )
@@ -78,7 +78,7 @@ export MACHINE_IPs=(\
     [compute1]=172.25.8.7 \
     [compute2]=172.25.8.8 \
     [compute3]=172.25.8.9 \
-    [nfs]=172.25.8.10 \
+    [storage]=172.25.8.10 \
     [ldap]=172.25.8.11 \
     [networking-node]=172.25.8.12 \
 )
@@ -91,7 +91,7 @@ export DATA_IPs=(\
     [compute2]=10.10.10.111 \
     [compute3]=10.10.10.112 \
     [networking-node]=10.10.10.101 \
-    [nfs]=10.10.10.102 \
+    [storage]=10.10.10.102 \
 )
 export DATA_GATEWAY=10.10.10.1
 export DATA_CIDR=10.10.10.0/24
@@ -105,7 +105,7 @@ export FLOATING_IPs=(\
     [compute1]=10.254.0.58 \
     [compute2]=10.254.0.59 \
     [compute3]=10.254.0.60 \
-    [nfs]=10.254.0.61 \
+    [storage]=10.254.0.61 \
     [ldap]=10.254.0.62 \
     [networking-node]=10.254.0.63 \
 )
@@ -127,7 +127,7 @@ export PROVISION=(\
     [compute1]=compute \
     [compute2]=compute \
     [compute3]=compute \
-    [nfs]=storage \
+    [storage]=storage \
     [ldap]=ldap \
     [networking-node]=network \
 )

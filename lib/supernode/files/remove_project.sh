@@ -68,7 +68,7 @@ neutron security-group-list | grep "${proj}-mosler_default" |  filter 2 | while 
   neutron security-group-delete "$secgroup"
 done
 
-ssh root@nfs <<EOF
+ssh root@storage <<EOF
 exportfs -u *:/mnt/nfs/$proj
 # Should remove the VLAN interface too.
 EOF

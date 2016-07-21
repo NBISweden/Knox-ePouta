@@ -15,7 +15,7 @@ tmpfil=/tmp/nfssan.$$
 
 test -e "$tmpfil" && exit 1
 
-ssh root@nfs 'showmount -e' > $tmpfil
+ssh root@storage 'showmount -e' > $tmpfil
 
 grep '^192.168' $tmpfil | sed -e 's/(.*//' | sort | uniq -c | while read count net; do
 
