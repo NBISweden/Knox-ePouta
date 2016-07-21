@@ -56,18 +56,15 @@ cat > /etc/cron.d/queue <<EOF
 */8 * * * * root flock -n /tmp/queue_responder /usr/local/bin/queue_responder
 EOF
 
-# cat > /etc/cron.d/project_mapping <<EOF
-# */15 * * * * root /usr/local/sbin/thinlinc_proj_setup
-# EOF
+cat > /etc/cron.d/project_mapping <<EOF
+*/15 * * * * root /usr/local/sbin/thinlinc_proj_setup
+EOF
 
-# cat > /etc/cron.d/userdata <<EOF
-# */2 * * * * root flock -n /tmp/userdatarun /usr/local/sbin/fix_userdata 2>/dev/null
-# * * * * * root flock -n /tmp/hostdatarun /usr/local/sbin/fix_hostdata 2>/dev/null
-# EOF
+cat > /etc/cron.d/userdata <<EOF
+*/2 * * * * root flock -n /tmp/userdatarun /usr/local/sbin/fix_userdata 2>/dev/null
+* * * * * root flock -n /tmp/hostdatarun /usr/local/sbin/fix_hostdata 2>/dev/null
+EOF
 
 ##############################################################
 # Create the NBIS project
-set -e -x
-/usr/local/bin/NBIS.sh
-/usr/local/sbin/fix_userdata
-/usr/local/sbin/fix_hostdata
+# /usr/local/bin/NBIS.sh

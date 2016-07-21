@@ -1,5 +1,6 @@
-#!/bin/sh
+#!/bin/sh 
 
+set -e -x
 source /root/.keystonerc
 
 ##############################################################
@@ -71,3 +72,5 @@ keystone user-role-add --tenant=NBIS --role=exporter --user=exporter1
 VLAN=$(heat stack-show NBIS | awk '/private_seg_id/ {print $5}')
 /usr/local/bin/create_nfs_share.sh NBIS $VLAN
 
+# No need to call fix_userdata and fix_hostdata.
+# They are called in some cron table.
