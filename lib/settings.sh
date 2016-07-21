@@ -53,7 +53,7 @@ export PUBLIC_SSH_KEYS=(\
 # Declaring the machines
 
 declare -a MACHINES
-export MACHINES=('openstack-controller' 'thinlinc-master' 'filsluss' 'supernode' 'compute1' 'compute2' 'compute3' 'nfs' 'ldap' 'networking-node')
+export MACHINES=('openstack-controller' 'thinlinc-master' 'filsluss' 'supernode' 'compute1' 'compute2' 'compute3' 'storage' 'ldap' 'networking-node')
 
 declare -A FLAVORS
 export FLAVORS=(\
