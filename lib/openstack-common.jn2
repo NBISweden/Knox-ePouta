@@ -7,11 +7,3 @@ rsync {{ env['VAULT'] }}/keystonerc /root/.keystonerc
 
 echo "Openstack python clients"
 yum -y install python-novaclient python-keystoneclient python-neutronclient python-glanceclient python-heatclient python-neutronclient MySQL-python
-
-echo "Copying Keystone credentials"
-rsync {{ env['VAULT'] }}/keystonerc /root/.keystonerc
-
-# - name: Adding the supernode as known_hosts
-#   shell: echo 'todo'
-# # Supernode needs to reach everywhere
-# #    - copy: src={{ env['MM_HOME'] }}/.ssh/id_rsa dest=/root/.ssh/id_rsa

@@ -104,7 +104,7 @@ service mysqld start
 {% include 'controller/provision-cheat.jn2' %}
 {% else %}
 {% include 'controller/provision-nocheat.jn2' %}
-mysqldump -u root -pmysql --all-databases --events > /home/centos/vault/openstack_db_dump.sql
+# mysqldump -u root -pmysql --all-databases --events > /home/centos/vault/openstack_db_dump.sql
 # exit 0
 {% endif %}
 
