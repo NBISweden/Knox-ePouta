@@ -50,7 +50,7 @@ export OS_TENANT_NAME=NBIS
 
 ssh root@ldap ldapsearch -h ldap -b ou=Users,dc=mosler,dc=nbis,dc=se uid -x | grep ^uid: | while read a b; do
     case "$b" in
-	admin|glance|glance|heat|keystone|neutron|nova) : ;;
+	admin|glance|heat|keystone|neutron|nova) : ;;
 	*)
 	    echo "User: $b"
 	    keystone user-role-add --tenant NBIS --role _member_ --user "$b"
@@ -59,4 +59,6 @@ ssh root@ldap ldapsearch -h ldap -b ou=Users,dc=mosler,dc=nbis,dc=se uid -x | gr
 done
 
 
+keystone user-role-add --user=pi1 --tenant=NBIS --role="exporter" >/dev/null
+keystone user-role-add --user=pi2 --tenant=NBIS --role="exporter" >/dev/null
 keystone user-role-add --user=export1 --tenant=NBIS --role="exporter" >/dev/null

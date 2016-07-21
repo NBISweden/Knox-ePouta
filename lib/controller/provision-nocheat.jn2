@@ -29,10 +29,14 @@ echo "Keystone roles"
 keystone role-create --name=admin
 keystone role-create --name=service
 #keystone role-create --name=_member_ # already created by 'keystone-manage db_sync'
+keystone role-create --name=heat_stack_user
+keystone role-create --name=exporter
+keystone role-create --name=tokenadmin
 
 echo "Keystone tenants"
 keystone tenant-create --name=admin --description='Admin Tenant'
 keystone tenant-create --name=services --description='Service Tenant'
+keystone tenant-create --name=tokenadmins --description='TokenAdmins Tenant'
 
 echo "Keystone roles attribution"
 keystone user-role-add --user=admin    --tenant=admin    --role=admin
@@ -42,6 +46,9 @@ keystone user-role-add --user=nova     --tenant=services --role=admin
 keystone user-role-add --user=neutron  --tenant=services --role=admin
 keystone user-role-add --user=glance   --tenant=services --role=admin
 keystone user-role-add --user=heat     --tenant=services --role=admin
+
+keystone user-role-add --user=tokenadmin1 --tenant=tokenadmins --role=tokenadmin
+keystone user-role-add --user=tokenadmin2 --tenant=tokenadmins --role=tokenadmin
         
 echo "Keystone service creation"
 keystone service-create --name=keystone --type=identity       --description='OpenStack Identity'
