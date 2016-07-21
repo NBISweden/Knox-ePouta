@@ -12,9 +12,9 @@ sed -i -e 's/^olcRootDN:.*/olcRootDN: cn=Manager,dc=mosler,dc=nbis,dc=se/' '/etc
 sed -i -e 's/^olcSuffix:.*/olcSuffix: dc=mosler,dc=nbis,dc=se/' '/etc/openldap/slapd.d/cn=config/olcDatabase={2}bdb.ldif'
 
 if grep ^olcRootPW '/etc/openldap/slapd.d/cn=config/olcDatabase={2}bdb.ldif' ; then
-  sed -i -e 's/^olcRootPw:.*/olcRootPW:  {SSHA}SGuX86SN0jX+X4M+1Gxlih4MmjEdh+gM/' '/etc/openldap/slapd.d/cn=config/olcDatabase={2}bdb.ldif'
+  sed -i -e 's/^olcRootPW:.*/olcRootPW:  {SSHA}M8N2yMz1iRL5SPvZJxmSqQ6Hb8RzlOh8/' '/etc/openldap/slapd.d/cn=config/olcDatabase={2}bdb.ldif'
 else
-  echo 'olcRootPW:  {SSHA}SGuX86SN0jX+X4M+1Gxlih4MmjEdh+gM' >> '/etc/openldap/slapd.d/cn=config/olcDatabase={2}bdb.ldif'
+  echo 'olcRootPW:  {SSHA}M8N2yMz1iRL5SPvZJxmSqQ6Hb8RzlOh8' >> '/etc/openldap/slapd.d/cn=config/olcDatabase={2}bdb.ldif'
 fi
 
 sed -i -e 's/ by dn.base="cn[^"]"/by dn.base="cn=Manager,dc=mosler,dc=nbis,dc=se"/' '/etc/openldap/slapd.d/cn=config/olcDatabase={2}bdb.ldif'

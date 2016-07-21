@@ -1,4 +1,5 @@
 # Fake one
 
-MANAGERDN=someone
-MANAGERPW=something
+MANAGERDN=Manager
+MANAGERPW=ldap
+
