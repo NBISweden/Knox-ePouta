@@ -1,9 +1,14 @@
 #!/bin/sh
 
 source /root/.keystonerc
+
 ##############################################################
 # Create project NBIS. Users come from ldap.
 ##############################################################
+
+keystone user-role-add --tenant=tokenadmins --role=tokenadmin --user=pi1
+keystone user-role-add --tenant=tokenadmins --role=tokenadmin --user=pi2
+keystone user-role-add --tenant=tokenadmins --role=tokenadmin --user=exporter1
 
 # Wait for the 3 glance images
 function wait_for_images {

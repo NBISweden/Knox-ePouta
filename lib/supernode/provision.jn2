@@ -52,16 +52,6 @@ echo "Creating public subnet network in neutron"
 neutron subnet-create public-net --name public-subnet --allocation-pool start=172.18.0.30,end=172.18.0.200 --disable-dhcp --gateway 172.18.0.1  172.18.0.0/24
 
 ##############################################################
-keystone role-create --name heat_stack_user
-keystone role-create --name=exporter
-keystone role-create --name=tokenadmin
-
-keystone user-role-add --tenant=tokenadmins --role=tokenadmin --user=pi1
-keystone user-role-add --tenant=tokenadmins --role=tokenadmin --user=pi2
-keystone user-role-add --tenant=tokenadmins --role=tokenadmin --user=exporter1
-
-
-##############################################################
 echo "Cron files"
 
 cat > /etc/cron.d/filsluss <<EOF
