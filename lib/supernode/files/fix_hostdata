@@ -22,13 +22,14 @@ for proj in *; do
     touch "$proj/misc/etc/slurmnodes.conf.new"
 
     echo 'NodeName=vtdummy NodeAddr=10.254.0.254 RealMemory=1 Sockets=1 CoresPerSocket=1 Feature=thin Weight=0 State=down' >> "$proj/misc/etc/slurmnodes.conf.new"
-    echo 'NodeName=vtlargedummy NodeAddr=10.254.0.253 RealMemory=1 Sockets=1 CoresPerSocket=8 Feature=thin Weight=0 State=down' >> "$proj/misc/etc/slurmnodes.conf.new"
+    echo 'NodeName=vtlargedummy NodeAddr=10.254.0.253 RealMemory=1 Sockets=1 CoresPerSocket=8 Feature=thin Weight=0 State=down' >> "$proj/misc/etc/slurmnodes.conf.new"c
 
 
     echo 10.254.0.254 vtdummy>> "$proj/misc/etc/hosts.new"
     echo 10.254.0.253 vtlargedummy>> "$proj/misc/etc/hosts.new"
 
-    echo 10.10.10.3 tos1 tos1.mosler.uppmax.uu.se >> "$proj/misc/etc/hosts.new"
+    # Changed from 10.10.10.3 /Daz
+    echo 10.254.0.54 tos1 tos1.mosler.nbis.se >> "$proj/misc/etc/hosts.new"
 
 
     if [ -n "$login" ]; then

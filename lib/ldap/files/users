@@ -225,10 +225,10 @@ uidNumber: 20005
 gidNumber: 20005
 
 
-dn: uid=export1,ou=Users,dc=mosler,dc=nbis,dc=se
-uid: export1
+dn: uid=exporter1,ou=Users,dc=mosler,dc=nbis,dc=se
+uid: exporter1
 loginShell: /bin/bash
-userPassword: export1
+userPassword: exporter1
 objectClass: organizationalPerson
 objectClass: person
 objectClass: posixAccount
@@ -238,8 +238,8 @@ objectClass: top
 cn: Exporter
 sn: EXPORTER1
 gecos: EXPORTER1
-homeDirectory: /home/export1
-mail: export1@localhost
+homeDirectory: /home/exporter1
+mail: exporter1@localhost
 uidNumber: 20006
 gidNumber: 20006
 

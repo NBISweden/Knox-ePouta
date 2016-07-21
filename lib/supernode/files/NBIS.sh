@@ -6,9 +6,8 @@ source /root/.keystonerc
 # Create project NBIS. Users come from ldap.
 ##############################################################
 
-keystone user-role-add --tenant=tokenadmins --role=tokenadmin --user=pi1
-keystone user-role-add --tenant=tokenadmins --role=tokenadmin --user=pi2
-keystone user-role-add --tenant=tokenadmins --role=tokenadmin --user=exporter1
+keystone user-role-add --tenant=tokenadmins --role=tokenadmin --user=tokenadmin1
+keystone user-role-add --tenant=tokenadmins --role=tokenadmin --user=tokenadmin2
 
 # Wait for the 3 glance images
 function wait_for_images {
@@ -46,9 +45,11 @@ wait_for_flavors 300
 # Wait for heat
 wait_port openstack-controller 8000 300
 
-if ! keystone tenant-get NBIS; then
-    /usr/local/bin/create_project.sh NBIS
-fi
+# If already exists
+keystone tenant-get NBIS &>/dev/null && exit 1
+
+# else
+/usr/local/bin/create_project.sh NBIS
 
 # add user to project, and fix the thinlinc account for it
 export OS_TENANT_NAME=NBIS
@@ -63,7 +64,10 @@ ssh root@ldap ldapsearch -h ldap -b ou=Users,dc=mosler,dc=nbis,dc=se uid -x | gr
     esac
 done
 
+keystone user-role-add --tenant=NBIS --role=exporter --user=pi1
+keystone user-role-add --tenant=NBIS --role=exporter --user=pi2
+keystone user-role-add --tenant=NBIS --role=exporter --user=exporter1
 
-keystone user-role-add --user=pi1 --tenant=NBIS --role="exporter" >/dev/null
-keystone user-role-add --user=pi2 --tenant=NBIS --role="exporter" >/dev/null
-keystone user-role-add --user=export1 --tenant=NBIS --role="exporter" >/dev/null
+VLAN=$(heat stack-show NBIS | awk '/private_seg_id/ {print $5}')
+/usr/local/bin/create_nfs_share.sh NBIS $VLAN
+

@@ -26,7 +26,7 @@ PREFIX=24
 echo "Setting up project share, you may see failures if it exists already."
 
 set -e # exit on errors
-ssh root@hnas-emulation 'bash -x -e' <<EOF
+ssh root@nfs 'bash -x -e' <<EOF
 
 cat > /etc/sysconfig/network-scripts/ifcfg-eth1.${VLAN} <<ENDCFG
 TYPE=Ethernet
@@ -53,7 +53,7 @@ if ! grep ${PROJECT_NAME} /etc/exports; then
 echo "/mnt/nfs/${PROJECT_NAME} ${IP%.254}.0/${PREFIX}(rw,sync,no_root_squash,no_subtree_check)" >> /etc/exports
 fi
 
-showmount -e
+#showmount -e
 EOF
 
 echo "Project share set up."

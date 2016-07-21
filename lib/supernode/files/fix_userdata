@@ -10,7 +10,7 @@ cd /meles || exit 1
 for proj in *; do 
 
   # Project $proj is a valid project?
-  if keystone tenant-get "$proj" 2>/dev/null >/dev/null; then
+  if keystone tenant-get "$proj" &>/dev/null; then
 
     # Make sure project directories are set up 
 

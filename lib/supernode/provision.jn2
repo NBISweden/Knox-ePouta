@@ -71,9 +71,10 @@ EOF
 # */2 * * * * root flock -n /tmp/userdatarun /usr/local/sbin/fix_userdata 2>/dev/null
 # * * * * * root flock -n /tmp/hostdatarun /usr/local/sbin/fix_hostdata 2>/dev/null
 # EOF
+
+##############################################################
+# Create the NBIS project
+set -e -x
+/usr/local/bin/NBIS.sh
 /usr/local/sbin/fix_userdata
 /usr/local/sbin/fix_hostdata
-
-# ##############################################################
-# # Create the NBIS project
-# /usr/local/bin/NBIS.sh
