@@ -24,7 +24,7 @@ service slapd restart
 chkconfig slapd on
 
 echo "Deleting all LDAP entries"
-ldapdelete -x -D "cn=Manager,dc=mosler,dc=nbis,dc=se" -w ldap -r "dc=mosler,dc=nbis,dc=se"
+ldapdelete -x -D "cn=Manager,dc=mosler,dc=nbis,dc=se" -w ldap -r "dc=mosler,dc=nbis,dc=se" || true
 
 echo "Adding LDAP users"
 ldapadd -c -D 'cn=Manager,dc=mosler,dc=nbis,dc=se' -w ldap -f {{ env['VAULT'] }}/users

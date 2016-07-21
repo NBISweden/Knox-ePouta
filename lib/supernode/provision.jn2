@@ -16,16 +16,19 @@ if mount | grep -q meles ;then
 fi
 t=0
 while : ; do # make it retry in case the nfs server is not up
-    if mount -t nfs {{ env['NFS_SERVER'] }}:/mnt/nfs /meles; then break; fi
+    if mount -t nfs {{ env['NFS_SERVER'] }}:/mnt/nfs /meles; then
+	if ! grep -q "{{ env['NFS_SERVER'] }}" /etc/fstab; then
+	    cat >> /etc/fstab <<EOF
+{{ env['NFS_SERVER'] }}:/mnt/nfs /meles  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0
+EOF
+	fi
+	break
+    fi
     ((t++))
+    echo "Elapsed time: $t"
     [ $t -eq 300 ] && exit 1
 done
 
-if ! grep -q "{{ env['NFS_SERVER'] }}" /etc/fstab; then
-    cat >> /etc/fstab<<EOF
-{{ env['NFS_SERVER'] }}:/mnt/nfs /meles  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0
-EOF
-fi
 
 ##############################################################
 # Wait 300 seconds max for neutron-server to be ready
