@@ -12,7 +12,9 @@ service iptables restart
 # Mount the nfs share as /meles
 mkdir -p /meles
 if mount | grep -q meles ;then
+    service crond stop
     umount /meles
+    service crond start
 fi
 sleep 20 # wait a bit for the nfs server
 mount -t nfs {{ env['NFS_SERVER'] }}:/mnt/nfs /meles || exit 1
