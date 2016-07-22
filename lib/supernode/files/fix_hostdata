@@ -22,8 +22,7 @@ for proj in *; do
     touch "$proj/misc/etc/slurmnodes.conf.new"
 
     echo 'NodeName=vtdummy NodeAddr=10.254.0.254 RealMemory=1 Sockets=1 CoresPerSocket=1 Feature=thin Weight=0 State=down' >> "$proj/misc/etc/slurmnodes.conf.new"
-    echo 'NodeName=vtlargedummy NodeAddr=10.254.0.253 RealMemory=1 Sockets=1 CoresPerSocket=8 Feature=thin Weight=0 State=down' >> "$proj/misc/etc/slurmnodes.conf.new"c
-
+    echo 'NodeName=vtlargedummy NodeAddr=10.254.0.253 RealMemory=1 Sockets=1 CoresPerSocket=8 Feature=thin Weight=0 State=down' >> "$proj/misc/etc/slurmnodes.conf.new"
 
     echo 10.254.0.254 vtdummy>> "$proj/misc/etc/hosts.new"
     echo 10.254.0.253 vtlargedummy>> "$proj/misc/etc/hosts.new"
