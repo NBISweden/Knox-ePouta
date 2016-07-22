@@ -131,16 +131,3 @@ export PROVISION=(\
     [ldap]=ldap \
     [networking-node]=network \
 )
-
-########################################
-export SSH_CONFIG=${MM_TMP}/ssh_config.${OS_TENANT_NAME}
-function mm_connect {
-    local host=$1
-    [ -f ${SSH_CONFIG} ] && CONF="-F ${SSH_CONFIG}"
-    if [ -n "${FLOATING_IPs[$host]}" ]; then
-	echo "Connecting to $host [${FLOATING_IPs[$host]}]"
-	ssh $CONF ${FLOATING_IPs[$host]}
-    else
-	echo "Unknown machine: $host"
-    fi
-}
