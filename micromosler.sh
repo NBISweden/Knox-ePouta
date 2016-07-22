@@ -3,11 +3,13 @@
 function usage {
     echo "Usage: $0 command [options]"
     echo -e "\ncommands are:"
-    echo -e "\tinit         \tInitializes the VMs"
     echo -e "\tclean        \tRemoves allocated resources"
-    echo -e "\tsync         \tCopies relevant files to the VMs"
-    echo -e "\tprovision    \tConfigures the infracstructure"
+    echo -e "\tconnect      \tConnects via ssh into the VMs"
+    echo -e "\tinit         \tInitializes the VMs"
+    echo -e "\tping         \tChecks if the VMs are up"
     echo -e "\tprepare      \tPrepares the virtual image to boot from"
+    echo -e "\tprovision    \tConfigures the infracstructure"
+    echo -e "\tsync         \tCopies relevant files to the VMs"
 
     echo -e "\nSupply --help (or -h) to see the options for each command"
 
@@ -35,6 +37,8 @@ case "$1" in
 	set -e # exit on error
 	# $0 clean -q
 	# $0 init -i CentOS6-mm-extended -q
+	# # echo "Waiting the machines to be ready"
+	# sleep 300 # 5min
 	# $0 sync -q
 	# $0 provision --cheat -q
 	exit 2;;

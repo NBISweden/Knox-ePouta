@@ -224,13 +224,21 @@ fi
 # make
 # make check # important!
 # make install
+
+### Don't recompile PyCrypto from pip
+## See https://techglimpse.com/openstack-installation-errors-solutions/
 # pip --proxy http://130.238.7.178:3128 install --upgrade pip
 # pip --proxy http://130.238.7.178:3128 install --ignore-installed PyCrypto
 
+### Recompile from the sources instead
+# curl -O https://ftp.dlitz.net/pub/dlitz/crypto/pycrypto/pycrypto-2.6.1.tar.gz
+# scp pycrypto-2.6.1.tar.gz  <FLOATING_IP>:.
 
-# 1. Go to PyCryto source directory
-# 2. export ac_cv_func_malloc_0_nonnull=yes
-# 3. ./configure
-# 4. python setup.py build
-# 5. python setup.py install
-# 6. Run db sync again.
+
+# tar -xvzf pycrypto-2.6.1.tar.gz
+# cd pycrypto-2.6.1
+# export ac_cv_func_malloc_0_nonnull=yes
+# ./configure
+# python setup.py build
+# python setup.py install
+# # Run glance db sync

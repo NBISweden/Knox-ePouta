@@ -16,7 +16,7 @@ function usage {
     echo -e "\t                       \tWe filter out machines that don't appear in the default list."
     echo -e "\t--vault <name>         \tName of the drop folder in the servers"
     echo -e "\t                       \tDefaults to '${VAULT}'"
-    echo -e "\t--no-key               \tDisables the SSH key generation for supernode"
+    echo -e "\t--no-key,-n            \tDisables the SSH key generation for supernode"
     echo -e "\t--timeout <seconds>,"
     echo -e "\t       -t <seconds>    \tMaximal waiting time for each server connection"
     echo -e "\t--quiet,-q             \tRemoves the verbose output"
@@ -32,7 +32,7 @@ while [ $# -gt 0 ]; do
         --machines|-m) CUSTOM_MACHINES=$2; shift;;
         --vault) VAULT=$2; shift;;
         --timeout|-t) CONNECTION_TIMEOUT=$2; shift;;
-        --no-key) WITH_KEY=no;;
+        --no-key|-n) WITH_KEY=no;;
         --) shift; break;;
         *) echo "$0: error - unrecognized option $1" 1>&2; usage; exit 1;;
     esac
