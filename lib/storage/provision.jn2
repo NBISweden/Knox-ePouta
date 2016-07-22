@@ -14,7 +14,7 @@ if ! grep -q rpcbind /etc/hosts.deny ; then
 fi
 
 if ! grep -q rpcbind /etc/hosts.allow ; then
-    echo "rpcbind mountd nfsd statd lockd rquotad : ALL@{{ env['NFS_SERVER'] }}" >> /etc/hosts.allow
+    echo "rpcbind mountd nfsd statd lockd rquotad : ALL@storage" >> /etc/hosts.allow
 fi
 
 chkconfig rpcbind on 
