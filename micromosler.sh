@@ -25,6 +25,11 @@ case "$1" in
 	export MM_CMD="$0 ${_CMD}"
 	$(dirname ${BASH_SOURCE[0]})/lib/${_CMD}.sh $@ # pass the remaining arguments
 	;;
+    connect)
+	shift # Remove the command name from $@
+	export MM_CMD="$0 connect"
+	$(dirname ${BASH_SOURCE[0]})/lib/goto.sh $@ # pass the remaining arguments
+	;;
     all)
 	echo "Not implemented yet";
 	set -e # exit on error
