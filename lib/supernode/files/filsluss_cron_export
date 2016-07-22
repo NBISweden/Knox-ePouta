@@ -14,7 +14,7 @@ for proj in *; do
     if keystone tenant-get "$proj" 2>/dev/null >/dev/null; then
      
      for user in  `project_members "$proj"`; do
-         if keystone --os-tenant-name "$proj" user-role-list --user "$user" | tr -d ' ' | grep -q '|778c12ac40ed4990a9f72655b2abc267|exporter|' ; then
+         if keystone --os-tenant-name "$proj" user-role-list --user "$user" | tr -d ' ' | grep -q 'exporter' ; then
              # User has export role?
              
              find "$proj/proj/$proj/OUTBOX/$user" -type f  | sed -ne "s,^$proj/proj/$proj/OUTBOX/$user,,pg" |  while read dname; do

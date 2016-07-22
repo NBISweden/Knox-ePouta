@@ -13,10 +13,13 @@ service iptables restart
 mkdir -p /meles
 if mount | grep -q meles ;then
     service crond stop
+    sleep 20
     umount /meles
     service crond start
+else
+    sleep 20 # wait a bit for the nfs server
 fi
-sleep 20 # wait a bit for the nfs server
+
 mount -t nfs storage:/mnt/nfs /meles || exit 1 # Using 'storage' instead of {{ env['NFS_SERVER'] }}
 if ! grep -q storage /etc/fstab; then
     cat >> /etc/fstab <<EOF
