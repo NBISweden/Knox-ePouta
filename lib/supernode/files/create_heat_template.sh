@@ -197,15 +197,3 @@ done
 
 /usr/local/bin/heat_add_compute.sh --project ${PROJECT_NAME} --index 1 --flavor mosler.8cores --image project-computenode-stable
 
-# #
-# # Create OMD/nagios config file for project
-# #
-# LOGIN_NODE_STATUS="NOT_CREATED"
-# until [ "${LOGIN_NODE_STATUS}" = "ACTIVE" ]; do
-#    sleep 5
-#    LOGIN_NODE_STATUS=`nova list|grep ${PROJECT_NAME}-login_node|awk -F\| '{print $4}'|sed 's/ //g'`
-#    echo "Login node status: ${LOGIN_NODE_STATUS}"
-# done
-
-# /usr/local/bin/create_omd_config.sh ${PROJECT_NAME}
-

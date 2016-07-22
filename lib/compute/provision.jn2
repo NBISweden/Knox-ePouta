@@ -60,6 +60,7 @@ echo "Starting Libvirt"
 service libvirtd restart
 service messagebus restart
 
+sleep 10 # On the openstack-controller, services are first closing. Let's sleep
 # Wait for Message Broker. Don't want to loose the messages
 wait_port openstack-controller 5672 300
 wait_port openstack-controller 9696 300
