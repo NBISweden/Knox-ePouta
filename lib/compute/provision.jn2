@@ -52,10 +52,8 @@ truncate --size 0 /var/log/nova/compute.log
 truncate --size 0 /var/log/neutron/openvswitch-agent.log
 
 echo "Deleting VMs in Libvirt"
-already=$(virsh list | grep -v "Id" | grep -v '^-----' | awk '{print $1}')
-if [ $? -eq 0 ]; then
-    for domain in $already; do virsh destroy $domain; done
-fi
+virsh list | awk '{ if ($0 !~ " Id " && $0 !~ "^-----" && $0 != "") print $1}' | while read domain; do virsh destroy $domain; done
+
 echo "Starting Libvirt"
 service libvirtd restart
 service messagebus restart

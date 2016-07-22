@@ -29,15 +29,25 @@ if [ ! -e ~/ssh_key.${PROJECT_NAME} ] || [ -e ~/ssh_key.${PROJECT_NAME}.pub ]; t
 fi
 nova keypair-add --pub-key ~/ssh_key.${PROJECT_NAME}.pub ${PROJECT_NAME}-key
 
-nova secgroup-add-rule default tcp 22 22 0.0.0.0/0
-nova secgroup-add-rule default icmp -1 -1 0.0.0.0/0
+nova secgroup-create ${PROJECT_NAME}-mosler_default "${PROJECT_NAME} secgroup"
+nova secgroup-add-rule ${PROJECT_NAME}-mosler_default tcp 22 22 0.0.0.0/0
+nova secgroup-add-rule ${PROJECT_NAME}-mosler_default icmp -1 -1 0.0.0.0/0
 
 nova boot --key-name ${PROJECT_NAME}-key --flavor mosler.1core --image cirros \
 --nic net-id=$(neutron net-list | awk '/ '${PROJECT_NAME}'-net /{print $2}') \
-${PROJECT_NAME}-node
+--availability-zone serv-login --security-groups ${PROJECT_NAME}-mosler_default \
+${PROJECT_NAME}-service-node
+nova boot --key-name ${PROJECT_NAME}-key --flavor mosler.1core --image cirros \
+--nic net-id=$(neutron net-list | awk '/ '${PROJECT_NAME}'-net /{print $2}') \
+--availability-zone serv-login --security-groups ${PROJECT_NAME}-mosler_default \
+${PROJECT_NAME}-login-node
+nova boot --key-name ${PROJECT_NAME}-key --flavor mosler.1core --image cirros \
+--nic net-id=$(neutron net-list | awk '/ '${PROJECT_NAME}'-net /{print $2}') \
+--availability-zone nova --security-groups ${PROJECT_NAME}-mosler_default \
+${PROJECT_NAME}-compute-node
 
 FIP=$(neutron floatingip-create public-net | awk '/ floating_ip_address /{print $4}')
-nova floating-ip-associate ${PROJECT_NAME}-node $FIP
+nova floating-ip-associate ${PROJECT_NAME}-login-node $FIP
 
 # # DELETE
 # export OS_TENANT_NAME=${PROJECT_NAME}
