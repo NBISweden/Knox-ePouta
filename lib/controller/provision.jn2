@@ -105,6 +105,7 @@ service mysqld start
 {% else %}
 {% include 'controller/provision-nocheat.jn2' %}
 # mysqldump -u root -pmysql --all-databases --events > /home/centos/vault/openstack_db_dump.sql
+# # Don't forget to change 'nova_admin_tenant_id' in neutron.conf
 # exit 0
 {% endif %}
 
