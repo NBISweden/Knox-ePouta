@@ -93,7 +93,7 @@ runcmd:
   - yum -y update
   - echo '================================================================================'
   - echo "Installing packages we always want"
-  - yum -y install lsof strace jq tcpdump nc cloud-utils-growpart
+  - yum -y install lsof strace jq tcpdump nmap nc cloud-utils-growpart
   - echo '================================================================================'
   - echo "Cloudinit phone home"
   - curl http://${PHONE_HOME}:$PORT/prepare/ready &>/dev/null || true
@@ -208,3 +208,29 @@ else
     echo "Run by hand: nova image-create --poll '${VM_NAME}' '${IMAGE_NAME}'"
 fi
 
+
+########################################################################
+# To update libgmp to version >= 5 and avoid
+# '/usr/lib64/python2.6/site-packages/Crypto/Util/number.py:57: PowmInsecureWarning: Not using mpz_powm_sec.  You should rebuild using libgmp >= 5 to avoid timing attack vulnerability. _warn("Not using mpz_powm_sec.  You should rebuild using libgmp >= 5 to avoid timing attack vulnerability.", PowmInsecureWarning)'
+
+# curl -O https://gmplib.org/download/gmp/gmp-6.1.1.tar.bz2
+# scp gmp-6.1.1.tar.bz2  <FLOATING_IP>:.
+# ssh  <FLOATING_IP> 'sudo bash' 
+
+# tar -xvjpf gmp-6.1.1.tar.bz2
+# cd gmp-6.1.1
+# yum -y install gcc libgcc glibc libffi-devel libxml2-devel libxslt-devel openssl-devel zlib-devel bzip2-devel ncurses-devel python-devel
+# ./configure
+# make
+# make check # important!
+# make install
+# pip --proxy http://130.238.7.178:3128 install --upgrade pip
+# pip --proxy http://130.238.7.178:3128 install --ignore-installed PyCrypto
+
+
+# 1. Go to PyCryto source directory
+# 2. export ac_cv_func_malloc_0_nonnull=yes
+# 3. ./configure
+# 4. python setup.py build
+# 5. python setup.py install
+# 6. Run db sync again.
