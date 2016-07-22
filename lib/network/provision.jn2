@@ -53,6 +53,10 @@ sed -i -e "s/nova_admin_tenant_id=.*/nova_admin_tenant_id=${nova_admin_tenant_id
 # ip netns | while read ns; do ip netns del $ns; done
 echo "Cleaning the logs"
 truncate --size 0 /var/log/neutron/*
+echo "Truncate the log files"
+truncate --size 0 /var/log/neutron/{dhcp-agent,l3-agent,metadata-agent,openvswitch-agent}.log
+truncate --size 0 /var/log/neutron/neutron-ns-metadata-proxy-*
+
 
 # Wait for Message Broker. Don't want to loose the messages
 wait_port openstack-controller 5672 300

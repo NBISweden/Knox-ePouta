@@ -47,6 +47,9 @@ done
 sed -i -e "s/nova_admin_tenant_id=.*/nova_admin_tenant_id=${nova_admin_tenant_id}/" /etc/neutron/neutron.conf
 {% endif %}
 
+echo "Truncate the log files"
+truncate --size 0 /var/log/nova/compute.log
+truncate --size 0 /var/log/neutron/openvswitch-agent.log
 
 echo "Deleting VMs in Libvirt"
 already=$(virsh list | grep -v "Id" | grep -v '^-----' | awk '{print $1}')
