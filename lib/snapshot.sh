@@ -59,9 +59,6 @@ for machine in ${MACHINES[@]}; do mkdir -p ${MM_TMP}/$machine/snapshot; done
 export LIB=${MM_HOME}/lib
 source $LIB/utils.sh
 
-#######################################################################
-source $LIB/ssh_connections.sh
-
 if [ ${#MACHINES[@]} -eq 0 ]; then
     echo "Nothing to be done. Exiting..." >${ORG_FD1}
     exit 2 # or 0?
