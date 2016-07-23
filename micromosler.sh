@@ -9,6 +9,7 @@ function usage {
     echo -e "\tping         \tChecks if the VMs are up"
     echo -e "\tprepare      \tPrepares the virtual image to boot from"
     echo -e "\tprovision    \tConfigures the infracstructure"
+    echo -e "\tsnapshot     \tSnapshots each VM"
     echo -e "\tsync         \tCopies relevant files to the VMs"
 
     echo -e "\nSupply --help (or -h) to see the options for each command"
@@ -21,7 +22,7 @@ function usage {
 }
 
 case "$1" in
-    init|clean|sync|provision|prepare|ping)
+    init|clean|sync|provision|prepare|ping|snapshot)
 	_CMD=$1
 	shift # Remove the command name from $@
 	export MM_CMD="$0 ${_CMD}"
