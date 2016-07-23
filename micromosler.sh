@@ -6,13 +6,16 @@ function usage {
     echo -e "\tclean        \tRemoves allocated resources"
     echo -e "\tconnect      \tConnects via ssh into the VMs"
     echo -e "\tinit         \tInitializes the VMs"
-    echo -e "\tping         \tChecks if the VMs are up"
-    echo -e "\tprepare      \tPrepares the virtual image to boot from"
     echo -e "\tprovision    \tConfigures the infracstructure"
-    echo -e "\tsnapshot     \tSnapshots each VM"
     echo -e "\tsync         \tCopies relevant files to the VMs"
 
     echo -e "\nSupply --help (or -h) to see the options for each command"
+
+    echo -e "\nExtra options"
+    echo -e "\tboot         \tCheats and boots from a pre-made snapshot"
+    echo -e "\tping         \tChecks if the VMs are up"
+    echo -e "\tprepare      \tPrepares the virtual image to boot from"
+    echo -e "\tsnapshot     \tSnapshots each VM"
 
     echo -e "\nThe typical order to set up MicroMosler is to call:"
     echo -e "\t$0 init --all   # --all to create networks too"
@@ -22,7 +25,7 @@ function usage {
 }
 
 case "$1" in
-    init|clean|sync|provision|prepare|ping|snapshot)
+    init|clean|sync|provision|prepare|ping|snapshot|boot)
 	_CMD=$1
 	shift # Remove the command name from $@
 	export MM_CMD="$0 ${_CMD}"
