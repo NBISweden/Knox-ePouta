@@ -47,6 +47,7 @@ nova boot --key-name ${PROJECT_NAME}-key --flavor mosler.1core --image cirros \
 ${PROJECT_NAME}-compute-node
 
 FIP=$(neutron floatingip-create public-net | awk '/ floating_ip_address /{print $4}')
+sleep 10
 nova floating-ip-associate ${PROJECT_NAME}-login-node $FIP
 
 # # DELETE

@@ -52,7 +52,7 @@ rm -f /var/log/nova/compute.log
 rm -f /var/log/neutron/openvswitch-agent.log
 
 echo "Deleting VMs in Libvirt"
-virsh list | awk '{ if ($0 !~ " Id " && $0 !~ "^-----" && $0 != "") print $1}' | while read domain; do virsh destroy $domain; done
+virsh list --all | awk '{ if ($0 !~ " Id " && $0 !~ "^-----" && $0 != "") print $1" "$2}' | while read domain name; do virsh destroy $domain || virsh undefine $name; done
 
 echo "Starting Libvirt"
 service libvirtd restart
