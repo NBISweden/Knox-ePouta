@@ -2,21 +2,24 @@
 
 ##############################################################
 # Mount the nfs share as /meles
-mkdir -p /meles/import
 
-if mount | grep -q meles ;then
+NFS_LOCATION=/meles/import
+
+mkdir -p $NFS_LOCATION
+
+if mount | grep -q $NFS_LOCATION ;then
     service crond stop
     sleep 20
-    umount /meles
+    umount $NFS_LOCATION
     service crond start
 else
     sleep 20 # wait a bit for the nfs server
 fi
 
-mount -t nfs storage:/nfs/import /meles/import || exit 1 # Using 'storage' instead of {{ env['NFS_SERVER'] }}
+mount -t nfs storage:/nfs/import $NFS_LOCATION || exit 1 # Using 'storage' instead of {{ env['NFS_SERVER'] }}
 if ! grep -q storage /etc/fstab; then
     cat >> /etc/fstab <<EOF
-storage:/nfs/import /meles/import  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0
+storage:/nfs/import $NFS_LOCATION  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0
 EOF
 fi
 
