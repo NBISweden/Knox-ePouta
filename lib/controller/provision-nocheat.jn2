@@ -1,11 +1,5 @@
 # -*-sh-*-
 
-for p in nova neutron glance heat keystone
-do
-    echo "Removing $p logs"
-    rm -rf /var/log/$p/*
-done
-
 echo "Removing Glance by hand"
 rm -rf /var/lib/glance/*
 
