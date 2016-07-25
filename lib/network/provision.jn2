@@ -52,10 +52,8 @@ sed -i -e "s/nova_admin_tenant_id=.*/nova_admin_tenant_id=${nova_admin_tenant_id
 # echo "Deleting the virtual routers"
 # ip netns | while read ns; do ip netns del $ns; done
 echo "Cleaning the logs"
-truncate --size 0 /var/log/neutron/*
-echo "Truncate the log files"
-truncate --size 0 /var/log/neutron/{dhcp-agent,l3-agent,metadata-agent,openvswitch-agent}.log
-truncate --size 0 /var/log/neutron/neutron-ns-metadata-proxy-*
+rm -f /var/log/neutron/{dhcp-agent,l3-agent,metadata-agent,openvswitch-agent}.log
+rm -f /var/log/neutron/neutron-ns-metadata-proxy-*
 
 
 sleep 10 # On the openstack-controller, services are first closing. Let's sleep

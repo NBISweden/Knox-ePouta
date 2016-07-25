@@ -48,8 +48,8 @@ sed -i -e "s/nova_admin_tenant_id=.*/nova_admin_tenant_id=${nova_admin_tenant_id
 {% endif %}
 
 echo "Truncate the log files"
-truncate --size 0 /var/log/nova/compute.log
-truncate --size 0 /var/log/neutron/openvswitch-agent.log
+rm -f /var/log/nova/compute.log
+rm -f /var/log/neutron/openvswitch-agent.log
 
 echo "Deleting VMs in Libvirt"
 virsh list | awk '{ if ($0 !~ " Id " && $0 !~ "^-----" && $0 != "") print $1}' | while read domain; do virsh destroy $domain; done
