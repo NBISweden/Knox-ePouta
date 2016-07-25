@@ -19,10 +19,15 @@ if service {{ service }} status; then
 fi
 {% endfor %}
 
-echo "Truncate the log files"
-truncate --size 0 /var/log/nova/{api,conductor,nova-manage,scheduler}.log
-truncate --size 0 /var/log/neutron/server.log
-truncate --size 0 /var/log/heat/{heat-api-cfn,heat-api,heat-engine,heat-manage}.log
+echo "Clean the log files"
+rm -f /var/log/nova/{api,conductor,nova-manage,scheduler}.log
+rm -f /var/log/neutron/server.log
+rm -f /var/log/heat/{heat-api-cfn,heat-api,heat-engine,heat-manage}.log
+rm -f /var/log/glance/{api,openstack-glance-api-startup,openstack-glance-registry-startup,registry}.log
+rm -f /var/log/keystone/{keystone,keystone-startup}.log
+
+# Problem with Nova...
+rm -f /var/lib/nova/tmp/
 
 #############################################################
 
