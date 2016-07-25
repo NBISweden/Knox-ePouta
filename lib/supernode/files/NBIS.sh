@@ -28,7 +28,7 @@ function wait_for_images {
     local -i stride=20
     while (( t > 0 )) ; do
 	echo -e "Time left: $t"
-	ans=$(glance image-list | awk '/ active /' | wc -l)
+	ans=$(glance image-list | grep 00000000-0000-0000-0000 | awk '/ active /' | wc -l) # Quick fix with the grep
 	[ "$ans" -eq 3 ] && return 0
 	(( t-=backoff ))
 	sleep $backoff

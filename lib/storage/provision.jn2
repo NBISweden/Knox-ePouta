@@ -33,4 +33,4 @@ echo "/nfs/mosler {{ env['MGMT_CIDR'] }}(rw,sync,no_root_squash,no_subtree_check
 
 echo "/nfs/import filsluss(rw,sync,no_root_squash,no_subtree_check)" >> /etc/exports
 
-exportfs -a
+exportfs -ra

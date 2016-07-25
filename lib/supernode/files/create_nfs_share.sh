@@ -47,13 +47,12 @@ service network restart
 # ip addr add ${IP}/${PREFIX} brd ${IP%%.*}.255 dev eth1.${VLAN}
 # ip link set dev eth1.${VLAN} up
 
-mkdir -p /mnt/nfs/${PROJECT_NAME}
+mkdir -p /nfs/mosler/${PROJECT_NAME}
 
-if ! grep ${PROJECT_NAME} /etc/exports; then
-echo "/mnt/nfs/${PROJECT_NAME} ${IP%.254}.0/${PREFIX}(rw,sync,no_root_squash,no_subtree_check)" >> /etc/exports
-fi
+sed -i -e "/\/nfs\/mosler\/${PROJECT_NAME}/ d" /etc/exports
+echo "/nfs/mosler/${PROJECT_NAME} ${IP%.254}.0/${PREFIX}(rw,sync,no_root_squash,no_subtree_check)" >> /etc/exports
 
-#showmount -e
+exportfs -ra
 EOF
 
 echo "Project share set up."

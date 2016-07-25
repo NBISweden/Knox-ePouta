@@ -69,7 +69,7 @@ neutron security-group-list | grep "${proj}-mosler_default" |  filter 2 | while 
 done
 
 ssh root@storage <<EOF
-exportfs -u *:/mnt/nfs/$proj
+exportfs -u *:/nfs/mosler/$proj
 # Should remove the VLAN interface too.
 EOF
 
