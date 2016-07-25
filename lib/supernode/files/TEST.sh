@@ -3,7 +3,7 @@
 set -e -x
 source /root/.keystonerc
 
-if ! glance image-show cirros; then
+if ! glance image-show cirros &>/dev/null; then
     glance image-create --disk-format qcow2 --container-format bare --is-public True --name "cirros" --file /home/centos/vault/cirros.img 
 fi
 
