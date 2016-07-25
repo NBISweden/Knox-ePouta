@@ -20,10 +20,10 @@ else
     sleep 20 # wait a bit for the nfs server
 fi
 
-mount -t nfs storage:/mnt/nfs /meles || exit 1 # Using 'storage' instead of {{ env['NFS_SERVER'] }}
+mount -t nfs storage:/nfs/mosler /meles || exit 1 # Using 'storage' instead of {{ env['NFS_SERVER'] }}
 if ! grep -q storage /etc/fstab; then
     cat >> /etc/fstab <<EOF
-storage:/mnt/nfs /meles  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0
+storage:/nfs/mosler /meles  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0
 EOF
 fi
 

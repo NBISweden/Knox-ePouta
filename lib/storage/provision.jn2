@@ -24,10 +24,13 @@ chkconfig nfs on
 service nfs restart
 
 echo "Creating NFS share"
-mkdir -p /mnt/nfs
+mkdir -p /nfs/mosler/incoming
+mkdir -p /nfs/import/
+:> /etc/exports
 
-echo "/mnt/nfs {{ env['MGMT_CIDR'] }}(rw,sync,no_root_squash,no_subtree_check)" > /etc/exports
-#echo "/mnt/nfs supernode(rw,sync,no_root_squash,no_subtree_check)" > /etc/exports
+echo "/nfs/mosler {{ env['MGMT_CIDR'] }}(rw,sync,no_root_squash,no_subtree_check)" >> /etc/exports
+#echo "/nfs/mosler supernode(rw,sync,no_root_squash,no_subtree_check)" >> /etc/exports
+
+echo "/nfs/import filsluss(rw,sync,no_root_squash,no_subtree_check)" >> /etc/exports
 
 exportfs -a
-
