@@ -26,6 +26,6 @@ while true; do
   /opt/thinlinc/bin/hivetool -r /etc/hiveconf.d/thinlinc.hconf  /thinlinc/vsmserver/explicit_agentselection="$mapping"
 
   /sbin/service vsmserver restart
-  inotifywait -e close_write,create,delete,modify /var/lib/tl-director/    
+  inotifywait -e close_write,create,delete,modify /var/lib/tl-director/
 done
 

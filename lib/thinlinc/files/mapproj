@@ -12,5 +12,6 @@ if grep -q "^$pname:$ip"'$' /usr/local/etc/tlprojects; then
   exit 0
 fi
 
+# Note: There is a race condition here /Fred
 flock /usr/local/etc/tlprojects sed -i "/^$pname:/ d" /usr/local/etc/tlprojects
 echo "$pname:$ip" | flock /usr/local/etc/tlprojects tee -a /usr/local/etc/tlprojects >/dev/null

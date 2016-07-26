@@ -1,7 +1,7 @@
 # -*-sh-*-
 
 echo "Installing Thinlinc packages"
-yum -y install {{ env['VAULT'] }}/*x86_64.rpm {{ env['VAULT'] }}/*noarch.rpm xauth
+yum -y install {{ env['VAULT'] }}/*x86_64.rpm {{ env['VAULT'] }}/*noarch.rpm xauth inotify-tools
 
 echo "Copying config files"
 {% set files = [ 'auth_token',
