@@ -8,6 +8,8 @@ echo "Copying config files"
 		 'establish_user',
 		 'mapproj',
 		 'pam_auth_token',
+		 'project',
+		 'projectallowed',
 		 'vsmconfigurator.sh'
 	       ] -%}
 {% for file in files %}
@@ -18,10 +20,11 @@ chmod 0755 /usr/local/sbin/{{ file }}
 
 # Not found
 # /usr/local/sbin/ssh_auth_token
-# /usr/local/sbin/vsmconfig.sh
 
-# Unused
-# {{ env['VAULT'] }}/thinlinc-master/project
-# {{ env['VAULT'] }}/thinlinc-master/projectallowed
-# {{ env['VAULT'] }}/thinlinc-master/sshd
-# {{ env['VAULT'] }}/thinlinc-master/thinlinc
+rsync -a {{ env['VAULT'] }}/sshd /etc/pam.d/sshd
+chown root:root /etc/pam.d/sshd
+chmod 0644 /etc/pam.d/sshd
+
+rsync -a {{ env['VAULT'] }}/thinlinc /etc/pam.d/thinlinc
+chown root:root /etc/pam.d/thinlinc
+chmod 0644 /etc/pam.d/thinlinc

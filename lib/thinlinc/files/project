@@ -1,7 +1,9 @@
 #!/bin/sh
 
-KEYSTONETHREE=https://172.27.0.32:5000/v3
-KEYSTONETWO=https://172.27.0.32:5000/v2.0
+# KEYSTONETHREE=https://172.27.0.32:5000/v3
+# KEYSTONETWO=https://172.27.0.32:5000/v2.0
+KEYSTONETHREE=http://openstack-controller:5000/v3
+KEYSTONETWO=http://openstack-controller:5000/v2.0
 
 token="`echo $QUERY_STRING | sed -ne 's/.*token=\([^&]*\)\&*.*/\1/p'`"
 new="`echo $QUERY_STRING | sed -ne 's/.*set=\([^&]*\)\&*.*/\1/p'`"
