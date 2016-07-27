@@ -48,7 +48,9 @@ sed -e "s/__EXT_NET__/$extnet/" {{ env['VAULT'] }}/mosler-template-parameters > 
 chmod 0755 /usr/local/heat/mosler-template-parameters
 
 echo "Creating public subnet network in neutron"
-neutron subnet-create public-net --name public-subnet --allocation-pool start=172.18.0.30,end=172.18.0.200 --disable-dhcp --gateway 172.18.0.1  172.18.0.0/24
+CIDR={{ env['MOSLER_EXT_CIDR'] }}
+IPPREFIX=${CIDR%.0/24}
+neutron subnet-create public-net --name public-subnet --allocation-pool start=${IPPREFIX}.30,end=${IPPREFIX}.200 --disable-dhcp --gateway ${IPPREFIX}.1 ${CIDR}
 
 ##############################################################
 echo "Cron files"

@@ -112,6 +112,9 @@ export FLOATING_IPs=(\
 export FLOATING_GATEWAY=10.254.0.1
 export FLOATING_CIDR=10.254.0.0/24
 
+# For the external network within Mosler
+export MOSLER_EXT_CIDR=172.18.0.0/24
+
 PHONE_HOME=${FLOATING_GATEWAY}
 PORT=12345
 

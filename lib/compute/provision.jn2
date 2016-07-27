@@ -1,5 +1,14 @@
 # -*-sh-*-
 
+echo "Cleaning virbr0"
+{ 
+    ip link set dev virbr0-nic down
+    ip link set dev virbr0 down
+    brctl delif virbr0 virbr0-nic
+    ip link del dev virbr0-nic
+    brctl delbr virbr0
+} || true
+
 echo "Configuring iptables"
 # Remove the line
 sed -i "/^-A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT/ d" /etc/sysconfig/iptables

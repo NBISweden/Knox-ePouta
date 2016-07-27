@@ -9,6 +9,11 @@ sed -i "/^-A INPUT -m state --state NEW .*/ i \
 #service iptables restart # Not sure why this fails sometimes.
 service iptables stop || true
 service iptables start
+
+sed -i "/^-A INPUT -m state --state NEW -s 172.18.0.0\/24 -j ACCEPT/ d" /etc/sysconfig/iptables
+sed -i "/^-A INPUT -m state --state NEW .*/ i \
+-A INPUT -m state --state NEW -s 172.18.0.0\/24 -j ACCEPT" /etc/sysconfig/iptables
+service iptables restart
     
 
 echo "System config"
@@ -29,11 +34,67 @@ echo "Starting OpenVSwitch"
 service openvswitch start
 chkconfig openvswitch on
     
-echo "Creating the OVS bridge"
-ovs-vsctl add-br br-eth1 || true
+# echo "Creating the OVS bridge"
+# ovs-vsctl add-br br-eth1 || true
 
-echo "Adding eth1 to the OVS bridge"
-ovs-vsctl add-port br-eth1 eth1 || true
+# echo "Adding eth1 to the OVS bridge"
+# ovs-vsctl add-port br-eth1 eth1 || true
+
+if [ ! -e /etc/sysconfig/network-scripts/ifcfg-br-eth1 ]; then
+
+    if [ ! -f /etc/sysconfig/network-scripts/ifdown-ovs.orig ]; then
+	cp /etc/sysconfig/network-scripts/ifdown-ovs /etc/sysconfig/network-scripts/ifdown-ovs.orig
+    fi
+    sed -i -r "s,ovs-vsctl (.*) del-br,#ovs-vsctl \1 del-br,g" /etc/sysconfig/network-scripts/ifdown-ovs
+    
+    CIDR={{ env['MOSLER_EXT_CIDR'] }}
+    BR_GATEWAY=${CIDR%.0/24}.1
+    BR_PREFIX=${CIDR##*/}
+    
+    IPADDR=$(grep -r 'IPADDR=' /etc/sysconfig/network-scripts/ifcfg-eth1 | sed 's/IPADDR\s*=\s*//')
+    PREFIX=$(grep -r 'PREFIX=' /etc/sysconfig/network-scripts/ifcfg-eth1 | sed 's/PREFIX\s*=\s*//')
+    GATEWAY=$(grep -r 'GATEWAY=' /etc/sysconfig/network-scripts/ifcfg-eth1 | sed 's/GATEWAY\s*=\s*//')
+    
+    cat > /etc/sysconfig/network-scripts/ifcfg-eth1 <<EOF
+#TYPE=Ethernet
+DEVICETYPE=ovs
+TYPE=OVSPort
+BOOTPROTO=none
+OVS_BRIDGE=br-eth1
+DEFROUTE=no
+NAME=eth1
+DEVICE=eth1
+ONBOOT=yes
+EOF
+
+    cat > /etc/sysconfig/network-scripts/ifcfg-br-eth1 <<EOF
+DEVICE=br-eth1
+NAME=br-eth1
+ONBOOT=yes
+BOOTPROTO=none
+IPADDR=${IPADDR}
+PREFIX=${PREFIX}
+GATEWAY=${GATEWAY}
+IPADDR2=${BR_GATEWAY}
+PREFIX2=${BR_PREFIX}
+#MTU=1450
+#DEFROUTE=yes
+DEVICETYPE=ovs
+TYPE=OVSBridge
+EOF
+
+    echo "Cleaning virbr0"
+    { 
+	ip link set dev virbr0-nic down
+	ip link set dev virbr0 down
+	brctl delif virbr0 virbr0-nic
+	ip link del dev virbr0-nic
+	brctl delbr virbr0
+    } || true
+
+    service network restart
+    
+fi # End if br-eth1 does not exist
 
 {% if env['DO_CHEAT'] != 'yes' %}
 echo "Correcting the Nova admin tenant id for Neutron"
