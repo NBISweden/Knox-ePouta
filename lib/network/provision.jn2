@@ -4,17 +4,16 @@ echo "Configuring iptables"
 # Remove the line
 sed -i "/^-A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT/ d" /etc/sysconfig/iptables
 # Insert it before the other line
-sed -i "/^-A INPUT -m state --state NEW .*/ i \
+sed -i "/^-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT/ i \
 -A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT" /etc/sysconfig/iptables
+
+sed -i "/^-A INPUT -m state --state NEW -s {{ env['MOSLER_EXT_CIDR']|replace('/','\/') }} -j ACCEPT/ d" /etc/sysconfig/iptables
+sed -i "/^-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT/ i \
+-A INPUT -m state --state NEW -s {{ env['MOSLER_EXT_CIDR']|replace('/','\/') }} -j ACCEPT" /etc/sysconfig/iptables
+
 #service iptables restart # Not sure why this fails sometimes.
 service iptables stop || true
 service iptables start
-
-sed -i "/^-A INPUT -m state --state NEW -s 172.18.0.0\/24 -j ACCEPT/ d" /etc/sysconfig/iptables
-sed -i "/^-A INPUT -m state --state NEW .*/ i \
--A INPUT -m state --state NEW -s 172.18.0.0\/24 -j ACCEPT" /etc/sysconfig/iptables
-service iptables restart
-    
 
 echo "System config"
 ## RegExp, Replacement
@@ -24,11 +23,17 @@ echo "System config"
 	('^\s*net.ipv4.conf.default.rp_filter\s*=.*$',     'net.ipv4.conf.default.rp_filter=0'     ),
 	('^\s*net.bridge.bridge-nf-call-arptables\s*=.*$', 'net.bridge.bridge-nf-call-arptables=1' ),
 	('^\s*net.bridge.bridge-nf-call-iptables\s*=.*$',  'net.bridge.bridge-nf-call-iptables=1'  ),
-	('^\s*net.bridge.bridge-nf-call-ip6tables\s*=.*$', 'net.bridge.bridge-nf-call-ip6tables=1' )
+	('^\s*net.bridge.bridge-nf-call-ip6tables\s*=.*$', 'net.bridge.bridge-nf-call-ip6tables=1' ),
+	('^\s*net.ipv6.conf.all.disable_ipv6\s*=.*$',      'net.ipv6.conf.all.disable_ipv6=1'      ),
+	('^\s*net.ipv6.conf.default.disable_ipv6\s*=.*$',  'net.ipv6.conf.default.disable_ipv6=1'  ),
+	('^\s*net.ipv4.conf.br-eth1.proxy_arp\s*=.*$',     'net.ipv4.conf.br-eth1.proxy_arp=1'     )
 ] -%}
 {% for regexp, line in lines %}
-sed -i -e 's/{{ regexp }}/{{ line }}/' /etc/sysctl.conf
+sed -i -e '/{{ regexp }}/ d' /etc/sysctl.conf
+echo '{{ line }}' >> /etc/sysctl.conf
 {% endfor %}
+
+sysctl -p
 
 echo "Starting OpenVSwitch"
 service openvswitch start
@@ -84,6 +89,8 @@ TYPE=OVSBridge
 EOF
 
     echo "Cleaning virbr0"
+    service libvirtd stop
+    chkconfig libvirtd off
     { 
 	ip link set dev virbr0-nic down
 	ip link set dev virbr0 down
@@ -91,7 +98,6 @@ EOF
 	ip link del dev virbr0-nic
 	brctl delbr virbr0
     } || true
-
     service network restart
     
 fi # End if br-eth1 does not exist

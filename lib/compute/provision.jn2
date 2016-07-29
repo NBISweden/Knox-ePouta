@@ -26,11 +26,16 @@ echo "System config"
 	('^\s*net.ipv4.conf.default.rp_filter\s*=.*$',     'net.ipv4.conf.default.rp_filter=0'     ),
 	('^\s*net.bridge.bridge-nf-call-arptables\s*=.*$', 'net.bridge.bridge-nf-call-arptables=1' ),
 	('^\s*net.bridge.bridge-nf-call-iptables\s*=.*$',  'net.bridge.bridge-nf-call-iptables=1'  ),
-	('^\s*net.bridge.bridge-nf-call-ip6tables\s*=.*$', 'net.bridge.bridge-nf-call-ip6tables=1' )
+	('^\s*net.bridge.bridge-nf-call-ip6tables\s*=.*$', 'net.bridge.bridge-nf-call-ip6tables=1' ),
+	('^\s*net.ipv6.conf.all.disable_ipv6\s*=.*$',      'net.ipv6.conf.all.disable_ipv6=1'      ),
+	('^\s*net.ipv6.conf.default.disable_ipv6\s*=.*$',  'net.ipv6.conf.default.disable_ipv6=1'  )
 ] -%}
 {% for regexp, line in lines %}
-sed -i -e 's/{{ regexp }}/{{ line }}/' /etc/sysctl.conf
+sed -i -e '/{{ regexp }}/ d' /etc/sysctl.conf
+echo '{{ line }}' >> /etc/sysctl.conf
 {% endfor %}
+
+sysctl -p
 
 echo "Starting OpenVSwitch"
 service openvswitch restart

@@ -100,6 +100,7 @@ FAIL=0
 reset_progress
 print_progress
 export DB_SERVER=${MACHINE_IPs[openstack-controller]} # Used in the templates
+export NEUTRON_SERVER=${MACHINE_IPs[networking-node]} # 
 #export NFS_SERVER=${MACHINE_IPs[storage]}
 
 # set -e # exit in errors

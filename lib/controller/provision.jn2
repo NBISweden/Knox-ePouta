@@ -1,6 +1,8 @@
 # -*-sh-*-
 
 echo "Cleaning virbr0"
+service libvirtd stop
+chkconfig libvirtd off
 { 
     ip link set dev virbr0-nic down
     ip link set dev virbr0 down
@@ -56,9 +58,36 @@ echo "Configuring iptables"
 # Remove the line
 sed -i "/^-A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT/ d" /etc/sysconfig/iptables
 # Insert it before the other line
-sed -i "/^-A INPUT -m state --state NEW .*/ i \
+sed -i "/^-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT/ i \
 -A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT" /etc/sysconfig/iptables
+
+sed -i "/^-A INPUT -m state --state NEW -s {{ env['MOSLER_EXT_CIDR']|replace('/','\/') }} -j ACCEPT/ d" /etc/sysconfig/iptables
+sed -i "/^-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT/ i \
+-A INPUT -m state --state NEW -s {{ env['MOSLER_EXT_CIDR']|replace('/','\/') }} -j ACCEPT" /etc/sysconfig/iptables
+
 service iptables restart
+
+
+#############################################################
+echo "Routing Mosler's external network"
+ip route add {{ env['MOSLER_EXT_CIDR'] }} via {{ env['NEUTRON_SERVER'] }} dev eth0
+echo "{{ env['MOSLER_EXT_CIDR'] }} via {{ env['NEUTRON_SERVER'] }} dev eth0" > /etc/sysconfig/network-scripts/route-eth0
+
+echo "System config"
+## RegExp, Replacement
+{% set lines = [
+	('^\s*net.ipv4.ip_forward\s*=.*$',                 'net.ipv4.ip_forward=1'                 ),
+	('^\s*net.ipv4.conf.all.rp_filter\s*=.*$',         'net.ipv4.conf.all.rp_filter=0'         ),
+	('^\s*net.ipv4.conf.default.rp_filter\s*=.*$',     'net.ipv4.conf.default.rp_filter=0'     ),
+	('^\s*net.ipv6.conf.all.disable_ipv6\s*=.*$',      'net.ipv6.conf.all.disable_ipv6=1'      ),
+	('^\s*net.ipv6.conf.default.disable_ipv6\s*=.*$',  'net.ipv6.conf.default.disable_ipv6=1'  )
+] -%}
+{% for regexp, line in lines %}
+sed -i -e '/{{ regexp }}/ d' /etc/sysctl.conf
+echo '{{ line }}' >> /etc/sysctl.conf
+{% endfor %}
+
+sysctl -p
 
 #############################################################
 
