@@ -33,8 +33,6 @@ sed -i -e '/{{ regexp }}/ d' /etc/sysctl.conf
 echo '{{ line }}' >> /etc/sysctl.conf
 {% endfor %}
 
-sysctl -p
-
 echo "Starting OpenVSwitch"
 service openvswitch start
 chkconfig openvswitch on
@@ -127,6 +125,9 @@ sleep 10 # On the openstack-controller, services are first closing. Let's sleep
 # Wait for Message Broker. Don't want to loose the messages
 wait_port openstack-controller 5672 300
 wait_port openstack-controller 9696 300
+
+# Activating kernel configurations (or use -e too)
+sysctl -p
 
 echo "Starting Neutron services"
 {% set services = [ 'dhcp-agent',
