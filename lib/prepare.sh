@@ -213,10 +213,9 @@ fi
 # To update libgmp to version >= 5 and avoid
 # '/usr/lib64/python2.6/site-packages/Crypto/Util/number.py:57: PowmInsecureWarning: Not using mpz_powm_sec.  You should rebuild using libgmp >= 5 to avoid timing attack vulnerability. _warn("Not using mpz_powm_sec.  You should rebuild using libgmp >= 5 to avoid timing attack vulnerability.", PowmInsecureWarning)'
 
-# curl -O https://gmplib.org/download/gmp/gmp-6.1.1.tar.bz2
-# scp gmp-6.1.1.tar.bz2  <FLOATING_IP>:.
 # ssh  <FLOATING_IP> 'sudo bash' 
 
+# curl --proxy http://130.238.7.178:3128 -O https://gmplib.org/download/gmp/gmp-6.1.1.tar.bz2
 # tar -xvjpf gmp-6.1.1.tar.bz2
 # cd gmp-6.1.1
 # yum -y install gcc libgcc glibc libffi-devel libxml2-devel libxslt-devel openssl-devel zlib-devel bzip2-devel ncurses-devel python-devel
@@ -231,10 +230,7 @@ fi
 # pip --proxy http://130.238.7.178:3128 install --ignore-installed PyCrypto
 
 ### Recompile from the sources instead
-# curl -O https://ftp.dlitz.net/pub/dlitz/crypto/pycrypto/pycrypto-2.6.1.tar.gz
-# scp pycrypto-2.6.1.tar.gz  <FLOATING_IP>:.
-
-
+# curl --proxy http://130.238.7.178:3128 -O https://ftp.dlitz.net/pub/dlitz/crypto/pycrypto/pycrypto-2.6.1.tar.gz
 # tar -xvzf pycrypto-2.6.1.tar.gz
 # cd pycrypto-2.6.1
 # export ac_cv_func_malloc_0_nonnull=yes
