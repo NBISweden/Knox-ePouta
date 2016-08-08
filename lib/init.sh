@@ -81,7 +81,7 @@ for machine in ${MACHINES[@]}; do mkdir -p ${MM_TMP}/$machine/init; done
 
 #######################################################################
 
-TENANT_ID=$(openstack project list | awk '/'${OS_TENANT_NAME}'/ {print $2}')
+TENANT_ID=$(openstack project list | awk "/${OS_TENANT_NAME}/ {print \$2}")
 # Checking if the user is admin for that tenant
 CHECK=$(openstack role assignment list --user ${OS_USERNAME} --role admin --project ${OS_TENANT_NAME})
 if [ $? -ne 0 ] || [ -z "$CHECK" ]; then
@@ -152,9 +152,9 @@ if nova image-list | grep "${_IMAGE}" > /dev/null; then : ; else
     exit 1
 fi
 
-MGMT_NET=$(neutron net-list --tenant_id=${TENANT_ID} | awk '/ '${OS_TENANT_NAME}-mgmt-net' /{print $2}')
-DATA_NET=$(neutron net-list --tenant_id=${TENANT_ID} | awk '/ '${OS_TENANT_NAME}-data-net' /{print $2}')
-DATA_SUBNET=$(neutron subnet-list --tenant_id=${TENANT_ID} | awk '/ '${OS_TENANT_NAME}-data-subnet' /{print $2}')
+MGMT_NET=$(neutron net-list --tenant_id=${TENANT_ID} | awk "/ ${OS_TENANT_NAME}-mgmt-net /{print \$2}")
+DATA_NET=$(neutron net-list --tenant_id=${TENANT_ID} | awk "/ ${OS_TENANT_NAME}-data-net /{print \$2}")
+DATA_SUBNET=$(neutron subnet-list --tenant_id=${TENANT_ID} | awk "/ ${OS_TENANT_NAME}-data-subnet /{print \$2}")
 
 echo "Management Net: $MGMT_NET"
 echo "Data Net: $DATA_NET"
@@ -296,8 +296,8 @@ do
     if [ ! -z "${DATA_IPs[$machine]}" ]; then
 	echo -e "\t\tUpdating data port on $machine to allow external network ${MOSLER_EXT_CIDR}"
 	{ set -e
-	  PORT_ID=$(neutron port-list | awk '/'$DATA_SUBNET'/ {print} /'${DATA_IPs[$machine]}'/ {print $2}')
-	  [ ! -z "${PORT_ID}" ] && neutron port-update ${PORT_ID} --allowed-address-pairs type=dict list=true ip_address=${MOSLER_EXT_CIDR}
+	  PORT_ID=$(neutron port-list | awk "/$DATA_SUBNET/ && /${DATA_IPs[$machine]}/ {print \$2})
+	  [ ! -z "${PORT_ID}" ] && neutron port-update ${PORT_ID} --allowed-address-pairs type=dict list=true ip_address=${MOSLER_EXT_CIDR} 1>&2
 	} || echo -e "\t\tERROR while updating data port on $machine"
     fi
 done
