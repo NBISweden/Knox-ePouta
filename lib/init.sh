@@ -119,7 +119,7 @@ if [ ${_ALL} = "yes" ]; then
 
     # should we have the vlan-transparent flag?
     neutron net-create --vlan-transparent=True ${OS_TENANT_NAME}-data-net
-    neutron subnet-create --name ${OS_TENANT_NAME}-data-subnet ${OS_TENANT_NAME}-data-net --gateway ${DATA_GATEWAY} ${DATA_CIDR} #--enable-dhcp 
+    neutron subnet-create --name ${OS_TENANT_NAME}-data-subnet ${OS_TENANT_NAME}-data-net --disable-dhcp --gateway ${DATA_GATEWAY} ${DATA_CIDR}
     neutron router-interface-add ${OS_TENANT_NAME}-data-router ${OS_TENANT_NAME}-data-subnet
     
 
@@ -289,8 +289,10 @@ echo "The last machine just phoned home."
 echo "Associating floating IPs"
 for machine in ${MACHINES[@]}
 do
-    echo -e "\t${FLOATING_IPs[$machine]} to $machine"
-    nova floating-ip-associate $machine ${FLOATING_IPs[$machine]}
+    echo -en "\t${FLOATING_IPs[$machine]} to $machine"
+    { nova floating-ip-associate $machine ${FLOATING_IPs[$machine]} &>/dev/null
+      echo -e $'\e[32m\xE2\x9C\x93\e[0m'    # ok (checkmark)
+    } || echo -e $'\e[31m\xE2\x9C\x97\e[0m' # fail (cross)
 done
 
 ########################################################################

@@ -31,6 +31,7 @@ done
 ORG_FD1=$(tty)
 
 TENANT_ID=$(openstack project list | awk '/'${OS_TENANT_NAME}'/ {print $2}')
+EXTNET_ID=$(neutron net-list | awk '/ public /{print $2}') # don't add --tenant-id $TENANT_ID
 
 #######################################################################
 
@@ -59,9 +60,22 @@ if [ $ALL = "yes" ]; then
     neutron router-interface-delete ${OS_TENANT_NAME}-mgmt-router ${OS_TENANT_NAME}-mgmt-subnet
     neutron router-interface-delete ${OS_TENANT_NAME}-data-router ${OS_TENANT_NAME}-data-subnet
 
-    echo "Deleting router"
-    neutron router-delete ${OS_TENANT_NAME}-mgmt-router
-    neutron router-delete ${OS_TENANT_NAME}-data-router
+    neutron router-gateway-clear ${OS_TENANT_NAME}-mgmt-router $EXTNET_ID
+
+    echo "Cleaning security group: ${OS_TENANT_NAME}-sg"
+    neutron dhcp-agent-network-remove $(neutron dhcp-agent-list-hosting-net -c id -f value public) ${OS_TENANT_NAME}-mgmt-net
+
+    echo "Deleting floating IPs"
+    neutron floatingip-list -F id -F floating_ip_address | awk '/^$/ {next;} {print $2____$4}' | while read fip; do
+	# We selected '--all'. That means, we do delete the network information.
+	# In that case, kill _all_ floating IPs since we also delete the networks
+	neutron floatingip-delete ${fip%____*} && \
+	    ssh-keygen -R ${fip#*____} &>/dev/null
+    done
+
+    # Cleaning the security group
+    echo "Cleaning security group: ${OS_TENANT_NAME}-sg"
+    neutron security-group-delete ${OS_TENANT_NAME}-sg
 
     echo "Deleting networks and subnets"
     neutron subnet-delete ${OS_TENANT_NAME}-mgmt-subnet
@@ -69,16 +83,9 @@ if [ $ALL = "yes" ]; then
     neutron net-delete ${OS_TENANT_NAME}-mgmt-net
     neutron net-delete ${OS_TENANT_NAME}-data-net
 
-    echo "Deleting floating IPs"
-    neutron floatingip-list -F id -F floating_ip_address | awk '/^$/ {next;} {print $2$3$4}' | while read floating; do
-	# We selected '--all'. That means, we do delete the network information.
-	# In that case, kill _all_ floating IPs since we also delete the networks
-	neutron floatingip-delete ${floating%|*} && ssh-keygen -R ${floating#*|}
-    done
-
-    # Cleaning the security group
-    echo "Cleaning security group: ${OS_TENANT_NAME}-sg"
-    neutron security-group-delete ${OS_TENANT_NAME}-sg
+    echo "Deleting router"
+    neutron router-delete ${OS_TENANT_NAME}-mgmt-router
+    neutron router-delete ${OS_TENANT_NAME}-data-router
 
 fi # End cleaning if ALL
 
