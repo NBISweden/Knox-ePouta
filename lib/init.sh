@@ -286,19 +286,27 @@ wait ${REST_PID}
 echo "The last machine just phoned home."
 
 ########################################################################
-echo -e "Associating floating IPs"
+echo "Associating floating IPs"
 for machine in ${MACHINES[@]}
 do
     echo -e "\t${FLOATING_IPs[$machine]} to $machine"
     nova floating-ip-associate $machine ${FLOATING_IPs[$machine]}
+done
 
-    # Updating the port
+########################################################################
+source lib/utils # for MSG[1] (ok) and MSG[2] (fail)
+echo "Updating data ports to allow external network ${MOSLER_EXT_CIDR}"
+for machine in ${MACHINES[@]}
+do
     if [ ! -z "${DATA_IPs[$machine]}" ]; then
-	echo -e "\t\tUpdating data port on $machine to allow external network ${MOSLER_EXT_CIDR}"
+	echo -en "\ton $machine: "
 	{ set -e
 	  PORT_ID=$(neutron port-list | awk "/$DATA_SUBNET/ && /${DATA_IPs[$machine]}/ {print \$2}")
-	  [ ! -z "${PORT_ID}" ] && neutron port-update ${PORT_ID} --allowed-address-pairs type=dict list=true ip_address=${MOSLER_EXT_CIDR} 1>&2
-	} || echo -e "\t\tERROR while updating data port on $machine"
+	  [ ! -z "${PORT_ID}" ] && neutron port-update ${PORT_ID} --allowed-address-pairs type=dict list=true ip_address=${MOSLER_EXT_CIDR} &>/dev/null
+	  echo ${MSG[1]} # ok
+	} || echo ${MSG[2]} # fail
+    else
+	
     fi
 done
 
