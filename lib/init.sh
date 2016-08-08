@@ -296,7 +296,7 @@ do
     if [ ! -z "${DATA_IPs[$machine]}" ]; then
 	echo -e "\t\tUpdating data port on $machine to allow external network ${MOSLER_EXT_CIDR}"
 	{ set -e
-	  PORT_ID=$(neutron port-list | awk "/$DATA_SUBNET/ && /${DATA_IPs[$machine]}/ {print \$2})
+	  PORT_ID=$(neutron port-list | awk "/$DATA_SUBNET/ && /${DATA_IPs[$machine]}/ {print \$2}")
 	  [ ! -z "${PORT_ID}" ] && neutron port-update ${PORT_ID} --allowed-address-pairs type=dict list=true ip_address=${MOSLER_EXT_CIDR} 1>&2
 	} || echo -e "\t\tERROR while updating data port on $machine"
     fi
