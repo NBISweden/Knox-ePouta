@@ -294,7 +294,6 @@ do
 done
 
 ########################################################################
-source lib/utils # for MSG[1] (ok) and MSG[2] (fail)
 echo "Updating data ports to allow external network ${MOSLER_EXT_CIDR}"
 for machine in ${MACHINES[@]}
 do
@@ -303,10 +302,8 @@ do
 	{ set -e
 	  PORT_ID=$(neutron port-list | awk "/$DATA_SUBNET/ && /${DATA_IPs[$machine]}/ {print \$2}")
 	  [ ! -z "${PORT_ID}" ] && neutron port-update ${PORT_ID} --allowed-address-pairs type=dict list=true ip_address=${MOSLER_EXT_CIDR} &>/dev/null
-	  echo ${MSG[1]} # ok
-	} || echo ${MSG[2]} # fail
-    else
-	
+	  echo -e $'\e[32m\xE2\x9C\x93\e[0m'    # ok (checkmark)
+	} || echo -e $'\e[31m\xE2\x9C\x97\e[0m' # fail (cross)
     fi
 done
 
