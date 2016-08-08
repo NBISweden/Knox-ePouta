@@ -154,10 +154,13 @@ fi
 
 MGMT_NET=$(neutron net-list --tenant_id=${TENANT_ID} | awk '/ '${OS_TENANT_NAME}-mgmt-net' /{print $2}')
 DATA_NET=$(neutron net-list --tenant_id=${TENANT_ID} | awk '/ '${OS_TENANT_NAME}-data-net' /{print $2}')
+DATA_SUBNET=$(neutron subnet-list --tenant_id=${TENANT_ID} | awk '/ '${OS_TENANT_NAME}-data-subnet' /{print $2}')
 
-echo -e "Management Net: $MGMT_NET\nData Net: $DATA_NET"
+echo "Management Net: $MGMT_NET"
+echo "Data Net: $DATA_NET"
+echo "Data SubNet: $DATA_SUBNET"
 
-if [ -z "$MGMT_NET" ] || [ -z "$DATA_NET" ]; then
+if [ -z "$MGMT_NET" ] || [ -z "$DATA_NET" ] || [ -z "$DATA_SUBNET" ]; then
     echo "Error: Could not find the Management or Data network" > ${ORG_FD1}
     echo -e "\tMaybe you should re-run with the --all flags?" > ${ORG_FD1}
     exit 1
@@ -194,6 +197,13 @@ chmod 0644 /etc/hosts
 echo "================================================================================"
 echo "Setting the Timezone to Stockholm"
 echo 'Europe/Stockholm' > /etc/timezone
+
+echo "================================================================================"
+echo "Adding Policy Routing tables"
+echo '10 mgmt' >> /etc/iproute2/rt_tables
+echo '11 data' >> /etc/iproute2/rt_tables
+echo '12 ext' >> /etc/iproute2/rt_tables
+
 ENDCLOUDINIT
 
     # If Data IP is not zero-length
@@ -202,8 +212,6 @@ ENDCLOUDINIT
 	# Note: I think I could add those routes to the DHCP server
 	# Neutron will then configure these settings automatically
 	cat >> ${_VM_INIT} <<ENDCLOUDINIT
-
-echo '10 data' >> /etc/iproute2/rt_tables
 
 cat > /etc/sysconfig/network-scripts/ifcfg-eth1 <<EOF
 TYPE=Ethernet
@@ -228,7 +236,9 @@ chown root:root /etc/sysconfig/network-scripts/rule-eth1
 chmod 0644 /etc/sysconfig/network-scripts/rule-eth1
 
 cat > /etc/sysconfig/network-scripts/route-eth1 <<EOF
-default via ${DATA_GATEWAY} dev eth1 table data
+table data ${DATA_CIDR} dev eth1 src ${DATA_IPs[$machine]}
+#table data default via ${DATA_GATEWAY} dev eth1
+table data blackhole default
 EOF
 chown root:root /etc/sysconfig/network-scripts/route-eth1
 chmod 0644 /etc/sysconfig/network-scripts/route-eth1
@@ -254,7 +264,7 @@ ENDCLOUDINIT
 
 # Booting a machine
 echo -e "\t* $machine"
-nova boot --flavor $flavor --image ${_IMAGE} --security-group ${OS_TENANT_NAME}-sg \
+nova boot --flavor $flavor --image ${_IMAGE} --security-groups default,${OS_TENANT_NAME}-sg \
 --nic net-id=${MGMT_NET},v4-fixed-ip=$ip $DN \
 --user-data ${_VM_INIT} \
 $machine 2>&1 > /dev/null
@@ -281,6 +291,15 @@ for machine in ${MACHINES[@]}
 do
     echo -e "\t${FLOATING_IPs[$machine]} to $machine"
     nova floating-ip-associate $machine ${FLOATING_IPs[$machine]}
+
+    # Updating the port
+    if [ ! -z "${DATA_IPs[$machine]}" ]; then
+	echo -e "\t\tUpdating data port on $machine to allow external network ${MOSLER_EXT_CIDR}"
+	{ set -e
+	  PORT_ID=$(neutron port-list | awk '/'$DATA_SUBNET'/ {print} /'${DATA_IPs[$machine]}'/ {print $2}')
+	  [ ! -z "${PORT_ID}" ] && neutron port-update ${PORT_ID} --allowed-address-pairs type=dict list=true ip_address=${MOSLER_EXT_CIDR}
+	} || echo -e "\t\tERROR while updating data port on $machine"
+    fi
 done
 
 ########################################################################
