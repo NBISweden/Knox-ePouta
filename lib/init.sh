@@ -104,41 +104,47 @@ if [ ${_ALL} = "yes" ]; then
 	echo "Router issues, skipping."
     else
 	echo -e "Attaching Management router to the External \"public\" network"
-	neutron router-gateway-set $MGMT_ROUTER_ID $EXTNET_ID
+	neutron router-gateway-set $MGMT_ROUTER_ID $EXTNET_ID >/dev/null
     fi
     
     # Creating the management and data networks
-    neutron net-create ${OS_TENANT_NAME}-mgmt-net
-    neutron subnet-create --name ${OS_TENANT_NAME}-mgmt-subnet ${OS_TENANT_NAME}-mgmt-net --gateway ${MGMT_GATEWAY} ${MGMT_CIDR}
+    neutron net-create ${OS_TENANT_NAME}-mgmt-net >/dev/null
+    neutron subnet-create --name ${OS_TENANT_NAME}-mgmt-subnet ${OS_TENANT_NAME}-mgmt-net --enable-dhcp --gateway ${MGMT_GATEWAY} --host-route destination=${MOSLER_EXT_CIDR},nexthop=${MACHINE_IPs[networking-node]} ${MGMT_CIDR} >/dev/null
 
-    neutron router-interface-add ${OS_TENANT_NAME}-mgmt-router ${OS_TENANT_NAME}-mgmt-subnet
+    neutron router-interface-add ${OS_TENANT_NAME}-mgmt-router ${OS_TENANT_NAME}-mgmt-subnet >/dev/null
 
     # Get the DHCP that host the public network and add an interface for the management network
-    neutron dhcp-agent-network-add $(neutron dhcp-agent-list-hosting-net -c id -f value public) ${OS_TENANT_NAME}-mgmt-net
+    neutron dhcp-agent-network-add $(neutron dhcp-agent-list-hosting-net -c id -f value public) ${OS_TENANT_NAME}-mgmt-net >/dev/null
     # Note: Not sure why Pontus wanted it like that. I'd create the mgmt-subnet with --enable-dhcp and that's it
 
     # should we have the vlan-transparent flag?
-    neutron net-create --vlan-transparent=True ${OS_TENANT_NAME}-data-net
-    neutron subnet-create --name ${OS_TENANT_NAME}-data-subnet ${OS_TENANT_NAME}-data-net --disable-dhcp --gateway ${DATA_GATEWAY} ${DATA_CIDR}
-    neutron router-interface-add ${OS_TENANT_NAME}-data-router ${OS_TENANT_NAME}-data-subnet
+    neutron net-create --vlan-transparent=True ${OS_TENANT_NAME}-data-net >/dev/null
+    neutron subnet-create --name ${OS_TENANT_NAME}-data-subnet ${OS_TENANT_NAME}-data-net --disable-dhcp --gateway ${DATA_GATEWAY} ${DATA_CIDR} >/dev/null
+    neutron router-interface-add ${OS_TENANT_NAME}-data-router ${OS_TENANT_NAME}-data-subnet >/dev/null
     
 
     echo "Creating the floating IPs"
     for machine in ${MACHINES[@]}; do
-	neutron floatingip-create --tenant-id ${TENANT_ID} --floating-ip-address ${FLOATING_IPs[$machine]} public
+	neutron floatingip-create --tenant-id ${TENANT_ID} --floating-ip-address ${FLOATING_IPs[$machine]} public >/dev/null
     done
 
     echo "Creating the Security Group: ${OS_TENANT_NAME}-sg"
-    neutron security-group-create ${OS_TENANT_NAME}-sg
-    neutron security-group-rule-create ${OS_TENANT_NAME}-sg --direction ingress --ethertype ipv4 --protocol icmp 
-    neutron security-group-rule-create ${OS_TENANT_NAME}-sg --direction ingress --ethertype ipv4 --protocol tcp --port-range-min 22 --port-range-max 22
-    neutron security-group-rule-create ${OS_TENANT_NAME}-sg --direction ingress --ethertype ipv4 --protocol tcp --port-range-min 443 --port-range-max 443
-    neutron security-group-rule-create ${OS_TENANT_NAME}-sg --ethertype ipv4 --direction ingress --remote-group-id ${OS_TENANT_NAME}-sg
-    neutron security-group-rule-create ${OS_TENANT_NAME}-sg --ethertype ipv4 --direction egress --remote-group-id ${OS_TENANT_NAME}-sg
+    neutron security-group-create ${OS_TENANT_NAME}-sg "Security Group for ${OS_TENANT_NAME}" >/dev/null
+    nova secgroup-add-rule ${OS_TENANT_NAME}-sg icmp  -1    -1 ${FLOATING_CIDR}               >/dev/null
+    nova secgroup-add-rule ${OS_TENANT_NAME}-sg icmp  -1    -1 ${MGMT_CIDR}                   >/dev/null
+    nova secgroup-add-rule ${OS_TENANT_NAME}-sg icmp  -1    -1 ${DATA_CIDR}                   >/dev/null
+    nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp   22    22 ${FLOATING_CIDR}               >/dev/null
+    #nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp   22    22 ${MGMT_CIDR}
+    #nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp  443   443 ${FLOATING_CIDR}
+    #nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp  443   443 ${MGMT_CIDR}
+    #nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp    1 65535 ${MOSLER_EXT_CIDR}
+    nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp  443   443 ${MOSLER_EXT_CIDR}             >/dev/null
+    nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp    1 65535 ${MGMT_CIDR}                   >/dev/null
+    nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp    1 65535 ${DATA_CIDR}                   >/dev/null
 
     echo "Setting the quotas"
     FACTOR=2
-    nova quota-update --instances $((10 * FACTOR)) --ram $((51200 * FACTOR)) ${TENANT_ID}
+    nova quota-update --instances $((10 * FACTOR)) --ram $((51200 * FACTOR)) ${TENANT_ID} >/dev/null
 
     #nova quota fixing
 
@@ -267,7 +273,7 @@ echo -e "\t* $machine"
 nova boot --flavor $flavor --image ${_IMAGE} --security-groups default,${OS_TENANT_NAME}-sg \
 --nic net-id=${MGMT_NET},v4-fixed-ip=$ip $DN \
 --user-data ${_VM_INIT} \
-$machine 2>&1 > /dev/null
+$machine &>/dev/null
 
 # nova boot does not use the --key-name flag.
 # Instead, cloudinit includes several keys on first boot
@@ -289,8 +295,8 @@ echo "The last machine just phoned home."
 echo "Associating floating IPs"
 for machine in ${MACHINES[@]}
 do
-    echo -en "\t${FLOATING_IPs[$machine]} to $machine"
-    { nova floating-ip-associate $machine ${FLOATING_IPs[$machine]} &>/dev/null
+    echo -en "\t${FLOATING_IPs[$machine]} to $machine "
+    { nova floating-ip-associate $machine ${FLOATING_IPs[$machine]} >/dev/null
       echo -e $'\e[32m\xE2\x9C\x93\e[0m'    # ok (checkmark)
     } || echo -e $'\e[31m\xE2\x9C\x97\e[0m' # fail (cross)
 done
@@ -301,11 +307,11 @@ for machine in ${MACHINES[@]}
 do
     if [ ! -z "${DATA_IPs[$machine]}" ]; then
 	echo -en "\ton $machine: "
-	{ set -e
+	( set -e # new shell, new env, exit if it errors on the way
 	  PORT_ID=$(neutron port-list | awk "/$DATA_SUBNET/ && /${DATA_IPs[$machine]}/ {print \$2}")
-	  [ ! -z "${PORT_ID}" ] && neutron port-update ${PORT_ID} --allowed-address-pairs type=dict list=true ip_address=${MOSLER_EXT_CIDR} &>/dev/null
+	  [ ! -z "${PORT_ID}" ] && neutron port-update ${PORT_ID} --allowed-address-pairs type=dict list=true ip_address=${MOSLER_EXT_CIDR} >/dev/null
 	  echo -e $'\e[32m\xE2\x9C\x93\e[0m'    # ok (checkmark)
-	} || echo -e $'\e[31m\xE2\x9C\x97\e[0m' # fail (cross)
+	) || echo -e $'\e[31m\xE2\x9C\x97\e[0m' # fail (cross)
     fi
 done
 
@@ -314,7 +320,7 @@ exec 1>${ORG_FD1}
 echo "Initialization phase complete."
 
 ########################################################################
-trap "echo -e \"\nOr you can Ctrl-C, yes...\n\"; exit 0" SIGINT INT
+trap "echo -e \"\nOr you can Ctrl-C, yes, that works too...\n\"; exit 0" SIGINT INT
 REBOOT=y
 ASK_TIMEOUT=10 #seconds
 while : ; do # while = In a subshell
@@ -330,6 +336,6 @@ done
 
 [ $REBOOT = y ] && for machine in ${MACHINES[@]}; do
     [ $VERBOSE == 'yes' ] && echo "Rebooting $machine"
-    nova reboot $machine 2>&1 > /dev/null
+    nova reboot $machine >/dev/null
 done
 
