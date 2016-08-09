@@ -54,7 +54,7 @@ done
 # Cleaning the network information
 if [ $ALL = "yes" ]; then
     echo "Cleaning the remaining VMs"
-    nova list --minimal --tenant ${TENANT_ID} | awk '/^$/ {next;} /^\| ID.*Name/ {next;} /^+--/ {next;} {print $2}' | while read m; do delete_machine $m; done
+    nova list --minimal --tenant ${TENANT_ID} | awk '/^$/ {next} /^\| ID/ {next} /^+--/ {next} {print $2}' | while read m; do delete_machine $m; done
 
     echo "Cleaning security group: ${OS_TENANT_NAME}-sg"
     neutron dhcp-agent-network-remove $(neutron dhcp-agent-list-hosting-net -c id -f value public) ${OS_TENANT_NAME}-mgmt-net
@@ -73,23 +73,23 @@ if [ $ALL = "yes" ]; then
     neutron floatingip-list -F id -F floating_ip_address | awk '/^$/ {next;} /^\| id.*floating_ip/ {next;} /^+--/ {next;} {print $2" "$4}' | while read fid fip; do
 	# We selected '--all'. That means, we do delete the network information.
 	# In that case, kill _all_ floating IPs since we also delete the networks
-	neutron floatingip-delete $fid && \
+	neutron floatingip-delete $fid >/dev/null && \
 	    ssh-keygen -R $fip &>/dev/null
     done
 
     # Cleaning the security group
     echo "Cleaning security group: ${OS_TENANT_NAME}-sg"
-    neutron security-group-delete ${OS_TENANT_NAME}-sg
+    neutron security-group-delete ${OS_TENANT_NAME}-sg >/dev/null
 
     echo "Deleting networks and subnets"
-    neutron subnet-delete ${OS_TENANT_NAME}-mgmt-subnet
-    neutron subnet-delete ${OS_TENANT_NAME}-data-subnet
-    neutron net-delete ${OS_TENANT_NAME}-mgmt-net
-    neutron net-delete ${OS_TENANT_NAME}-data-net
+    neutron subnet-delete ${OS_TENANT_NAME}-mgmt-subnet >/dev/null
+    neutron subnet-delete ${OS_TENANT_NAME}-data-subnet >/dev/null
+    neutron net-delete ${OS_TENANT_NAME}-mgmt-net       >/dev/null
+    neutron net-delete ${OS_TENANT_NAME}-data-net       >/dev/null
 
-    echo "Deleting router"
-    neutron router-delete ${OS_TENANT_NAME}-mgmt-router
-    neutron router-delete ${OS_TENANT_NAME}-data-router
+    echo "Deleting routers"
+    neutron router-delete ${OS_TENANT_NAME}-mgmt-router >/dev/null
+    neutron router-delete ${OS_TENANT_NAME}-data-router >/dev/null
 
 fi # End cleaning if ALL
 
