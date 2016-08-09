@@ -287,7 +287,8 @@ echo "Booting the machines"
 for machine in ${MACHINES[@]}; do boot_machine $machine; done
 
 ########################################################################
-echo "Waiting for the REST phone home server (PID: ${REST_PID})"
+echo "Waiting for the REST phone home server"
+#echo "(PID: ${REST_PID})"
 wait ${REST_PID}
 echo "The last machine just phoned home."
 
@@ -317,7 +318,6 @@ done
 
 ########################################################################
 exec 1>${ORG_FD1}
-echo "Initialization phase complete."
 
 ########################################################################
 trap "echo -e \"\nOr you can Ctrl-C, yes, that works too...\n\"; exit 0" SIGINT INT
@@ -334,8 +334,9 @@ while : ; do # while = In a subshell
     esac
 done
 
-[ $REBOOT = y ] && for machine in ${MACHINES[@]}; do
-    [ $VERBOSE == 'yes' ] && echo "Rebooting $machine"
-    nova reboot $machine >/dev/null
-done
+[ $REBOOT = y ] && echo -n "Rebooting " && for machine in ${MACHINES[@]}; do
+	echo -n "." # progress
+	nova reboot $machine >/dev/null
+    done
 
+echo -e "\nInitialization phase complete."
