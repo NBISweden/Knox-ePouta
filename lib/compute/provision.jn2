@@ -1,14 +1,5 @@
 # -*-sh-*-
 
-echo "Cleaning virbr0"
-{ 
-    ip link set dev virbr0-nic down
-    ip link set dev virbr0 down
-    brctl delif virbr0 virbr0-nic
-    ip link del dev virbr0-nic
-    brctl delbr virbr0
-} || true
-
 echo "Configuring iptables"
 # Remove the line
 sed -i "/^-A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT/ d" /etc/sysconfig/iptables
@@ -35,17 +26,18 @@ sed -i -e '/{{ regexp }}/ d' /etc/sysctl.conf
 echo '{{ line }}' >> /etc/sysctl.conf
 {% endfor %}
 
-sysctl -p
-
 echo "Starting OpenVSwitch"
 service openvswitch restart
 chkconfig openvswitch on
-    
-echo "Creating the OVS bridge"
-ovs-vsctl add-br br-eth1 || true
 
-echo "Adding eth1 to the OVS bridge"
-ovs-vsctl add-port br-eth1 eth1 || true
+echo "Creating the OVS bridge"
+ovs-vsctl add-br br-int || true
+
+# echo "Creating the OVS bridge"
+# ovs-vsctl add-br br-eth1 || true
+
+# echo "Adding eth1 to the OVS bridge"
+# ovs-vsctl add-port br-eth1 eth1 || true
 
 {% if env['DO_CHEAT'] != 'yes' %}
 echo "Correcting the Nova admin tenant id for Neutron"
@@ -71,6 +63,9 @@ virsh list --all | awk '{ if ($0 !~ " Id " && $0 !~ "^-----" && $0 != "") print 
 echo "Starting Libvirt"
 service libvirtd restart
 service messagebus restart
+
+# Activating kernel configurations (or use -e too)
+sysctl -p
 
 sleep 10 # On the openstack-controller, services are first closing. Let's sleep
 # Wait for Message Broker. Don't want to loose the messages

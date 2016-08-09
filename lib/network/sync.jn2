@@ -39,3 +39,8 @@ if [ ! -f /etc/init.d/neutron-openvswitch-agent.orig ]; then
     cp /etc/init.d/neutron-openvswitch-agent /etc/init.d/neutron-openvswitch-agent.orig
     sed -i 's,plugins/openvswitch/ovs_neutron_plugin.ini,plugin.ini,g' /etc/init.d/neutron-openvswitch-agent
 fi
+
+if [ ! -f /etc/sysconfig/network-scripts/ifdown-ovs.orig ]; then
+    cp /etc/sysconfig/network-scripts/ifdown-ovs /etc/sysconfig/network-scripts/ifdown-ovs.orig
+    sed -i -r "s,ovs-vsctl (.*) del-br,#ovs-vsctl \1 del-br,g" /etc/sysconfig/network-scripts/ifdown-ovs
+fi
