@@ -63,11 +63,9 @@ if [ $ALL = "yes" ]; then
     # TODO
 
     echo "Disconnecting the router from the management subnet"
-    neutron router-interface-delete ${OS_TENANT_NAME}-mgmt-router ${OS_TENANT_NAME}-mgmt-subnet
-    neutron router-interface-delete ${OS_TENANT_NAME}-data-router ${OS_TENANT_NAME}-data-subnet
-
-    neutron router-gateway-clear ${OS_TENANT_NAME}-mgmt-router $EXTNET_ID
-
+    neutron router-interface-delete ${OS_TENANT_NAME}-mgmt-router ${OS_TENANT_NAME}-mgmt-subnet >/dev/null
+    neutron router-interface-delete ${OS_TENANT_NAME}-data-router ${OS_TENANT_NAME}-data-subnet >/dev/null
+    neutron router-gateway-clear    ${OS_TENANT_NAME}-mgmt-router $EXTNET_ID                    >/dev/null
 
     echo "Deleting floating IPs"
     neutron floatingip-list -F id -F floating_ip_address | awk '/^$/ {next;} /^\| id.*floating_ip/ {next;} /^+--/ {next;} {print $2" "$4}' | while read fid fip; do

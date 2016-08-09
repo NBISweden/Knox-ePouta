@@ -129,18 +129,18 @@ if [ ${_ALL} = "yes" ]; then
     done
 
     echo "Creating the Security Group: ${OS_TENANT_NAME}-sg"
-    neutron security-group-create ${OS_TENANT_NAME}-sg "Security Group for ${OS_TENANT_NAME}" >/dev/null
-    nova secgroup-add-rule ${OS_TENANT_NAME}-sg icmp  -1    -1 ${FLOATING_CIDR}               >/dev/null
-    nova secgroup-add-rule ${OS_TENANT_NAME}-sg icmp  -1    -1 ${MGMT_CIDR}                   >/dev/null
-    nova secgroup-add-rule ${OS_TENANT_NAME}-sg icmp  -1    -1 ${DATA_CIDR}                   >/dev/null
-    nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp   22    22 ${FLOATING_CIDR}               >/dev/null
+    nova secgroup-create ${OS_TENANT_NAME}-sg "Security Group for ${OS_TENANT_NAME}" >/dev/null
+    nova secgroup-add-rule ${OS_TENANT_NAME}-sg icmp  -1    -1 ${FLOATING_CIDR}      >/dev/null
+    nova secgroup-add-rule ${OS_TENANT_NAME}-sg icmp  -1    -1 ${MGMT_CIDR}          >/dev/null
+    nova secgroup-add-rule ${OS_TENANT_NAME}-sg icmp  -1    -1 ${DATA_CIDR}          >/dev/null
+    nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp   22    22 ${FLOATING_CIDR}      >/dev/null
     #nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp   22    22 ${MGMT_CIDR}
     #nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp  443   443 ${FLOATING_CIDR}
     #nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp  443   443 ${MGMT_CIDR}
     #nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp    1 65535 ${MOSLER_EXT_CIDR}
-    nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp  443   443 ${MOSLER_EXT_CIDR}             >/dev/null
-    nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp    1 65535 ${MGMT_CIDR}                   >/dev/null
-    nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp    1 65535 ${DATA_CIDR}                   >/dev/null
+    nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp  443   443 ${MOSLER_EXT_CIDR}    >/dev/null
+    nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp    1 65535 ${MGMT_CIDR}          >/dev/null
+    nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp    1 65535 ${DATA_CIDR}          >/dev/null
 
     echo "Setting the quotas"
     FACTOR=2
