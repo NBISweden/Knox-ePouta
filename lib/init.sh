@@ -211,37 +211,37 @@ EOF
 chown root:root /etc/hosts
 chmod 0644 /etc/hosts
 
-# echo "Resetting the network configuration for eth0. Bye-bye DHCP."
-# cat > /etc/sysconfig/network-scripts/ifcfg-eth0 <<EOF
-# TYPE=Ethernet
-# BOOTPROTO=static
-# DEFROUTE=no
-# NAME=eth0
-# DEVICE=eth0
-# ONBOOT=yes
-# IPADDR=${MACHINE_IPs[$machine]}
-# PREFIX=22
-# GATEWAY=${MGMT_GATEWAY}
-# MTU=1450
-# NOZEROCONF=yes
-# EOF
+echo "Resetting the network configuration for eth0. Bye-bye DHCP."
+cat > /etc/sysconfig/network-scripts/ifcfg-eth0 <<EOF
+TYPE=Ethernet
+BOOTPROTO=static
+DEFROUTE=no
+NAME=eth0
+DEVICE=eth0
+ONBOOT=yes
+IPADDR=${MACHINE_IPs[$machine]}
+PREFIX=22
+GATEWAY=${MGMT_GATEWAY}
+MTU=1450
+NOZEROCONF=yes
+EOF
 
-# cat > /etc/sysconfig/network-scripts/rule-eth0 <<EOF
-# to ${MGMT_CIDR} lookup mgmt
-# from ${MGMT_CIDR} lookup mgmt
-# EOF
+cat > /etc/sysconfig/network-scripts/rule-eth0 <<EOF
+to ${MGMT_CIDR} lookup mgmt
+from ${MGMT_CIDR} lookup mgmt
+EOF
 
-# cat > /etc/sysconfig/network-scripts/route-eth0 <<EOF
-# 169.254.169.254 via ${MGMT_GATEWAY} dev eth0 proto static
-# table mgmt ${MGMT_CIDR} dev eth0 proto kernel scope link src ${MACHINE_IPs[$machine]}
-# default via ${MGMT_GATEWAY} dev eth0 proto static
-# EOF
+cat > /etc/sysconfig/network-scripts/route-eth0 <<EOF
+169.254.169.254 via ${MGMT_GATEWAY} dev eth0 proto static
+table mgmt ${MGMT_CIDR} dev eth0 proto kernel scope link src ${MACHINE_IPs[$machine]}
+default via ${MGMT_GATEWAY} dev eth0 proto static
+EOF
 
-# for f in ifcfg rule route
-# do
-# chown root:root /etc/sysconfig/network-scripts/\${f}-eth0
-# chmod 0644 /etc/sysconfig/network-scripts/\${f}-eth0
-# done
+for f in ifcfg rule route
+do
+chown root:root /etc/sysconfig/network-scripts/\${f}-eth0
+chmod 0644 /etc/sysconfig/network-scripts/\${f}-eth0
+done
 
 ENDCLOUDINIT
 
