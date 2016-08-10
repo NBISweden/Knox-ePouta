@@ -54,9 +54,6 @@ if [ ! -e ~/ssh_key.${PROJECT_NAME} ] || [ -e ~/ssh_key.${PROJECT_NAME}.pub ]; t
 fi
 nova keypair-add --pub-key ~/ssh_key.${PROJECT_NAME}.pub ${PROJECT_NAME}-key
 
-# nova secgroup-create ${PROJECT_NAME}-mosler_default "${PROJECT_NAME} secgroup"
-# nova secgroup-add-rule ${PROJECT_NAME}-mosler_default tcp 22 22 0.0.0.0/0
-# nova secgroup-add-rule ${PROJECT_NAME}-mosler_default icmp -1 -1 0.0.0.0/0
 nova secgroup-add-rule default tcp 22 22 0.0.0.0/0
 nova secgroup-add-rule default icmp -1 -1 0.0.0.0/0
 
