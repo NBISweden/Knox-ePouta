@@ -352,7 +352,7 @@ done
 # Allowing external network ${MOSLER_EXT_CIDR} from the networking-node back to the openstack-controller
 # We update the port corresponding to eth0 on the neutron node, so that the bridge can talk back to the controller.
 # 
-echo "Handling external network ${MOSLER_EXT_CIDR} within Openstack"
+echo -n "Handling external network ${MOSLER_EXT_CIDR} within Openstack"
 ( set -e # new shell, new env, exit if it errors on the way
   NEUTRON_ETH0=$(neutron port-list | awk "/${MACHINE_IPs[networking-node]}/ {print \$2}")
   [ ! -z "${NEUTRON_ETH0}" ] && neutron port-update ${NEUTRON_ETH0} --allowed-address-pairs type=dict list=true ip_address=${MOSLER_EXT_CIDR} >/dev/null
