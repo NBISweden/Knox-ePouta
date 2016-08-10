@@ -11,6 +11,8 @@ sed -i "/^-A INPUT -m state --state NEW -s {{ env['MOSLER_EXT_CIDR']|replace('/'
 sed -i "/^-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT/ i \
 -A INPUT -m state --state NEW -s {{ env['MOSLER_EXT_CIDR']|replace('/','\/') }} -j ACCEPT" /etc/sysconfig/iptables
 
+#iptables -I FORWARD 1 -i eth0 -o br-eth1 -j ACCEPT
+
 #service iptables restart # Not sure why this fails sometimes.
 service iptables stop || true
 service iptables start
@@ -69,10 +71,10 @@ DEVICETYPE=ovs
 TYPE=OVSPort
 BOOTPROTO=none
 OVS_BRIDGE=br-eth1
-DEFROUTE=no
 NAME=eth1
 DEVICE=eth1
 ONBOOT=yes
+MTU=1450
 EOF
 
 cat > /etc/sysconfig/network-scripts/ifcfg-br-eth1 <<EOF
@@ -85,8 +87,8 @@ PREFIX=${PREFIX}
 GATEWAY=${GATEWAY}
 IPADDR2=${BR_GATEWAY}
 PREFIX2=${BR_PREFIX}
-#MTU=1450
-#DEFROUTE=yes
+MTU=1450
+DEFROUTE=no
 DEVICETYPE=ovs
 TYPE=OVSBridge
 EOF
@@ -102,7 +104,7 @@ rm -f /etc/sysconfig/network-scripts/rule-eth1
 
 # Routes
 cat > /etc/sysconfig/network-scripts/route-br-eth1.tmp <<EOF
-table ext $CIDR dev br-eth1
+table ext $CIDR dev br-eth1 src ${BR_GATEWAY}
 table ext blackhole default
 EOF
 sed 's/eth1/br-eth1/g' /etc/sysconfig/network-scripts/org/route-eth1 >> /etc/sysconfig/network-scripts/route-br-eth1.tmp

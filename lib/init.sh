@@ -198,7 +198,7 @@ echo "Adjusting the timezone"
 echo 'Europe/Stockholm' > /etc/timezone
 echo "================================================================================"
 echo "Adding the routing tables"
-#echo '10 mgmt' >> /etc/iproute2/rt_tables
+echo '10 mgmt' >> /etc/iproute2/rt_tables
 echo '11 data' >> /etc/iproute2/rt_tables
 echo '12 ext' >> /etc/iproute2/rt_tables
 echo "================================================================================"
@@ -222,7 +222,7 @@ chmod 0644 /etc/hosts
 # IPADDR=${MACHINE_IPs[$machine]}
 # PREFIX=22
 # GATEWAY=${MGMT_GATEWAY}
-# MTU=1500
+# MTU=1450
 # NOZEROCONF=yes
 # EOF
 
