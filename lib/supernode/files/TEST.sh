@@ -1,6 +1,5 @@
 #!/bin/sh 
 
-set -e -x
 source /root/.keystonerc
 PROJECT_NAME=TEST
 
@@ -23,7 +22,11 @@ if [ ${1:-shoot} == "delete" ] ; then
     nova keypair-delete ${PROJECT_NAME}-key
 
     keystone tenant-delete ${PROJECT_NAME}
+
+    exit 0
 fi
+
+set -e -x
 
 #####################################################
 if ! glance image-show cirros &>/dev/null; then
