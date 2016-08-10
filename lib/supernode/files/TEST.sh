@@ -62,20 +62,17 @@ nova secgroup-add-rule default icmp -1 -1 0.0.0.0/0
 
 nova boot --key-name ${PROJECT_NAME}-key --flavor mosler.1core --image cirros \
 --nic net-id=$(neutron net-list | awk '/ '${PROJECT_NAME}'-net /{print $2}') \
---availability-zone serv-login --security-groups ${PROJECT_NAME}-mosler_default \
+--availability-zone serv-login \
 ${PROJECT_NAME}-service-node
 nova boot --key-name ${PROJECT_NAME}-key --flavor mosler.1core --image cirros \
 --nic net-id=$(neutron net-list | awk '/ '${PROJECT_NAME}'-net /{print $2}') \
---availability-zone serv-login --security-groups ${PROJECT_NAME}-mosler_default \
+--availability-zone serv-login \
 ${PROJECT_NAME}-login-node
 nova boot --key-name ${PROJECT_NAME}-key --flavor mosler.1core --image cirros \
 --nic net-id=$(neutron net-list | awk '/ '${PROJECT_NAME}'-net /{print $2}') \
---availability-zone nova --security-groups ${PROJECT_NAME}-mosler_default \
+--availability-zone nova \
 ${PROJECT_NAME}-compute-node
 
 FIP=$(neutron floatingip-create public-net | awk '/ floating_ip_address /{print $4}')
 sleep 10
 nova floating-ip-associate ${PROJECT_NAME}-login-node $FIP
-
-# # DELETE
-# source /root/.keystonerc
