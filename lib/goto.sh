@@ -15,6 +15,7 @@ while [ $# -gt 0 ]; do
 	thinlinc) host='thinlinc-master';;
 	hnas|nfs) host='storage';;
 	neutron) host='networking-node';;
+        --) shift; break;;
         *) host=$1;;
     esac
     shift
@@ -27,4 +28,4 @@ done
 [ -f ${MM_TMP}/ssh_config.${OS_TENANT_NAME} ] && CONF="-F ${MM_TMP}/ssh_config.${OS_TENANT_NAME}"
 
 echo "Connecting to $host [${FLOATING_IPs[$host]}]"
-ssh -t $CONF ${FLOATING_IPs[$host]} 'sudo bash'
+ssh $@ -t $CONF ${FLOATING_IPs[$host]} 'sudo bash'
