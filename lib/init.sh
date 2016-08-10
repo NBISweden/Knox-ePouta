@@ -92,6 +92,10 @@ if [ $? -ne 0 ] || [ -z "$CHECK" ]; then
 fi
 
 EXTNET_ID=$(neutron net-list | awk '/ public /{print $2}')
+if [ -z "$EXTNET_ID" ]; then
+    echo "Error: Could not find the external network" > ${ORG_FD1}
+    exit 1
+fi
 
 if [ ${_ALL} = "yes" ]; then
 
@@ -109,8 +113,7 @@ if [ ${_ALL} = "yes" ]; then
     
     # Creating the management and data networks
     neutron net-create ${OS_TENANT_NAME}-mgmt-net >/dev/null
-    neutron subnet-create --name ${OS_TENANT_NAME}-mgmt-subnet ${OS_TENANT_NAME}-mgmt-net --enable-dhcp --gateway ${MGMT_GATEWAY} --host-route destination=${MOSLER_EXT_CIDR},nexthop=${MACHINE_IPs[networking-node]} ${MGMT_CIDR} >/dev/null
-
+    neutron subnet-create --name ${OS_TENANT_NAME}-mgmt-subnet ${OS_TENANT_NAME}-mgmt-net --gateway ${MGMT_GATEWAY} ${MGMT_CIDR} >/dev/null # --disable-dhcp
     neutron router-interface-add ${OS_TENANT_NAME}-mgmt-router ${OS_TENANT_NAME}-mgmt-subnet >/dev/null
 
     # Get the DHCP that host the public network and add an interface for the management network
@@ -185,11 +188,19 @@ function boot_machine {
     local machine=$1
     local ip=${MACHINE_IPs[$machine]}
     local flavor=${FLAVORS[$machine]}
-    
+
     _VM_INIT=${MM_TMP}/$machine/init/vm.sh
     echo '#!/usr/bin/env bash' > ${_VM_INIT}
     for user in ${!PUBLIC_SSH_KEYS[@]}; do echo "echo '${PUBLIC_SSH_KEYS[$user]}' >> /home/centos/.ssh/authorized_keys" >> ${_VM_INIT}; done
     cat >> ${_VM_INIT} <<ENDCLOUDINIT
+echo "================================================================================"
+echo "Adjusting the timezone"
+echo 'Europe/Stockholm' > /etc/timezone
+echo "================================================================================"
+echo "Adding the routing tables"
+echo '10 mgmt' >> /etc/iproute2/rt_tables
+echo '11 data' >> /etc/iproute2/rt_tables
+echo '12 ext' >> /etc/iproute2/rt_tables
 echo "================================================================================"
 echo "Creating hosts file"
 cat > /etc/hosts <<EOF
@@ -200,15 +211,37 @@ EOF
 chown root:root /etc/hosts
 chmod 0644 /etc/hosts
 
-echo "================================================================================"
-echo "Setting the Timezone to Stockholm"
-echo 'Europe/Stockholm' > /etc/timezone
+echo "Resetting the network configuration for eth0. Bye-bye DHCP."
+cat > /etc/sysconfig/network-scripts/ifcfg-eth0 <<EOF
+TYPE=Ethernet
+BOOTPROTO=static
+DEFROUTE=no
+NAME=eth0
+DEVICE=eth0
+ONBOOT=yes
+IPADDR=${MACHINE_IPs[$machine]}
+PREFIX=24
+GATEWAY=${MGMT_GATEWAY}
+MTU=1500
+NOZEROCONF=yes
+EOF
 
-echo "================================================================================"
-echo "Adding Policy Routing tables"
-echo '10 mgmt' >> /etc/iproute2/rt_tables
-echo '11 data' >> /etc/iproute2/rt_tables
-echo '12 ext' >> /etc/iproute2/rt_tables
+cat > /etc/sysconfig/network-scripts/rule-eth0 <<EOF
+to ${MGMT_CIDR} lookup mgmt
+from ${MGMT_CIDR} lookup mgmt
+EOF
+
+cat > /etc/sysconfig/network-scripts/route-eth0 <<EOF
+169.254.169.254 via ${MGMT_GATEWAY} dev eth0 proto static
+table mgmt ${MGMT_CIDR} dev eth0 proto kernel scope link src ${MACHINE_IPs[$machine]}
+default via ${MGMT_GATEWAY} dev eth0 proto static
+EOF
+
+for f in ifcfg rule route
+do
+chown root:root /etc/sysconfig/network-scripts/${f}-eth0
+chmod 0644 /etc/sysconfig/network-scripts/${f}-eth0
+done
 
 ENDCLOUDINIT
 
@@ -218,7 +251,6 @@ ENDCLOUDINIT
 	# Note: I think I could add those routes to the DHCP server
 	# Neutron will then configure these settings automatically
 	cat >> ${_VM_INIT} <<ENDCLOUDINIT
-
 cat > /etc/sysconfig/network-scripts/ifcfg-eth1 <<EOF
 TYPE=Ethernet
 BOOTPROTO=static
@@ -230,6 +262,7 @@ IPADDR=${DATA_IPs[$machine]}
 PREFIX=24
 GATEWAY=${DATA_GATEWAY}
 #MTU=1450
+NOZEROCONF=yes
 EOF
 chown root:root /etc/sysconfig/network-scripts/ifcfg-eth1
 chmod 0644 /etc/sysconfig/network-scripts/ifcfg-eth1
@@ -249,15 +282,15 @@ EOF
 chown root:root /etc/sysconfig/network-scripts/route-eth1
 chmod 0644 /etc/sysconfig/network-scripts/route-eth1
 
-echo "================================================================================"
-echo "Restarting network"
-service network restart
 ENDCLOUDINIT
     fi
 
     # Final part: Grow partition and phone home
     # sed -i 's/^Defaults.*requiretty/#&/g' /etc/sudoers
     cat >> ${_VM_INIT} <<ENDCLOUDINIT
+echo "================================================================================"
+echo "Restarting network"
+service network restart
 echo "================================================================================"
 echo "Growing partition to disk size"
 curl http://${PHONE_HOME}:$PORT/machine/$machine/growing 2>&1 > /dev/null || true

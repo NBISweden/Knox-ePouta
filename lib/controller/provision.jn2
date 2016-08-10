@@ -70,9 +70,9 @@ service iptables restart
 
 #############################################################
 echo "Routing Mosler's external network"
-ip route del {{ env['MOSLER_EXT_CIDR'] }} via {{ env['NEUTRON_SERVER'] }} dev eth0
-ip route add {{ env['MOSLER_EXT_CIDR'] }} via {{ env['NEUTRON_SERVER'] }} dev eth0 src {{ env['CONTROLLER'] }}
-echo "{{ env['MOSLER_EXT_CIDR'] }} via {{ env['NEUTRON_SERVER'] }} dev eth0 src {{ env['CONTROLLER'] }}" > /etc/sysconfig/network-scripts/route-eth0
+sed -i "/ {{ env['MOSLER_EXT_CIDR']|replace('/','\/') }} / d" /etc/sysconfig/network-scripts/route-eth0
+sed -i "/default via/ i \
+table ext {{ env['MOSLER_EXT_CIDR']|replace('/','\/') }} via {{ env['NEUTRON_SERVER'] }} dev eth0 src {{ env['CONTROLLER'] }}" /etc/sysconfig/network-scripts/route-eth0
 
 echo "System config"
 ## RegExp, Replacement

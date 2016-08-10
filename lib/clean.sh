@@ -33,6 +33,8 @@ ORG_FD1=$(tty)
 TENANT_ID=$(openstack project list | awk '/'${OS_TENANT_NAME}'/ {print $2}')
 EXTNET_ID=$(neutron net-list | awk '/ public /{print $2}') # don't add --tenant-id $TENANT_ID
 
+[ -z "${TENANT_ID}" ] && echo "Tenant ID not found for ${OS_TENANT_NAME}" && exit 1
+
 #######################################################################
 
 # Cleaning all the running machines
@@ -44,7 +46,7 @@ function delete_machine {
 
 echo "Cleaning running machines"
 #for machine in "${MACHINES[@]}"; do delete_machine $machine; done
-nova list --minimal --tenant ${TENANT_ID} | awk '{print $4}' | while read machine; do
+nova list --minimal --tenant ${TENANT_ID} | awk '/^$/ {next} /^\| ID/ {next} /^+--/ {next} {print $4}' | while read machine; do
     # If I find the server in the MACHINES list. Otherwise, don't touch! Might not be your server
     for m in "${MACHINES[@]}"; do
 	[ "$m" = "$machine" ] && delete_machine $m;
@@ -57,10 +59,10 @@ if [ $ALL = "yes" ]; then
     nova list --minimal --tenant ${TENANT_ID} | awk '/^$/ {next} /^\| ID/ {next} /^+--/ {next} {print $2}' | while read m; do delete_machine $m; done
 
     echo "Cleaning security group: ${OS_TENANT_NAME}-sg"
-    neutron dhcp-agent-network-remove $(neutron dhcp-agent-list-hosting-net -c id -f value public) ${OS_TENANT_NAME}-mgmt-net
+    neutron dhcp-agent-network-remove $(neutron dhcp-agent-list-hosting-net -c id -f value public) ${OS_TENANT_NAME}-mgmt-net >/dev/null
 
     echo "Cleaning the extra routes for the external network"
-    # TODO
+    # TODO: A must! cleaning will fail otherwise.
 
     echo "Disconnecting the router from the management subnet"
     neutron router-interface-delete ${OS_TENANT_NAME}-mgmt-router ${OS_TENANT_NAME}-mgmt-subnet >/dev/null
