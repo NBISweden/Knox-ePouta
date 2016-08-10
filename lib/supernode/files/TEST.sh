@@ -4,7 +4,7 @@ set -e -x
 source /root/.keystonerc
 PROJECT_NAME=TEST
 
-if [ $1 == "delete" ] ; then
+if [ ${1:-shoot} == "delete" ] ; then
     export OS_TENANT_NAME=${PROJECT_NAME}
     nova delete ${PROJECT_NAME}-compute-node
     nova delete ${PROJECT_NAME}-login-node
