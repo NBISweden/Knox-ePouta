@@ -336,18 +336,34 @@ do
 done
 
 ########################################################################
-echo "Updating data ports to allow external network ${MOSLER_EXT_CIDR}"
-for machine in ${MACHINES[@]}
-do
-    if [ ! -z "${DATA_IPs[$machine]}" ]; then
-	echo -en "\ton $machine: "
-	( set -e # new shell, new env, exit if it errors on the way
-	  PORT_ID=$(neutron port-list | awk "/$DATA_SUBNET/ && /${DATA_IPs[$machine]}/ {print \$2}")
-	  [ ! -z "${PORT_ID}" ] && neutron port-update ${PORT_ID} --allowed-address-pairs type=dict list=true ip_address=${MOSLER_EXT_CIDR} >/dev/null
-	  echo -e $'\e[32m\xE2\x9C\x93\e[0m'    # ok (checkmark)
-	) || echo -e $'\e[31m\xE2\x9C\x97\e[0m' # fail (cross)
-    fi
-done
+# echo "Updating data ports to allow external network ${MOSLER_EXT_CIDR}"
+# for machine in ${MACHINES[@]}
+# do
+#     if [ ! -z "${DATA_IPs[$machine]}" ]; then
+# 	echo -en "\ton $machine: "
+# 	( set -e # new shell, new env, exit if it errors on the way
+# 	  PORT_ID=$(neutron port-list | awk "/$DATA_SUBNET/ && /${DATA_IPs[$machine]}/ {print \$2}")
+# 	  [ ! -z "${PORT_ID}" ] && neutron port-update ${PORT_ID} --allowed-address-pairs type=dict list=true ip_address=${MOSLER_EXT_CIDR} >/dev/null
+# 	  echo -e $'\e[32m\xE2\x9C\x93\e[0m'    # ok (checkmark)
+# 	) || echo -e $'\e[31m\xE2\x9C\x97\e[0m' # fail (cross)
+#     fi
+# done
+
+# Allowing external network ${MOSLER_EXT_CIDR} from the networking-node back to the openstack-controller
+# We update the port corresponding to eth0 on the neutron node, so that the bridge can talk back to the controller.
+# 
+echo "Handling external network ${MOSLER_EXT_CIDR} within Openstack"
+( set -e # new shell, new env, exit if it errors on the way
+  NEUTRON_ETH0=$(neutron port-list | awk "/${MACHINE_IPs[networking-node]}/ {print \$2}")
+  [ ! -z "${NEUTRON_ETH0}" ] && neutron port-update ${NEUTRON_ETH0} --allowed-address-pairs type=dict list=true ip_address=${MOSLER_EXT_CIDR} >/dev/null
+  echo -e $'\e[32m\xE2\x9C\x93\e[0m'    # ok (checkmark)
+) || echo -e $'\e[31m\xE2\x9C\x97\e[0m' # fail (cross)
+
+# Adding an opt in the DHCP for the controller, to fix the static route: EXTERNAL_NET via NEUTRON_NODE
+# neutron port-update \
+# --extra-dhcp-opt opt_name=classless-static-route,opt_value=${MOSLER_EXT_CIDR},${MACHINE_IPs[networking-node]},ip_version=4 \
+# $(neutron port-list | awk "/${DATA_IPs[openstack-controller]}/ {print \$2}")
+
 
 ########################################################################
 exec 1>${ORG_FD1}
