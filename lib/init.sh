@@ -239,8 +239,8 @@ EOF
 
 for f in ifcfg rule route
 do
-chown root:root /etc/sysconfig/network-scripts/${f}-eth0
-chmod 0644 /etc/sysconfig/network-scripts/${f}-eth0
+chown root:root /etc/sysconfig/network-scripts/\${f}-eth0
+chmod 0644 /etc/sysconfig/network-scripts/\${f}-eth0
 done
 
 ENDCLOUDINIT
