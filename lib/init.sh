@@ -232,7 +232,7 @@ from ${MGMT_CIDR} lookup mgmt
 EOF
 
 cat > /etc/sysconfig/network-scripts/route-eth0 <<EOF
-169.254.169.254 via ${MGMT_GATEWAY} dev eth0 proto static
+#169.254.169.254 via ${MGMT_GATEWAY} dev eth0 proto static
 table mgmt ${MGMT_CIDR} dev eth0 proto kernel scope link src ${MACHINE_IPs[$machine]}
 default via ${MGMT_GATEWAY} dev eth0 proto static
 EOF
