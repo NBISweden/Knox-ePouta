@@ -20,11 +20,12 @@ chmod 644 /etc/neutron/neutron.conf
 rsync -a --no-perms {{ env['VAULT'] }}/ml2.ini                  /etc/neutron/plugins/ml2/ml2.ini
 chown neutron:neutron /etc/neutron/plugins/ml2/ml2.ini
 chmod 644 /etc/neutron/plugins/ml2/ml2.ini
+sed -i -e "/br-eth1/ d" /etc/neutron/plugins/ml2/ml2.ini
 
-rsync -a --no-perms {{ env['VAULT'] }}/ovs_neutron_plugin.ini   /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
-chown neutron:neutron /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
-chmod 644 /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
-
+# rsync -a --no-perms {{ env['VAULT'] }}/ovs_neutron_plugin.ini   /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
+# chown neutron:neutron /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
+# chmod 644 /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
+sed -i -e "/br-eth1/ d" /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
 
 if [ -f /etc/neutron/plugin.ini ]; then
     rm /etc/neutron/plugin.ini
@@ -35,3 +36,9 @@ if [ ! -f /etc/init.d/neutron-openvswitch-agent.orig ]; then
     cp /etc/init.d/neutron-openvswitch-agent /etc/init.d/neutron-openvswitch-agent.orig
     sed -i 's,plugins/openvswitch/ovs_neutron_plugin.ini,plugin.ini,g' /etc/init.d/neutron-openvswitch-agent
 fi
+
+if [ ! -f /etc/init.d/neutron-ovs-cleanup.orig ]; then
+    cp /etc/init.d/neutron-ovs-cleanup /etc/init.d/neutron-ovs-cleanup.orig
+    sed -i 's,plugins/openvswitch/ovs_neutron_plugin.ini,plugin.ini,g' /etc/init.d/neutron-ovs-cleanup
+fi
+

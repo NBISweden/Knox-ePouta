@@ -15,12 +15,13 @@ declare -A FILES
 FILES=(\
 ['neutron.conf']='/etc/neutron/neutron.conf' \
 ['ml2.ini']='/etc/neutron/plugins/ml2/ml2.ini' \
-['ovs_neutron_plugin.ini']='/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini' \
 ['l3_agent.ini']='/etc/neutron/l3_agent.ini' \
 ['metadata_agent.ini']='/etc/neutron/metadata_agent.ini' \
 ['dhcp_agent.ini']='/etc/neutron/dhcp_agent.ini' \
 ['dnsmasq-neutron.conf']='/etc/neutron/dnsmasq-neutron.conf' \
 )
+
+# ['ovs_neutron_plugin.ini']='/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini' \
 
 for f in ${!FILES[@]}
 do
@@ -40,7 +41,13 @@ if [ ! -f /etc/init.d/neutron-openvswitch-agent.orig ]; then
     sed -i 's,plugins/openvswitch/ovs_neutron_plugin.ini,plugin.ini,g' /etc/init.d/neutron-openvswitch-agent
 fi
 
+if [ ! -f /etc/init.d/neutron-ovs-cleanup.orig ]; then
+    cp /etc/init.d/neutron-ovs-cleanup /etc/init.d/neutron-ovs-cleanup.orig
+    sed -i 's,plugins/openvswitch/ovs_neutron_plugin.ini,plugin.ini,g' /etc/init.d/neutron-ovs-cleanup
+fi
+
 if [ ! -f /etc/sysconfig/network-scripts/ifdown-ovs.orig ]; then
     cp /etc/sysconfig/network-scripts/ifdown-ovs /etc/sysconfig/network-scripts/ifdown-ovs.orig
     sed -i -r "s,ovs-vsctl (.*) del-br,#ovs-vsctl \1 del-br,g" /etc/sysconfig/network-scripts/ifdown-ovs
 fi
+
