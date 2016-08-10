@@ -18,6 +18,9 @@ Host ${FLOATING_CIDR%0/24}*
 	StrictHostKeyChecking no
 	UserKnownHostsFile ${SSH_KNOWN_HOSTS}
 	ForwardAgent yes
+	GSSAPIAuthentication no
+	GSSAPIDelegateCredentials yes
+#	UseDNS no
 ENDSSHCFG
 
 :> ${SSH_KNOWN_HOSTS}

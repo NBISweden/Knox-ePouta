@@ -74,6 +74,10 @@ sed -i "/ {{ env['MOSLER_EXT_CIDR']|replace('/','\/') }} / d" /etc/sysconfig/net
 sed -i "/default via/ i \
 table ext {{ env['MOSLER_EXT_CIDR']|replace('/','\/') }} via {{ env['NEUTRON_SERVER'] }} dev eth0 src {{ env['CONTROLLER'] }}" /etc/sysconfig/network-scripts/route-eth0
 
+sed -i "/ {{ env['MOSLER_EXT_CIDR']|replace('/','\/') }} / d" /etc/sysconfig/network-scripts/rule-eth0
+echo "to {{ env['MOSLER_EXT_CIDR'] }} table ext" >> /etc/sysconfig/network-scripts/rule-eth0
+echo "from {{ env['MOSLER_EXT_CIDR'] }} table ext" >> /etc/sysconfig/network-scripts/rule-eth0
+
 echo "System config"
 ## RegExp, Replacement
 {% set lines = [

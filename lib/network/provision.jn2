@@ -124,8 +124,7 @@ chkconfig libvirtd off
 
 echo "Restarting network to bring up the bridge used by Openstack"
 service network restart
-# Delete route (added by DHCP client, I think)
-ip route del 172.18.0.0/24 dev eth0 || true
+
 
 {% if env['DO_CHEAT'] != 'yes' %}
 echo "Correcting the Nova admin tenant id for Neutron"
