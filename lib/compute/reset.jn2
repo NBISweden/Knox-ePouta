@@ -6,8 +6,11 @@ service iptables restart
 
 # OpenVSwitch
 ovs-vsctl del-br br-int || true
+ovs-vsctl del-br br-eth1 || true
 service openvswitch stop
 chkconfig openvswitch off
+
+service network restart
 
 # Clear log files
 rm -f /var/log/nova/compute.log
