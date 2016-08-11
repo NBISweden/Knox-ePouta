@@ -56,4 +56,5 @@ ps ax | awk '/neutron-ns-metadata-proxy/ {print $1}' | while read pid; do
     kill -9 $pid
 done
 
+sleep 5
 ip netns | while read ns; do ip netns del $ns; done
