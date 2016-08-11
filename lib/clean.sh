@@ -56,7 +56,7 @@ done
 # Cleaning the network information
 if [ $ALL = "yes" ]; then
     echo "Cleaning the remaining VMs"
-    nova list --minimal --tenant ${TENANT_ID} | awk '/^$/ {next} /^\| ID/ {next} /^+--/ {next} {print $2}' | while read m; do delete_machine $m; done
+    nova list --minimal --tenant ${TENANT_ID} | awk '/^$/ {next} /^\| ID/ {next} /^+--/ {next} ! /DELET/ {print $2}' | while read m; do delete_machine $m; done
 
     echo "Cleaning security group: ${OS_TENANT_NAME}-sg"
     neutron dhcp-agent-network-remove $(neutron dhcp-agent-list-hosting-net -c id -f value public) ${OS_TENANT_NAME}-mgmt-net >/dev/null
