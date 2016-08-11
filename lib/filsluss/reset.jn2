@@ -13,5 +13,4 @@ if mount | grep -q $NFS_LOCATION ;then
     service crond start
 fi
 
-sed -i '/storage:.*${NFS_LOCATION//\//\\\/}/ d' /etc/fstab
-
+sed -i '/storage:.*/ d' /etc/fstab
