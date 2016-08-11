@@ -14,6 +14,7 @@ done
 # OpenVSwitch
 ovs-vsctl del-br br-eth1 || true
 ovs-vsctl del-br br-int || true
+ovs-vsctl emer-reset
 service openvswitch stop
 chkconfig openvswitch off
 
