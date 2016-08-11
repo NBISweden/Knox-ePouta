@@ -30,11 +30,50 @@ echo "Starting OpenVSwitch"
 service openvswitch start
 chkconfig openvswitch on
 
-# echo "Creating the OVS bridge"
-# ovs-vsctl add-br br-eth1 || true
+mkdir -p /etc/sysconfig/network-scripts/org
+[ ! -e /etc/sysconfig/network-scripts/org/ifcfg-eth1 ] && cp /etc/sysconfig/network-scripts/ifcfg-eth1 /etc/sysconfig/network-scripts/org/ifcfg-eth1
+[ ! -e /etc/sysconfig/network-scripts/org/route-eth1 ] && cp /etc/sysconfig/network-scripts/route-eth1 /etc/sysconfig/network-scripts/org/route-eth1
+[ ! -e /etc/sysconfig/network-scripts/org/rule-eth1 ] && cp /etc/sysconfig/network-scripts/rule-eth1 /etc/sysconfig/network-scripts/org/rule-eth1
 
-# echo "Adding eth1 to the OVS bridge"
-# ovs-vsctl add-port br-eth1 eth1 || true
+IPADDR=$(grep -r 'IPADDR=' /etc/sysconfig/network-scripts/org/ifcfg-eth1 | sed 's/IPADDR\s*=\s*//')
+PREFIX=$(grep -r 'PREFIX=' /etc/sysconfig/network-scripts/org/ifcfg-eth1 | sed 's/PREFIX\s*=\s*//')
+GATEWAY=$(grep -r 'GATEWAY=' /etc/sysconfig/network-scripts/org/ifcfg-eth1 | sed 's/GATEWAY\s*=\s*//')
+    
+cat > /etc/sysconfig/network-scripts/ifcfg-eth1 <<EOF
+#TYPE=Ethernet
+DEVICETYPE=ovs
+TYPE=OVSPort
+BOOTPROTO=none
+OVS_BRIDGE=br-eth1
+NAME=eth1
+DEVICE=eth1
+ONBOOT=yes
+MTU=1450
+EOF
+
+cat > /etc/sysconfig/network-scripts/ifcfg-br-eth1 <<EOF
+DEVICE=br-eth1
+NAME=br-eth1
+ONBOOT=yes
+BOOTPROTO=none
+IPADDR=${IPADDR}
+PREFIX=${PREFIX}
+GATEWAY=${GATEWAY}
+MTU=1450
+DEFROUTE=no
+DEVICETYPE=ovs
+TYPE=OVSBridge
+EOF
+
+# Rules
+mv -f /etc/sysconfig/network-scripts/org/rule-eth1 /etc/sysconfig/network-scripts/rule-br-eth1
+
+# Routes
+sed 's/eth1/br-eth1/g' /etc/sysconfig/network-scripts/org/route-eth1 > /etc/sysconfig/network-scripts/route-br-eth1
+rm -f /etc/sysconfig/network-scripts/route-eth1
+
+echo "Restarting network to bring up the bridge used by Openstack"
+service network restart
 
 echo "Creating the OVS bridge"
 ovs-vsctl add-br br-int || true

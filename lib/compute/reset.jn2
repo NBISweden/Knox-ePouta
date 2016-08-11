@@ -4,11 +4,24 @@
 sed -i "/^-A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT/ d" /etc/sysconfig/iptables
 service iptables restart
 
+for f in ifcfg route rule
+do
+    # cp is 'cp -i', so I call /bin/cp
+    [ -e /etc/sysconfig/network-scripts/org/${f}-eth1 ] && /bin/cp -f /etc/sysconfig/network-scripts/org/${f}-eth1 /etc/sysconfig/network-scripts/${f}-eth1
+    rm -f /etc/sysconfig/network-scripts/${f}-br-eth1
+done
+
 # OpenVSwitch
-ovs-vsctl del-br br-int || true
 ovs-vsctl del-br br-eth1 || true
+ovs-vsctl del-br br-int || true
 service openvswitch stop
 chkconfig openvswitch off
+
+ip rule del from {{ env['MGMT_CIDR'] }} lookup mgmt || true
+ip rule del to {{ env['MGMT_CIDR'] }} lookup mgmt || true
+
+ip rule del from {{ env['DATA_CIDR'] }} lookup data || true
+ip rule del to {{ env['DATA_CIDR'] }} lookup data || true
 
 service network restart
 
