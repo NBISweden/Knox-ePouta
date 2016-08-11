@@ -8,7 +8,7 @@ service iptables restart
 for f in ifcfg route rule
 do
     # cp is 'cp -i', so I call /bin/cp
-    /bin/cp -f /etc/sysconfig/network-scripts/org/${f}-eth1 /etc/sysconfig/network-scripts/${f}-eth1
+    [ -e /etc/sysconfig/network-scripts/org/${f}-eth1 ] && /bin/cp -f /etc/sysconfig/network-scripts/org/${f}-eth1 /etc/sysconfig/network-scripts/${f}-eth1
     rm -f /etc/sysconfig/network-scripts/${f}-br-eth1
 done
 

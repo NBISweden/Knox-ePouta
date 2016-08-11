@@ -1,7 +1,13 @@
 # -*-sh-*-
 
 #############################################################
-{% include 'openstack-common.jn2' %}
+echo "Copying Openstack repo, signing key and credentials"
+rsync {{ env['VAULT'] }}/rdo-release.repo /etc/yum.repos.d/rdo-release.repo
+rsync {{ env['VAULT'] }}/RPM-GPG-KEY-Icehouse-SIG /etc/pki/rpm-gpg/RPM-GPG-KEY-Icehouse-SIG
+rsync {{ env['VAULT'] }}/keystonerc /root/.keystonerc
+
+echo "Openstack python clients"
+yum -y install python-novaclient python-keystoneclient python-neutronclient python-glanceclient python-heatclient python-neutronclient MySQL-python
 
 yum -y install nc nfs-utils
 
