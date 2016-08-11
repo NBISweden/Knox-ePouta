@@ -30,14 +30,14 @@ echo "Starting OpenVSwitch"
 service openvswitch start
 chkconfig openvswitch on
 
-echo "Creating the OVS bridge"
-ovs-vsctl add-br br-eth1 || true
-
-echo "Adding eth1 to the OVS bridge"
-ovs-vsctl add-port br-eth1 eth1 || true
-
 # echo "Creating the OVS bridge"
-# ovs-vsctl add-br br-int || true
+# ovs-vsctl add-br br-eth1 || true
+
+# echo "Adding eth1 to the OVS bridge"
+# ovs-vsctl add-port br-eth1 eth1 || true
+
+echo "Creating the OVS bridge"
+ovs-vsctl add-br br-int || true
 
 {% if env['DO_CHEAT'] != 'yes' %}
 echo "Correcting the Nova admin tenant id for Neutron"
