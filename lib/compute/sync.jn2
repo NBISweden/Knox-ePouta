@@ -28,10 +28,6 @@ chown neutron:neutron /etc/neutron/plugins/ml2/ml2.ini
 chmod 644 /etc/neutron/plugins/ml2/ml2.ini
 sed -i -e "/br-eth1/ d" /etc/neutron/plugins/ml2/ml2.ini
 
-rsync -a --no-perms {{ env['VAULT'] }}/ovs_neutron_plugin.ini   /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
-chown neutron:neutron /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
-chmod 644 /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
-
 if [ -f /etc/neutron/plugin.ini ]; then
     rm /etc/neutron/plugin.ini
 fi

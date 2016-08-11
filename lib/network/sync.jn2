@@ -25,7 +25,6 @@ FILES=(\
 ['neutron.conf']='/etc/neutron/neutron.conf' \
 ['ml2.ini']='/etc/neutron/plugins/ml2/ml2.ini' \
 ['l3_agent.ini']='/etc/neutron/l3_agent.ini' \
-['ovs_neutron_plugin.ini']='/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini' \
 ['metadata_agent.ini']='/etc/neutron/metadata_agent.ini' \
 ['dhcp_agent.ini']='/etc/neutron/dhcp_agent.ini' \
 ['dnsmasq-neutron.conf']='/etc/neutron/dnsmasq-neutron.conf' \
