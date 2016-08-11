@@ -1,16 +1,9 @@
 # -*-sh-*-
 
-echo "Cleaning old namespaces"
-ip netns | while read ns; do ip netns del $ns; done
-
 echo "Configuring iptables"
-# Remove the line
-sed -i "/^-A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT/ d" /etc/sysconfig/iptables
 # Insert it before the other line
 sed -i "/^-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT/ i \
 -A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT" /etc/sysconfig/iptables
-
-sed -i "/^-A INPUT -m state --state NEW -s {{ env['MOSLER_EXT_CIDR']|replace('/','\/') }} -j ACCEPT/ d" /etc/sysconfig/iptables
 sed -i "/^-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT/ i \
 -A INPUT -m state --state NEW -s {{ env['MOSLER_EXT_CIDR']|replace('/','\/') }} -j ACCEPT" /etc/sysconfig/iptables
 
@@ -46,12 +39,6 @@ echo "Starting OpenVSwitch"
 service openvswitch start
 chkconfig openvswitch on
     
-# echo "Creating the OVS bridge"
-# ovs-vsctl add-br br-eth1 || true
-
-# echo "Adding eth1 to the OVS bridge"
-# ovs-vsctl add-port br-eth1 eth1 || true
-
 CIDR={{ env['MOSLER_EXT_CIDR'] }}
 
 mkdir -p /etc/sysconfig/network-scripts/org
@@ -112,20 +99,8 @@ sed 's/eth1/br-eth1/g' /etc/sysconfig/network-scripts/org/route-eth1 >> /etc/sys
 mv -f /etc/sysconfig/network-scripts/route-br-eth1.tmp /etc/sysconfig/network-scripts/route-br-eth1
 rm -f /etc/sysconfig/network-scripts/route-eth1
 
-echo "Cleaning virbr0"
-service libvirtd stop
-chkconfig libvirtd off
-{ 
-    ip link set dev virbr0-nic down
-    ip link set dev virbr0 down
-    brctl delif virbr0 virbr0-nic
-    ip link del dev virbr0-nic
-    brctl delbr virbr0
-} || true
-
 echo "Restarting network to bring up the bridge used by Openstack"
 service network restart
-
 
 {% if env['DO_CHEAT'] != 'yes' %}
 echo "Correcting the Nova admin tenant id for Neutron"
@@ -141,13 +116,6 @@ done
 sed -i -e "s/nova_admin_tenant_id=.*/nova_admin_tenant_id=${nova_admin_tenant_id}/" /etc/neutron/neutron.conf
 {% endif %}
 
-# echo "Deleting the virtual routers"
-# ip netns | while read ns; do ip netns del $ns; done
-echo "Cleaning the logs"
-rm -f /var/log/neutron/{dhcp-agent,l3-agent,metadata-agent,openvswitch-agent}.log
-rm -f /var/log/neutron/neutron-ns-metadata-proxy-*
-
-
 sleep 10 # On the openstack-controller, services are first closing. Let's sleep
 # Wait for Message Broker. Don't want to loose the messages
 wait_port openstack-controller 5672 300
@@ -161,6 +129,6 @@ echo "Starting Neutron services"
 		    'ovs-cleanup'
 ] -%}
 {% for service in services %}
-service neutron-{{ service }} restart
+service neutron-{{ service }} start
 chkconfig neutron-{{ service }} on
 {% endfor %}

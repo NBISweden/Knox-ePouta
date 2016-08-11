@@ -51,3 +51,13 @@ if [ ! -f /etc/sysconfig/network-scripts/ifdown-ovs.orig ]; then
     sed -i -r "s,ovs-vsctl (.*) del-br,#ovs-vsctl \1 del-br,g" /etc/sysconfig/network-scripts/ifdown-ovs
 fi
 
+# Cleaning virbr0
+service libvirtd stop
+chkconfig libvirtd off
+{ 
+    ip link set dev virbr0-nic down
+    ip link set dev virbr0 down
+    brctl delif virbr0 virbr0-nic
+    ip link del dev virbr0-nic
+    brctl delbr virbr0
+} || true
