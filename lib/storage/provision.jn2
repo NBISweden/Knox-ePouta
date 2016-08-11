@@ -1,8 +1,6 @@
 # -*-sh-*-
 
 echo "Configuring iptables"
-# Remove the line
-sed -i "/^-A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT/ d" /etc/sysconfig/iptables
 # Insert it before the other line
 sed -i "/^-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT/ i \
 -A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT" /etc/sysconfig/iptables
@@ -36,7 +34,7 @@ if ! grep -q rpcbind /etc/hosts.allow ; then
     echo "rpcbind mountd nfsd statd lockd rquotad : ALL@storage" >> /etc/hosts.allow
 fi
 
-chkconfig rpcbind on 
+chkconfig rpcbind on
 service rpcbind restart
 
 chkconfig nfs on 
