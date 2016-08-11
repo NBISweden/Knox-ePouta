@@ -1,0 +1,14 @@
+# -*-sh-*-
+
+# iptables
+sed -i "/^-A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT/ d" /etc/sysconfig/iptables
+service iptables restart
+
+:> /etc/exports
+exportfs -ra
+
+chkconfig rpcbind off
+service rpcbind stop
+
+chkconfig nfs off
+service nfs stop

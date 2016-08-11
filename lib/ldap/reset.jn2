@@ -1,0 +1,22 @@
+# -*-sh-*-
+
+# iptables
+sed -i '/^-A INPUT -m state --state NEW -m tcp -p tcp --dport 389 -j ACCEPT/ d' /etc/sysconfig/iptables
+service iptables restart
+
+sed -i -e 's/^olcRootDN:.*/olcRootDN: cn=Manager,dc=mosler,dc=nbis,dc=se/' '/etc/openldap/slapd.d/cn=config/olcDatabase={2}bdb.ldif'
+sed -i -e 's/^olcSuffix:.*/olcSuffix: dc=mosler,dc=nbis,dc=se/' '/etc/openldap/slapd.d/cn=config/olcDatabase={2}bdb.ldif'
+
+# The password is 'ldap'. Obtained with 'slappasswd -h {SSHA}'
+if grep ^olcRootPW '/etc/openldap/slapd.d/cn=config/olcDatabase={2}bdb.ldif' ; then
+  sed -i -e 's/^olcRootPW:.*/olcRootPW:  {SSHA}M8N2yMz1iRL5SPvZJxmSqQ6Hb8RzlOh8/' '/etc/openldap/slapd.d/cn=config/olcDatabase={2}bdb.ldif'
+else
+  echo 'olcRootPW:  {SSHA}M8N2yMz1iRL5SPvZJxmSqQ6Hb8RzlOh8' >> '/etc/openldap/slapd.d/cn=config/olcDatabase={2}bdb.ldif'
+fi
+
+sed -i -e 's/ by dn.base="cn[^"]"/by dn.base="cn=Manager,dc=mosler,dc=nbis,dc=se"/' '/etc/openldap/slapd.d/cn=config/olcDatabase={2}bdb.ldif'
+
+ldapdelete -x -D "cn=Manager,dc=mosler,dc=nbis,dc=se" -w ldap -r "dc=mosler,dc=nbis,dc=se" || true
+
+service slapd stop
+chkconfig slapd off

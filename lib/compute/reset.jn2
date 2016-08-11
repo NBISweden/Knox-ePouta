@@ -1,0 +1,28 @@
+# -*-sh-*-
+
+# iptables
+sed -i "/^-A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT/ d" /etc/sysconfig/iptables
+service iptables restart
+
+# OpenVSwitch
+ovs-vsctl del-br br-int || true
+service openvswitch stop
+chkconfig openvswitch off
+
+# Clear log files
+rm -f /var/log/nova/compute.log
+rm -f /var/log/neutron/openvswitch-agent.log
+
+# Deleting VMs in Libvirt
+virsh list --all | awk '{ if ($0 !~ " Id " && $0 !~ "^-----" && $0 != "") print $1" "$2}' | while read domain name; do virsh destroy $domain || virsh undefine $name; done
+service libvirtd stop
+chkconfig libvirtd off
+service messagebus stop
+chkconfig messagebus off
+
+# Nova and Neutron agents
+service openstack-nova-compute stop
+chkconfig openstack-nova-compute off
+
+service neutron-openvswitch-agent stop
+chkconfig neutron-openvswitch-agent off

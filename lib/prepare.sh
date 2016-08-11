@@ -164,8 +164,8 @@ if [ -n $PACKAGES ]; then
     FLOATING_IP=$(nova floating-ip-create public | awk '/ public / {print $4}')
     nova floating-ip-associate "${VM_NAME}" ${FLOATING_IP}
     # Configuring the repo for Openstack
-    rsync -avL -e "ssh -l centos -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" lib/_openstack-common/rdo-release.repo ${FLOATING_IP}:.
-    rsync -avL -e "ssh -l centos -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" lib/_openstack-common/RPM-GPG-KEY-Icehouse-SIG ${FLOATING_IP}:.
+    rsync -avL -e "ssh -l centos -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" lib/controller/files/rdo-release.repo ${FLOATING_IP}:.
+    rsync -avL -e "ssh -l centos -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" lib/controller/files/RPM-GPG-KEY-Icehouse-SIG ${FLOATING_IP}:.
     ssh -l centos -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${FLOATING_IP} 'sudo bash -x -e' &>${MM_TMP}/prepare.log <<EOF
 rsync /home/centos/rdo-release.repo /etc/yum.repos.d/rdo-release.repo
 rsync /home/centos/RPM-GPG-KEY-Icehouse-SIG /etc/pki/rpm-gpg/RPM-GPG-KEY-Icehouse-SIG

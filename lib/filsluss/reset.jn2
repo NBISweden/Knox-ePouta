@@ -1,0 +1,17 @@
+# -*-sh-*-
+
+rm -f /etc/cron.d/getusers
+
+NFS_LOCATION=/meles/import
+
+mkdir -p $NFS_LOCATION
+
+if mount | grep -q $NFS_LOCATION ;then
+    service crond stop
+    sleep 20
+    umount $NFS_LOCATION
+    service crond start
+fi
+
+sed -i '/storage:.*${NFS_LOCATION//\//\\\/}/ d' /etc/fstab
+

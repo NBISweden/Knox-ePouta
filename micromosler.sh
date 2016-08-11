@@ -7,6 +7,7 @@ function usage {
     echo -e "\tconnect      \tConnects via ssh into the VMs"
     echo -e "\tinit         \tInitializes the VMs"
     echo -e "\tprovision    \tConfigures the infracstructure"
+    echo -e "\treset        \tRestores to the VMs to some original status"
     echo -e "\tsync         \tCopies relevant files to the VMs"
 
     echo -e "\nSupply --help (or -h) to see the options for each command"
@@ -25,7 +26,7 @@ function usage {
 }
 
 case "$1" in
-    init|clean|sync|provision|prepare|ping|snapshot|boot)
+    init|clean|sync|provision|prepare|ping|snapshot|boot|reset)
 	_CMD=$1
 	shift # Remove the command name from $@
 	export MM_CMD="$0 ${_CMD}"

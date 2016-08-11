@@ -1,0 +1,24 @@
+# -*-sh-*-
+
+# iptables
+sed -i "/^-A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT/ d" /etc/sysconfig/iptables
+service iptables restart
+
+##############################################################
+# Mount the nfs share as /meles
+NFS_LOCATION=/meles
+mkdir -p $NFS_LOCATION
+
+if mount | grep -q $NFS_LOCATION ;then
+    service crond stop
+    sleep 20
+    umount $NFS_LOCATION
+    service crond start
+fi
+sed -i '/storage:.*${NFS_LOCATION//\//\\\/}/ d' /etc/fstab
+
+rm -f /usr/local/heat/mosler-template-parameters
+
+##############################################################
+# Cron
+rm -f /etc/cron.d/filsluss /etc/cron.d/queue /etc/cron.d/project_mapping /etc/cron.d/userdata

@@ -1,0 +1,3 @@
+# -*-sh-*-
+
+rm -f /etc/cron.d/tl-statistics-cron /etc/cron.d/vsmconfigurator
