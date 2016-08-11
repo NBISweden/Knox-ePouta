@@ -14,6 +14,8 @@ do
 done
 
 # OpenVSwitch
+ovs-vsctl del-br br-eth1 || true
+ovs-vsctl del-br br-int || true
 service openvswitch stop
 chkconfig openvswitch off
 
@@ -28,13 +30,6 @@ ip rule del to {{ env['MOSLER_EXT_CIDR'] }} lookup ext || true
 
 service network restart
 
-# Cleaning old namespaces
-ip netns | while read ns; do ip netns del $ns; done
-
-# Cleaning the logs
-rm -f /var/log/neutron/{dhcp-agent,l3-agent,metadata-agent,openvswitch-agent}.log
-rm -f /var/log/neutron/neutron-ns-metadata-proxy-*
-
 # Starting Neutron services
 {% set services = [ 'dhcp-agent',
 		    'l3-agent',
@@ -48,3 +43,10 @@ if service neutron-{{ service }} status; then
     service neutron-{{ service }} stop
 fi
 {% endfor %}
+
+# Cleaning the logs
+rm -f /var/log/neutron/{dhcp-agent,l3-agent,metadata-agent,openvswitch-agent}.log
+rm -f /var/log/neutron/neutron-ns-metadata-proxy-*
+
+# Cleaning old namespaces
+ip netns | while read ns; do ip netns del $ns; done
