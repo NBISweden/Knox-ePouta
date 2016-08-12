@@ -109,17 +109,3 @@ chkconfig libvirtd on
 chkconfig messagebus on
 chkconfig openstack-nova-compute on
 chkconfig neutron-openvswitch-agent on
-
-
-
-br-eth1 1a:2e:49:63:b8:48
-eth1 fa:16:3e:58:ab:ef
-
-
-curr_br-eth1: f2:a4:12:e9:70:48
-curr_eth1: fa:16:3e:4f:d8:82
-
-ip link set dev eth1 down
-ip link set dev eth1 address f2:a4:12:e9:70:48
-ovs-vsctl --may-exist add-br br-eth1 -- set bridge br-eth1 other-config:hwaddr=fa:16:3e:4f:d8:82
-ip link set dev eth1 up
