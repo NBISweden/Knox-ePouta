@@ -361,11 +361,6 @@ echo -n "Handling external network ${MOSLER_EXT_CIDR} within Openstack"
   echo -e $'\e[32m\xE2\x9C\x93\e[0m'    # ok (checkmark)
 ) || echo -e $'\e[31m\xE2\x9C\x97\e[0m' # fail (cross)
 
-# Adding an opt in the DHCP for the controller, to fix the static route: EXTERNAL_NET via NEUTRON_NODE
-# neutron port-update \
-# --extra-dhcp-opt opt_name=classless-static-route,opt_value=${MOSLER_EXT_CIDR},${MACHINE_IPs[networking-node]},ip_version=4 \
-# $(neutron port-list | awk "/${DATA_IPs[openstack-controller]}/ {print \$2}")
-
 
 ########################################################################
 exec 1>${ORG_FD1}
