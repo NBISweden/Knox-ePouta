@@ -358,8 +358,8 @@ echo -n "Handling external network ${MOSLER_EXT_CIDR} within Openstack"
   [ ! -z "${NEUTRON_ETH0}" ] && neutron port-update ${NEUTRON_ETH0} --allowed-address-pairs type=dict list=true ip_address=${MOSLER_EXT_CIDR} >/dev/null
   # NEUTRON_ETH1=$(neutron port-list | awk "/${DATA_IPs[networking-node]}/ {print \$2}")
   # [ ! -z "${NEUTRON_ETH1}" ] && neutron port-update ${NEUTRON_ETH1} --allowed-address-pairs type=dict list=true ip_address=${MOSLER_EXT_CIDR} >/dev/null
-  echo -e $'\e[32m\xE2\x9C\x93\e[0m'    # ok (checkmark)
-) || echo -e $'\e[31m\xE2\x9C\x97\e[0m' # fail (cross)
+  echo -e $' \e[32m\xE2\x9C\x93\e[0m'    # ok (checkmark)
+) || echo -e $' \e[31m\xE2\x9C\x97\e[0m' # fail (cross)
 
 
 ########################################################################
