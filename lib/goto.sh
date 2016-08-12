@@ -14,7 +14,7 @@ while [ $# -gt 0 ]; do
 	controller) host='openstack-controller';;
 	thinlinc) host='thinlinc-master';;
 	hnas|nfs) host='storage';;
-	neutron) host='networking-node';;
+	neutron|network) host='networking-node';;
         --) shift; break;;
         *) host=$1;;
     esac
