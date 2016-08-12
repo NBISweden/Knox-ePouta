@@ -2,7 +2,7 @@
 
 echo "Configuring iptables"
 # Insert it before the other line
-sed -i "/^-A INPUT -m state --state NEW .*/ i \
+sed -i "/^-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT/ i \
 -A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT" /etc/sysconfig/iptables
 service iptables restart
     
@@ -23,12 +23,12 @@ sed -i -e '/{{ regexp }}/ d' /etc/sysctl.conf
 echo '{{ line }}' >> /etc/sysctl.conf
 {% endfor %}
 
-# Activating kernel configurations (or use -e too)
-sysctl -p
-
 echo "Starting OpenVSwitch"
 service openvswitch start
 chkconfig openvswitch on
+
+# Activating kernel configurations (or use -e too)
+sysctl -e -p
 
 mkdir -p /etc/sysconfig/network-scripts/org
 [ ! -e /etc/sysconfig/network-scripts/org/ifcfg-eth1 ] && cp /etc/sysconfig/network-scripts/ifcfg-eth1 /etc/sysconfig/network-scripts/org/ifcfg-eth1
@@ -109,3 +109,17 @@ chkconfig libvirtd on
 chkconfig messagebus on
 chkconfig openstack-nova-compute on
 chkconfig neutron-openvswitch-agent on
+
+
+
+br-eth1 1a:2e:49:63:b8:48
+eth1 fa:16:3e:58:ab:ef
+
+
+curr_br-eth1: f2:a4:12:e9:70:48
+curr_eth1: fa:16:3e:4f:d8:82
+
+ip link set dev eth1 down
+ip link set dev eth1 address f2:a4:12:e9:70:48
+ovs-vsctl --may-exist add-br br-eth1 -- set bridge br-eth1 other-config:hwaddr=fa:16:3e:4f:d8:82
+ip link set dev eth1 up

@@ -19,25 +19,24 @@ echo "System config"
 	('^\s*net.ipv4.conf.default.rp_filter\s*=.*$',     'net.ipv4.conf.default.rp_filter=0'     ),
 	('^\s*net.ipv4.conf.eth0.rp_filter\s*=.*$',        'net.ipv4.conf.eth0.rp_filter=0'        ),
 	('^\s*net.ipv4.conf.eth1.rp_filter\s*=.*$',        'net.ipv4.conf.eth1.rp_filter=0'        ),
-	('^\s*net.ipv4.conf.br-eth1.rp_filter\s*=.*$',     'net.ipv4.conf.br-eth1.rp_filter=0'     ),
 	('^\s*net.bridge.bridge-nf-call-arptables\s*=.*$', 'net.bridge.bridge-nf-call-arptables=0' ),
 	('^\s*net.bridge.bridge-nf-call-iptables\s*=.*$',  'net.bridge.bridge-nf-call-iptables=0'  ),
 	('^\s*net.bridge.bridge-nf-call-ip6tables\s*=.*$', 'net.bridge.bridge-nf-call-ip6tables=0' ),
 	('^\s*net.ipv6.conf.all.disable_ipv6\s*=.*$',      'net.ipv6.conf.all.disable_ipv6=1'      ),
 	('^\s*net.ipv6.conf.default.disable_ipv6\s*=.*$',  'net.ipv6.conf.default.disable_ipv6=1'  ),
-	('^\s*net.ipv4.conf.br-eth1.proxy_arp\s*=.*$',     'net.ipv4.conf.br-eth1.proxy_arp=1'     )
+	('^\s*net.ipv4.conf.br-eth1.proxy_arp\s*=.*$',     'net.ipv4.conf.br-eth1.proxy_arp=0'     )
 ] -%}
 {% for regexp, line in lines %}
 sed -i -e '/{{ regexp }}/ d' /etc/sysctl.conf
 echo '{{ line }}' >> /etc/sysctl.conf
 {% endfor %}
 
-# Activating kernel configurations (or use -e too)
-sysctl -e -p
-
 echo "Starting OpenVSwitch"
 service openvswitch start
 chkconfig openvswitch on
+
+# Activating kernel configurations (or use -e too)
+sysctl -e -p
     
 CIDR={{ env['MOSLER_EXT_CIDR'] }}
 
