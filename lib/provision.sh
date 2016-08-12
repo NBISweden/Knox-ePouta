@@ -165,15 +165,15 @@ if (( FAIL > 0 )); then
     oups "\a\n${FAIL} servers failed to be configured"
 else
     ########################################################################
-    echo "Updating data ports to allow external network ${MOSLER_EXT_CIDR}"
-    echo "(Adding the mac address of the bridges"
+    echo "\nUpdating data ports to allow external network ${MOSLER_EXT_CIDR}"
+    echo "(Adding the mac address of the bridges)"
     for machine in ${MACHINES[@]}
     do
 	if [ ! -z "${DATA_IPs[$machine]}" ] && [ "$machine" != "storage" ]; then
 	    echo -en "\ton $machine: "
 	    ( set -e # new shell, new env, exit if it errors on the way
 	      PORT_ID=$(neutron port-list | awk "/$DATA_SUBNET/ && /${DATA_IPs[$machine]}/ {print \$2}")
-	      MAC_ADDR=$(ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} '/sbin/ip link show dev eth1' | awk '/ether/ {print $2}')
+	      MAC_ADDR=$(ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} '/sbin/ip link show dev br-eth1' | awk '/ether/ {print $2}')
 	      [ $? -eq 0 ] && [ ! -z "${PORT_ID}" ] && neutron port-update ${PORT_ID} --allowed-address-pairs type=dict list=true ip_address=${DATA_CIDR},mac_address=${MAC_ADDR} >/dev/null
 	      echo -e $'\e[32m\xE2\x9C\x93\e[0m'    # ok (checkmark)
 	    ) || echo -e $'\e[31m\xE2\x9C\x97\e[0m' # fail (cross)
