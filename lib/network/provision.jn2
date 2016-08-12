@@ -1,6 +1,8 @@
 # -*-sh-*-
 
 echo "Configuring iptables"
+sed -i "/^-A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT/ d" /etc/sysconfig/iptables
+sed -i "/^-A INPUT -m state --state NEW -s {{ env['MOSLER_EXT_CIDR']|replace('/','\/') }} -j ACCEPT/ d" /etc/sysconfig/iptables
 # Insert it before the other line
 sed -i "/^-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT/ i \
 -A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT" /etc/sysconfig/iptables
@@ -32,7 +34,7 @@ echo '{{ line }}' >> /etc/sysctl.conf
 {% endfor %}
 
 echo "Starting OpenVSwitch"
-service openvswitch start
+service openvswitch restart
 chkconfig openvswitch on
 
 # Activating kernel configurations (or use -e too)
@@ -128,6 +130,6 @@ echo "Starting Neutron services"
 		    'ovs-cleanup'
 ] -%}
 {% for service in services %}
-service neutron-{{ service }} start
+service neutron-{{ service }} restart
 chkconfig neutron-{{ service }} on
 {% endfor %}

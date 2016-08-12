@@ -1,6 +1,10 @@
 # -*-sh-*-
 
 echo "Cleaning virbr0"
+if service libvirtd status; then
+    virsh net-destroy default
+    virsh net-undefine default
+fi
 service libvirtd stop
 chkconfig libvirtd off
 { 
@@ -66,7 +70,6 @@ sed -i "/^-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT/ i \
 -A INPUT -m state --state NEW -s {{ env['MOSLER_EXT_CIDR']|replace('/','\/') }} -j ACCEPT" /etc/sysconfig/iptables
 
 service iptables restart
-
 
 #############################################################
 echo "Routing Mosler's external network"

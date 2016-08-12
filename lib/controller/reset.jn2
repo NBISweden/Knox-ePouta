@@ -1,6 +1,8 @@
 # -*-sh-*-
 
 # Cleaning virbr0
+virsh net-destroy default || true
+virsh net-undefine default || true
 service libvirtd stop
 chkconfig libvirtd off
 { 

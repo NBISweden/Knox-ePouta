@@ -1,6 +1,7 @@
 # -*-sh-*-
 
 echo "Configuring iptables"
+sed -i "/^-A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT/ d" /etc/sysconfig/iptables
 # Insert it before the other line
 sed -i "/^-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT/ i \
 -A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT" /etc/sysconfig/iptables
@@ -24,7 +25,7 @@ echo '{{ line }}' >> /etc/sysctl.conf
 {% endfor %}
 
 echo "Starting OpenVSwitch"
-service openvswitch start
+service openvswitch restart
 chkconfig openvswitch on
 
 # Activating kernel configurations (or use -e too)
@@ -32,6 +33,9 @@ sysctl -e -p
 
 echo "Creating the OVS bridge"
 ovs-vsctl add-br br-int || true
+
+virsh net-destroy default || true
+virsh net-undefine default || true
 
 {% if env['DO_CHEAT'] != 'yes' %}
 echo "Correcting the Nova admin tenant id for Neutron"
@@ -48,8 +52,8 @@ sed -i -e "s/nova_admin_tenant_id=.*/nova_admin_tenant_id=${nova_admin_tenant_id
 {% endif %}
 
 echo "Starting Libvirt"
-service libvirtd start
-service messagebus start
+service libvirtd restart
+service messagebus restart
 
 sleep 10 # On the openstack-controller, services are first closing. Let's sleep
 # Wait for Message Broker. Don't want to loose the messages
@@ -57,8 +61,8 @@ wait_port openstack-controller 5672 300
 wait_port openstack-controller 9696 300
 
 echo "Starting Nova and Neutron agents"
-service openstack-nova-compute start
-service neutron-openvswitch-agent start
+service openstack-nova-compute restart
+service neutron-openvswitch-agent restart
 
 chkconfig libvirtd on
 chkconfig messagebus on

@@ -165,7 +165,7 @@ if (( FAIL > 0 )); then
     oups "\a\n${FAIL} servers failed to be configured"
 else
     ########################################################################
-    echo -ne "(Adding the mac address of the external bridge from the Neutron node)"
+    echo -ne "\nAdding the mac address of the external bridge from the Neutron node"
     TENANT_ID=$(openstack project list | awk "/${OS_TENANT_NAME}/ {print \$2}")
     DATA_SUBNET=$(neutron subnet-list --tenant_id=${TENANT_ID} | awk "/ ${OS_TENANT_NAME}-data-subnet /{print \$2}")
     ( set -e # new shell, new env, exit if it errors on the way
