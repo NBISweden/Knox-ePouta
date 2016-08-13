@@ -10,6 +10,12 @@ MSG[4]=$'\xF0\x9F\x91\x8D'            # success (thumb up)
 # Used in the print_progress so that we show the filtered ones too
 ALL_MACHINES=("${MACHINES[@]}")
 
+mkdir -p ${MM_TMP}/locks
+
+TASK=$1
+[ -z $TASK ] && echo "Task not set" && exit 1
+export TASK
+
 function thumb_up {
     [ -n "$1" ] && echo -ne "$1 "
     echo -e ${MSG[4]}
@@ -22,22 +28,22 @@ function oups {
 function print_progress {
     ( flock -x 200 # lock exclusively fd 200. Unlock is automatic
       printf "\e[2K\r|" # clear line and go back to the beginning
-      for machine in ${ALL_MACHINES[@]}; do printf " %s %3b |" $machine ${MSG[$(<${MM_TMP}/$machine/progress)]}; done
-    ) 200>${MM_TMP}/progress_lock
+      for machine in ${ALL_MACHINES[@]}; do printf " %s %3b |" $machine ${MSG[$(<${MM_TMP}/$machine/$TASK/progress)]}; done
+    ) 200>${MM_TMP}/locks/$TASK
 }
 
 function reset_progress { # Initialization
-    for machine in ${MACHINES[@]}; do echo -n 0 > ${MM_TMP}/$machine/progress; done
+    for machine in ${MACHINES[@]}; do echo -n 0 > ${MM_TMP}/$machine/$TASK/progress; done
 }
 function report_ok { # Not testing if $1 exists. It will!
-    echo -n 1 > ${MM_TMP}/$1/progress
+    echo -n 1 > ${MM_TMP}/$1/$TASK/progress
 }
 function report_fail {
-    echo -n 2 > ${MM_TMP}/$1/progress
+    echo -n 2 > ${MM_TMP}/$1/$TASK/progress
     #curl -X POST ${NOTIFICATION_URL}/fail/$1 &>/dev/null
 }
 function filter_out {
-    echo -n 3 > ${MM_TMP}/${MACHINES[$1]}/progress
+    echo -n 3 > ${MM_TMP}/${MACHINES[$1]}/$TASK/progress
     unset MACHINES[$1]
 }
 function filter_out_machine {

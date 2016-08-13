@@ -70,7 +70,7 @@ for machine in ${MACHINES[@]}; do mkdir -p ${MM_TMP}/$machine/provision; done
 #######################################################################
 export TL_HOME MOSLER_IMAGES
 export LIB=${MM_HOME}/lib
-source $LIB/utils.sh
+source $LIB/utils.sh provision
 
 #######################################################################
 source $LIB/ssh_connections.sh
