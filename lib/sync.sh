@@ -61,13 +61,9 @@ if [ -n ${CUSTOM_MACHINES:-''} ]; then
 fi
 
 #######################################################################
-# Prepare the tmp folders
-for machine in ${MACHINES[@]}; do mkdir -p ${MM_TMP}/$machine/sync; done
-
-#######################################################################
 export TL_HOME MOSLER_IMAGES
 export LIB=${MM_HOME}/lib
-source $LIB/utils.sh sync
+source $LIB/utils.sh
 
 #######################################################################
 source $LIB/ssh_connections.sh

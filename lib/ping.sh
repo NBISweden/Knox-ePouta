@@ -53,5 +53,5 @@ fi
 
 #######################################################################
 export LIB=${MM_HOME}/lib
-source $LIB/utils.sh ping
+source $LIB/utils.sh
 source $LIB/ssh_connections.sh

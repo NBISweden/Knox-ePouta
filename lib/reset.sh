@@ -57,12 +57,8 @@ if [ -n ${CUSTOM_MACHINES:-''} ]; then
 fi
 
 #######################################################################
-# Prepare the tmp folders
-for machine in ${MACHINES[@]}; do mkdir -p ${MM_TMP}/$machine/reset; done
-
-#######################################################################
 export LIB=${MM_HOME}/lib
-source $LIB/utils.sh reset
+source $LIB/utils.sh
 
 #######################################################################
 source $LIB/ssh_connections.sh

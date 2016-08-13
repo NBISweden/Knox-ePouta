@@ -1,4 +1,8 @@
 ########################################################################
+# Checking the global task
+[ -z $TASK ] && echo "Task not set: Aborting..." && exit 1
+
+########################################################################
 declare -a MSG
 MSG[0]=$'\e[34m\xE2\x80\xA6\e[0m'     # ... (ellipsis)
 MSG[1]=$'\e[32m\xE2\x9C\x93\e[0m'     # ok (checkmark)
@@ -10,11 +14,10 @@ MSG[4]=$'\xF0\x9F\x91\x8D'            # success (thumb up)
 # Used in the print_progress so that we show the filtered ones too
 ALL_MACHINES=("${MACHINES[@]}")
 
+# Prepare the tmp folders
+for machine in ${MACHINES[@]}; do mkdir -p ${MM_TMP}/$machine/$TASK; done
 mkdir -p ${MM_TMP}/locks
 
-TASK=$1
-[ -z $TASK ] && echo "Task not set" && exit 1
-export TASK
 
 function thumb_up {
     [ -n "$1" ] && echo -ne "$1 "
