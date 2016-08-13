@@ -4,8 +4,8 @@
 # Checking if machines are available
 # Filtering them out otherwise
 #######################################################################
-SSH_CONFIG=${MM_TMP}/ssh_config.${OS_TENANT_NAME}
-SSH_KNOWN_HOSTS=${MM_TMP}/ssh_known_hosts.${OS_TENANT_NAME}
+SSH_CONFIG=${MM_TMP}/ssh_config
+SSH_KNOWN_HOSTS=${MM_TMP}/ssh_known_hosts
 
 echo -e "Checking the connections:"
 reset_progress

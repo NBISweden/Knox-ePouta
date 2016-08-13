@@ -25,7 +25,7 @@ done
 
 [ -z "${FLOATING_IPs[$host]}" ] && echo "Unknown machine: $host" && exit 1
 
-[ -f ${MM_TMP}/ssh_config.${OS_TENANT_NAME} ] && CONF="-F ${MM_TMP}/ssh_config.${OS_TENANT_NAME}"
+[ -f ${MM_TMP}/ssh_config ] && CONF="-F ${MM_TMP}/ssh_config"
 
 echo "Connecting to $host [${FLOATING_IPs[$host]}]"
 ssh $@ -t $CONF ${FLOATING_IPs[$host]} 'sudo bash'

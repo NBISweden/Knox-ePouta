@@ -141,21 +141,21 @@ for job in ${JOB_PIDS[@]}; do wait ${job} || ((FAIL++)); print_progress; done
 if [ $WITH_KEY = yes ]; then
     echo -e "\nHandling supernode access to other machines"
     # If one of the two does not exit, recreate them the key pair.
-    if [ ! -e ${MM_TMP}/ssh_key.${OS_TENANT_NAME} ] || [ -e ${MM_TMP}/ssh_key.${OS_TENANT_NAME}.pub ]; then
-	rm -f ${MM_TMP}/ssh_key.${OS_TENANT_NAME} ${MM_TMP}/ssh_key.${OS_TENANT_NAME}.pub
-	ssh-keygen -q -t rsa -N "" -f ${MM_TMP}/ssh_key.${OS_TENANT_NAME} -C supernode
+    if [ ! -e ${MM_TMP}/ssh_key ] || [ -e ${MM_TMP}/ssh_key.pub ]; then
+	rm -f ${MM_TMP}/ssh_key ${MM_TMP}/ssh_key.pub
+	ssh-keygen -q -t rsa -N "" -f ${MM_TMP}/ssh_key -C supernode
     fi
-    cat > ${MM_TMP}/ssh_key.${OS_TENANT_NAME}.config <<EOF
+    cat > ${MM_TMP}/ssh_key.config <<EOF
 Host ${MACHINES[@]// /,} tos1
         User root
         StrictHostKeyChecking no
         UserKnownHostsFile /dev/null
 EOF
-    scp -q -F ${SSH_CONFIG} ${MM_TMP}/ssh_key.${OS_TENANT_NAME}* ${FLOATING_IPs[supernode]}:${VAULT}/.
+    scp -q -F ${SSH_CONFIG} ${MM_TMP}/ssh_key* ${FLOATING_IPs[supernode]}:${VAULT}/.
     ssh -F ${SSH_CONFIG} ${FLOATING_IPs[supernode]} 'sudo bash -e -x 2>&1' <<EOF &>/dev/null
-mv ${VAULT}/ssh_key.${OS_TENANT_NAME} /root/.ssh/id_rsa
-mv ${VAULT}/ssh_key.${OS_TENANT_NAME}.pub /root/.ssh/id_rsa.pub
-mv ${VAULT}/ssh_key.${OS_TENANT_NAME}.config /root/.ssh/config
+mv ${VAULT}/ssh_key /root/.ssh/id_rsa
+mv ${VAULT}/ssh_key.pub /root/.ssh/id_rsa.pub
+mv ${VAULT}/ssh_key.config /root/.ssh/config
 chown root:root /root/.ssh/config /root/.ssh/id_rsa /root/.ssh/id_rsa.pub
 chmod 600 /root/.ssh/id_rsa /root/.ssh/config
 chmod 644 /root/.ssh/id_rsa.pub
@@ -163,7 +163,7 @@ EOF
     for machine in ${MACHINES[@]}
     do
 	[ "$machine" == "supernode" ] && continue
-	scp -q -F ${SSH_CONFIG} ${MM_TMP}/ssh_key.${OS_TENANT_NAME}.pub ${FLOATING_IPs[$machine]}:${VAULT}/id_rsa.pub
+	scp -q -F ${SSH_CONFIG} ${MM_TMP}/ssh_key.pub ${FLOATING_IPs[$machine]}:${VAULT}/id_rsa.pub
 	ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x 2>&1' <<EOF &>/dev/null
 sudo sed -i -e '/supernode/d' /root/.ssh/authorized_keys
 cat ${VAULT}/id_rsa.pub >> /root/.ssh/authorized_keys

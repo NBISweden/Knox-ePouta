@@ -36,7 +36,7 @@ export VERBOSE=yes
 [ -n "$TL_HOME" ]       || readonly TL_HOME=/home/jonas/thinlinc
 [ -n "$MOSLER_IMAGES" ] || readonly MOSLER_IMAGES=/home/jonas/mosler-images
 
-[ -n "$MM_TMP" ]      || readonly MM_TMP=${MM_HOME}/tmp
+[ -n "$MM_TMP" ]      || readonly MM_TMP=${MM_HOME}/tmp/${OS_TENANT_NAME}
 mkdir -p ${MM_TMP}
 export MM_TMP
 

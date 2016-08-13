@@ -16,8 +16,6 @@ ALL_MACHINES=("${MACHINES[@]}")
 
 # Prepare the tmp folders
 for machine in ${MACHINES[@]}; do mkdir -p ${MM_TMP}/$machine/$TASK; done
-mkdir -p ${MM_TMP}/locks
-
 
 function thumb_up {
     [ -n "$1" ] && echo -ne "$1 "
@@ -32,7 +30,7 @@ function print_progress {
     ( flock -x 200 # lock exclusively fd 200. Unlock is automatic
       printf "\e[2K\r|" # clear line and go back to the beginning
       for machine in ${ALL_MACHINES[@]}; do printf " %s %3b |" $machine ${MSG[$(<${MM_TMP}/$machine/$TASK/progress)]}; done
-    ) 200>${MM_TMP}/locks/$TASK
+    ) 200>${MM_TMP}/lock.$TASK
 }
 
 function reset_progress { # Initialization
