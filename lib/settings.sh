@@ -40,6 +40,11 @@ export VERBOSE=yes
 mkdir -p ${MM_TMP}
 export MM_TMP
 
+echo "###################################"
+echo "####   Home: $MM_HOME"
+echo "####    TMP: $MM_TMP"
+echo "###################################"
+
 #################################################################
 # Adding the public ssh keys here, so that we don't change init.sh
 # All configurable settings should be here
