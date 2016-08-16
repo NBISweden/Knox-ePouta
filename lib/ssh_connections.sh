@@ -20,7 +20,6 @@ Host ${FLOATING_CIDR%0/24}*
 	ForwardAgent yes
 	GSSAPIAuthentication no
 	GSSAPIDelegateCredentials yes
-	RequestTTY force
 #	UseDNS no
 ENDSSHCFG
 
