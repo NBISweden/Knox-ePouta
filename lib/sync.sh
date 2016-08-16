@@ -61,7 +61,6 @@ if [ -n ${CUSTOM_MACHINES:-''} ]; then
 fi
 
 #######################################################################
-export TL_HOME MOSLER_IMAGES
 export LIB=${MM_HOME}/lib
 source $LIB/utils.sh
 
@@ -83,6 +82,8 @@ function cleanup {
 trap 'cleanup' INT TERM #EXIT #HUP ERR
 # Or just kill the parent. That should kill the processes in that process group
 # trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
+
+#export TL_HOME MOSLER_IMAGES
 
 echo "Syncing servers"
 FAIL=0
@@ -106,15 +107,15 @@ do
 	    [ -d ${FOLDER}/files ] &&
 		rsync -av -e "ssh -F ${SSH_CONFIG}" ${FOLDER}/files/ ${FLOATING_IPs[$machine]}:${VAULT}/.
 	    
-	    [ "$machine" == "thinlinc-master" ] && [ -d $TL_HOME ] &&
-		rsync -av -e "ssh -F ${SSH_CONFIG}" $TL_HOME/ ${FLOATING_IPs[$machine]}:${VAULT}/.
+	    # [ "$machine" == "thinlinc-master" ] && [ -d $TL_HOME ] &&
+	    # 	rsync -av -e "ssh -F ${SSH_CONFIG}" $TL_HOME/ ${FLOATING_IPs[$machine]}:${VAULT}/.
 	    
-	    if [ "$machine" == "openstack-controller" ]; then
-		for img in project-computenode-stable project-loginnode-stable topolino-q-stable; do
-		    [ -f ${MOSLER_IMAGES}/$img ] &&
-			rsync -av --no-perms -e "ssh -F ${SSH_CONFIG}" ${MOSLER_IMAGES}/$img ${FLOATING_IPs[openstack-controller]}:${VAULT}/.
-		done
-	    fi
+	    # if [ "$machine" == "openstack-controller" ]; then
+	    # 	for img in project-computenode-stable project-loginnode-stable topolino-q-stable; do
+	    # 	    [ -f ${MOSLER_IMAGES}/$img ] &&
+	    # 		rsync -av --no-perms -e "ssh -F ${SSH_CONFIG}" ${MOSLER_IMAGES}/$img ${FLOATING_IPs[openstack-controller]}:${VAULT}/.
+	    # 	done
+	    # fi
 	    
 	    # Phase 2: running some commands
 	    _SCRIPT=${MM_TMP}/$machine/sync/run.sh

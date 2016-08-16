@@ -5,7 +5,6 @@ source $(dirname ${BASH_SOURCE[0]})/settings.sh
 
 export VAULT=vault
 CONNECTION_TIMEOUT=1 #seconds
-export DO_CHEAT=no
 
 function usage {
     echo "Usage: ${MM_CMD:-$0} [options]"
@@ -18,7 +17,6 @@ function usage {
     echo -e "\t                       \tDefaults to '${VAULT}'"
     echo -e "\t--timeout <seconds>,"
     echo -e "\t       -t <seconds>    \tMaximal waiting time for each server connection"
-    echo -e "\t--cheat                \tUses tricks to provision machines faster (like mysql pre-dumps)"
     echo -e "\t--quiet,-q             \tRemoves the verbose output"
     echo -e "\t--help,-h              \tOutputs this message and exits"
     echo -e "\t-- ...                 \tAny other options appearing after the -- will be ignored"
@@ -30,7 +28,6 @@ while [ $# -gt 0 ]; do
         --quiet|-q) VERBOSE=no;;
         --help|-h) usage; exit 0;;
         --machines|-m) CUSTOM_MACHINES=$2; shift;;
-        --cheat) DO_CHEAT=yes;;
         --vault) VAULT=$2; shift;;
         --timeout|-t) CONNECTION_TIMEOUT=$2; shift;;
         --) shift; break;;
@@ -64,7 +61,6 @@ if [ -n ${CUSTOM_MACHINES:-''} ]; then
 fi
 
 #######################################################################
-export TL_HOME MOSLER_IMAGES
 export LIB=${MM_HOME}/lib
 source $LIB/utils.sh
 
@@ -95,9 +91,6 @@ echo -e "Configuring servers:"
 FAIL=0
 reset_progress
 print_progress
-export DB_SERVER=${MACHINE_IPs[openstack-controller]} # Used in the templates
-export NEUTRON_SERVER=${MACHINE_IPs[networking-node]} # 
-export CONTROLLER=${MACHINE_IPs[openstack-controller]}
 #export NFS_SERVER=${MACHINE_IPs[storage]}
 
 # set -e # exit in errors
@@ -160,17 +153,6 @@ print_progress # to have a clear picture
 if (( FAIL > 0 )); then
     oups "\a\n${FAIL} servers failed to be configured"
 else
-    ########################################################################
-    echo -ne "\nAdding the mac address of the external bridge from the Neutron node"
-    TENANT_ID=$(openstack project list | awk "/${OS_TENANT_NAME}/ {print \$2}")
-    DATA_SUBNET=$(neutron subnet-list --tenant_id=${TENANT_ID} | awk "/ ${OS_TENANT_NAME}-data-subnet /{print \$2}")
-    ( set -e # new shell, new env, exit if it errors on the way
-      PORT_ID=$(neutron port-list | awk "/$DATA_SUBNET/ && /${DATA_IPs[networking-node]}/ {print \$2}")
-      MAC_ADDR=$(ssh -F ${SSH_CONFIG} ${FLOATING_IPs[networking-node]} '/sbin/ip link show dev br-eth1' | awk '/ether/ {print $2}')
-      [ $? -eq 0 ] && [ ! -z "${PORT_ID}" ] && neutron port-update ${PORT_ID} --allowed-address-pairs type=dict list=true ip_address=${DATA_CIDR},mac_address=${MAC_ADDR} >/dev/null
-      echo -e $' \e[32m\xE2\x9C\x93\e[0m'    # ok (checkmark)
-    ) || echo -e $' \e[31m\xE2\x9C\x97\e[0m' # fail (cross)
-
     # Finally...
     thumb_up "Servers configured"
 fi

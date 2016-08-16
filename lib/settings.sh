@@ -33,8 +33,7 @@ export VERBOSE=yes
 # Note: Can source this file several times
 
 [ -n "$MM_HOME" ]       || readonly MM_HOME=$ABOVE
-[ -n "$TL_HOME" ]       || readonly TL_HOME=/home/jonas/thinlinc
-[ -n "$MOSLER_IMAGES" ] || readonly MOSLER_IMAGES=/home/jonas/mosler-images
+#[ -n "$TL_HOME" ]       || readonly TL_HOME=/home/jonas/thinlinc
 
 [ -n "$MM_TMP" ]      || readonly MM_TMP=${MM_HOME}/tmp/${OS_TENANT_NAME}
 mkdir -p ${MM_TMP}
@@ -53,34 +52,26 @@ export PUBLIC_SSH_KEYS=(\
 # Declaring the machines
 
 declare -a MACHINES
-export MACHINES=('openstack-controller' 'thinlinc-master' 'filsluss' 'supernode' 'compute1' 'compute2' 'compute3' 'storage' 'ldap' 'networking-node')
+export MACHINES=('supernode' 'compute1' 'compute2' 'compute3' 'storage' 'thinlinc')
 
 declare -A FLAVORS
 export FLAVORS=(\
-    [openstack-controller]=m1.small \
-    [thinlinc-master]=m1.small \
-    [filsluss]=m1.small \
     [supernode]=m1.small \
     [compute1]=m1.large \
     [compute2]=m1.large \
     [compute3]=m1.large \
     [storage]=m1.small \
-    [ldap]=m1.small \
-    [networking-node]=m1.small \
+    [thinlinc]=m1.small \
 )
 
 declare -A MACHINE_IPs
 export MACHINE_IPs=(\
-    [openstack-controller]=172.25.8.3 \
-    [thinlinc-master]=172.25.8.4 \
-    [filsluss]=172.25.8.5 \
     [supernode]=172.25.8.6 \
     [compute1]=172.25.8.7 \
     [compute2]=172.25.8.8 \
     [compute3]=172.25.8.9 \
     [storage]=172.25.8.10 \
-    [ldap]=172.25.8.11 \
-    [networking-node]=172.25.8.12 \
+    [thinlinc]=172.25.8.11 \
 )
 export MGMT_GATEWAY=172.25.8.1
 export MGMT_CIDR=172.25.8.0/22
@@ -90,7 +81,6 @@ export DATA_IPs=(\
     [compute1]=10.10.10.110 \
     [compute2]=10.10.10.111 \
     [compute3]=10.10.10.112 \
-    [networking-node]=10.10.10.101 \
     [storage]=10.10.10.102 \
 )
 export DATA_GATEWAY=10.10.10.1
@@ -98,22 +88,16 @@ export DATA_CIDR=10.10.10.0/24
 
 declare -A FLOATING_IPs
 export FLOATING_IPs=(\
-    [openstack-controller]=10.254.0.54 \
-    [thinlinc-master]=10.254.0.55 \
-    [filsluss]=10.254.0.56 \
     [supernode]=10.254.0.57 \
     [compute1]=10.254.0.58 \
     [compute2]=10.254.0.59 \
     [compute3]=10.254.0.60 \
     [storage]=10.254.0.61 \
-    [ldap]=10.254.0.62 \
-    [networking-node]=10.254.0.63 \
+    [thinlinc]=10.254.0.62 \
 )
 export FLOATING_GATEWAY=10.254.0.1
 export FLOATING_CIDR=10.254.0.0/24
 
-# For the external network within Mosler
-export MOSLER_EXT_CIDR=172.18.0.0/24
 
 PHONE_HOME=${FLOATING_GATEWAY}
 PORT=12345
@@ -123,14 +107,10 @@ PORT=12345
 
 declare -A PROVISION
 export PROVISION=(\
-    [openstack-controller]=controller \
-    [thinlinc-master]=thinlinc \
-    [filsluss]=filsluss \
     [supernode]=supernode \
     [compute1]=compute \
     [compute2]=compute \
     [compute3]=compute \
     [storage]=storage \
-    [ldap]=ldap \
-    [networking-node]=network \
+    [thinlinc]=thinlinc \
 )

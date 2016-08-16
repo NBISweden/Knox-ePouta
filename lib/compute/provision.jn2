@@ -24,50 +24,5 @@ sed -i -e '/{{ regexp }}/ d' /etc/sysctl.conf
 echo '{{ line }}' >> /etc/sysctl.conf
 {% endfor %}
 
-echo "Starting OpenVSwitch"
-service openvswitch restart
-chkconfig openvswitch on
-
 # Activating kernel configurations (or use -e too)
 sysctl -e -p
-
-echo "Creating the OVS bridge"
-ovs-vsctl del-br br-int || true
-ovs-vsctl add-br br-int
-
-{% if env['DO_CHEAT'] != 'yes' %}
-echo "Correcting the Nova admin tenant id for Neutron"
-source /root/.keystonerc
-T=0
-while (( ++T < 300 )) ; do
-    nova_admin_tenant_id=$(keystone tenant-list | awk '/ services /{print $2}')
-    [ $? -eq 0 ] && [ -n "${nova_admin_tenant_id}" ] && break;
-    sleep 1
-done
-(( T >= 300 )) && exit 1
-[ -z "${nova_admin_tenant_id}" ] && exit 1
-sed -i -e "s/nova_admin_tenant_id=.*/nova_admin_tenant_id=${nova_admin_tenant_id}/" /etc/neutron/neutron.conf
-{% endif %}
-
-echo "Starting Libvirt"
-service libvirtd restart
-service messagebus restart
-virsh net-destroy default || true
-virsh net-undefine default || true
-
-sleep 10 # On the openstack-controller, services are first closing. Let's sleep
-# Wait for Message Broker. Don't want to loose the messages
-wait_port openstack-controller 5672 300
-wait_port openstack-controller 9696 300
-
-rm -f /var/log/nova/compute.log
-rm -f /var/log/neutron/openvswitch-agent.log
-
-echo "Starting Nova and Neutron agents"
-service openstack-nova-compute restart
-service neutron-openvswitch-agent restart
-
-chkconfig libvirtd on
-chkconfig messagebus on
-chkconfig openstack-nova-compute on
-chkconfig neutron-openvswitch-agent on

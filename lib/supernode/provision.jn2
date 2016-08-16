@@ -30,48 +30,14 @@ EOF
 fi
 
 ##############################################################
-# Wait 300 seconds max for neutron-server to be ready
-# Note: this should happen after keystone is ready
-sleep 5 # On the openstack-controller, neutron-server is first closing. Let's sleep
-wait_port openstack-controller 9696 300
+# cat > /etc/cron.d/project_mapping <<EOF
+# */15 * * * * root /usr/local/sbin/thinlinc_proj_setup
+# EOF
 
-source /root/.keystonerc
-
-echo "Removing any 'public-net'"
-neutron net-list -F id -F name | awk '/ public-net / {print $2}' | while read netid; do neutron net-delete ${netid}; done
-
-echo 'Creating public network in neutron & updating the mosler-heat parameters'
-extnet=$(neutron net-create public-net --router:external True | awk '/ id / {print $4}')
-# rsync -a {{ env['VAULT'] }}/mosler-template-parameters /usr/local/heat/mosler-template-parameters
-# sed -i -e "s/__EXT_NET__/$extnet/"  /usr/local/heat/mosler-template-parameters
-sed -e "s/__EXT_NET__/$extnet/" {{ env['VAULT'] }}/mosler-template-parameters > /usr/local/heat/mosler-template-parameters
-chmod 0755 /usr/local/heat/mosler-template-parameters
-
-echo "Creating public subnet network in neutron"
-CIDR={{ env['MOSLER_EXT_CIDR'] }}
-IPPREFIX=${CIDR%.0/24}
-neutron subnet-create public-net --name public-subnet --allocation-pool start=${IPPREFIX}.30,end=${IPPREFIX}.200 --disable-dhcp --gateway ${IPPREFIX}.1 ${CIDR}
-
-##############################################################
-echo "Cron files"
-
-cat > /etc/cron.d/filsluss <<EOF
-*/2 * * * * root flock -n /tmp/filsluss_import_run /usr/local/sbin/filsluss_cron_import 2>/dev/null >/dev/null 
-*/2 * * * * root flock -n /tmp/filsluss_export_run /usr/local/sbin/filsluss_cron_export 2>/dev/null >/dev/null
-EOF
-
-cat > /etc/cron.d/queue <<EOF
-*/8 * * * * root flock -n /tmp/queue_responder /usr/local/bin/queue_responder
-EOF
-
-cat > /etc/cron.d/project_mapping <<EOF
-*/15 * * * * root /usr/local/sbin/thinlinc_proj_setup
-EOF
-
-cat > /etc/cron.d/userdata <<EOF
-*/2 * * * * root flock -n /tmp/userdatarun /usr/local/sbin/fix_userdata 2>/dev/null
-* * * * * root flock -n /tmp/hostdatarun /usr/local/sbin/fix_hostdata 2>/dev/null
-EOF
+# cat > /etc/cron.d/userdata <<EOF
+# */2 * * * * root flock -n /tmp/userdatarun /usr/local/sbin/fix_userdata 2>/dev/null
+# * * * * * root flock -n /tmp/hostdatarun /usr/local/sbin/fix_hostdata 2>/dev/null
+# EOF
 
 ##############################################################
 # Create the NBIS project

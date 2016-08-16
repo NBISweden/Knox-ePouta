@@ -21,4 +21,4 @@ rm -f /usr/local/heat/mosler-template-parameters
 
 ##############################################################
 # Cron
-rm -f /etc/cron.d/filsluss /etc/cron.d/queue /etc/cron.d/project_mapping /etc/cron.d/userdata
+#rm -f /etc/cron.d/project_mapping /etc/cron.d/userdata

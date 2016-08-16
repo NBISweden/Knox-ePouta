@@ -5,7 +5,7 @@ source $(dirname ${BASH_SOURCE[0]})/settings.sh
 
 # Default values
 _ALL=no
-_IMAGE=CentOS6-micromosler
+_IMAGE=CentOS7
 
 function usage {
     echo "Usage: ${MM_CMD:-$0} [options]"
@@ -48,7 +48,6 @@ cat > ${MM_TMP}/hosts <<ENDHOST
 
 ENDHOST
 for name in ${MACHINES[@]}; do echo "${MACHINE_IPs[$name]} $name" >> ${MM_TMP}/hosts; done
-echo "${MACHINE_IPs[openstack-controller]} tos1" >> ${MM_TMP}/hosts
 
 #######################################################################
 # Logic to allow the user to specify some machines
@@ -82,6 +81,11 @@ for machine in ${MACHINES[@]}; do mkdir -p ${MM_TMP}/$machine/init; done
 #######################################################################
 
 TENANT_ID=$(openstack project list | awk "/${OS_TENANT_NAME}/ {print \$2}")
+if [ -z "$TENANT_ID" ]; then
+    echo "ERROR: Does tenant ${OS_TENANT_NAME} exit?" > ${ORG_FD1}
+    exit 1
+fi
+
 # Checking if the user is admin for that tenant
 CHECK=$(openstack role assignment list --user ${OS_USERNAME} --role admin --project ${OS_TENANT_NAME})
 if [ $? -ne 0 ] || [ -z "$CHECK" ]; then
@@ -93,7 +97,7 @@ fi
 
 EXTNET_ID=$(neutron net-list | awk '/ public /{print $2}')
 if [ -z "$EXTNET_ID" ]; then
-    echo "Error: Could not find the external network" > ${ORG_FD1}
+    echo "ERROR: Could not find the external network" > ${ORG_FD1}
     exit 1
 fi
 
@@ -137,11 +141,6 @@ if [ ${_ALL} = "yes" ]; then
     nova secgroup-add-rule ${OS_TENANT_NAME}-sg icmp  -1    -1 ${MGMT_CIDR}          >/dev/null
     nova secgroup-add-rule ${OS_TENANT_NAME}-sg icmp  -1    -1 ${DATA_CIDR}          >/dev/null
     nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp   22    22 ${FLOATING_CIDR}      >/dev/null
-    #nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp   22    22 ${MGMT_CIDR}
-    #nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp  443   443 ${FLOATING_CIDR}
-    #nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp  443   443 ${MGMT_CIDR}
-    #nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp    1 65535 ${MOSLER_EXT_CIDR}
-    nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp  443   443 ${MOSLER_EXT_CIDR}    >/dev/null
     nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp    1 65535 ${MGMT_CIDR}          >/dev/null
     nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp    1 65535 ${DATA_CIDR}          >/dev/null
 
@@ -220,7 +219,7 @@ NAME=eth0
 DEVICE=eth0
 ONBOOT=yes
 IPADDR=${MACHINE_IPs[$machine]}
-PREFIX=22
+PREFIX=${MGMT_CIDR##*/}
 GATEWAY=${MGMT_GATEWAY}
 MTU=1450
 NOZEROCONF=yes
@@ -259,7 +258,7 @@ NAME=eth1
 DEVICE=eth1
 ONBOOT=yes
 IPADDR=${DATA_IPs[$machine]}
-PREFIX=24
+PREFIX=${DATA_CIDR##*/}
 GATEWAY=${DATA_GATEWAY}
 #MTU=1450
 NOZEROCONF=yes
@@ -308,9 +307,6 @@ nova boot --flavor $flavor --image ${_IMAGE} --security-groups default,${OS_TENA
 --user-data ${_VM_INIT} \
 $machine &>/dev/null
 
-# nova boot does not use the --key-name flag.
-# Instead, cloudinit includes several keys on first boot
-
 } # End boot_machine function
 
 ########################################################################
@@ -335,31 +331,18 @@ do
     } || echo -e $'\e[31m\xE2\x9C\x97\e[0m' # fail (cross)
 done
 
-########################################################################
-# echo "Updating data ports to allow external network ${MOSLER_EXT_CIDR}"
-# for machine in ${MACHINES[@]}
-# do
-#     if [ ! -z "${DATA_IPs[$machine]}" ]; then
-# 	echo -en "\ton $machine: "
-# 	( set -e # new shell, new env, exit if it errors on the way
-# 	  PORT_ID=$(neutron port-list | awk "/$DATA_SUBNET/ && /${DATA_IPs[$machine]}/ {print \$2}")
-# 	  [ ! -z "${PORT_ID}" ] && neutron port-update ${PORT_ID} --allowed-address-pairs type=dict list=true ip_address=${MOSLER_EXT_CIDR} >/dev/null
-# 	  echo -e $'\e[32m\xE2\x9C\x93\e[0m'    # ok (checkmark)
-# 	) || echo -e $'\e[31m\xE2\x9C\x97\e[0m' # fail (cross)
-#     fi
-# done
-
-# Allowing external network ${MOSLER_EXT_CIDR} from the networking-node back to the openstack-controller
-# We update the port corresponding to eth0 on the neutron node, so that the bridge can talk back to the controller.
-# 
-echo -n "Handling external network ${MOSLER_EXT_CIDR} within Openstack"
-( set -e # new shell, new env, exit if it errors on the way
-  NEUTRON_ETH0=$(neutron port-list | awk "/${MACHINE_IPs[networking-node]}/ {print \$2}")
-  [ ! -z "${NEUTRON_ETH0}" ] && neutron port-update ${NEUTRON_ETH0} --allowed-address-pairs type=dict list=true ip_address=${MOSLER_EXT_CIDR} >/dev/null
-  # NEUTRON_ETH1=$(neutron port-list | awk "/${DATA_IPs[networking-node]}/ {print \$2}")
-  # [ ! -z "${NEUTRON_ETH1}" ] && neutron port-update ${NEUTRON_ETH1} --allowed-address-pairs type=dict list=true ip_address=${MOSLER_EXT_CIDR} >/dev/null
-  echo -e $' \e[32m\xE2\x9C\x93\e[0m'    # ok (checkmark)
-) || echo -e $' \e[31m\xE2\x9C\x97\e[0m' # fail (cross)
+# ########################################################################
+# # Allowing external network ${MOSLER_EXT_CIDR} from the networking-node back to the openstack-controller
+# # We update the port corresponding to eth0 on the neutron node, so that the bridge can talk back to the controller.
+# # 
+# echo -n "Handling external network ${MOSLER_EXT_CIDR} within Openstack"
+# ( set -e # new shell, new env, exit if it errors on the way
+#   NEUTRON_ETH0=$(neutron port-list | awk "/${MACHINE_IPs[networking-node]}/ {print \$2}")
+#   [ ! -z "${NEUTRON_ETH0}" ] && neutron port-update ${NEUTRON_ETH0} --allowed-address-pairs type=dict list=true ip_address=${MOSLER_EXT_CIDR} >/dev/null
+#   # NEUTRON_ETH1=$(neutron port-list | awk "/${DATA_IPs[networking-node]}/ {print \$2}")
+#   # [ ! -z "${NEUTRON_ETH1}" ] && neutron port-update ${NEUTRON_ETH1} --allowed-address-pairs type=dict list=true ip_address=${MOSLER_EXT_CIDR} >/dev/null
+#   echo -e $' \e[32m\xE2\x9C\x93\e[0m'    # ok (checkmark)
+# ) || echo -e $' \e[31m\xE2\x9C\x97\e[0m' # fail (cross)
 
 
 ########################################################################
