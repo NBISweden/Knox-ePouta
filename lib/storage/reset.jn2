@@ -7,8 +7,7 @@ service iptables restart
 :> /etc/exports
 exportfs -ra
 
-chkconfig rpcbind off
-service rpcbind stop
-
-chkconfig nfs off
-service nfs stop
+# systemctl disable rpcbind
+# systemctl disable nfs-server
+# systemctl disable nfs-lock
+# systemctl disable nfs-idmap

@@ -28,3 +28,11 @@ chmod 0644 /etc/pam.d/sshd
 rsync -a {{ env['VAULT'] }}/thinlinc /etc/pam.d/thinlinc
 chown root:root /etc/pam.d/thinlinc
 chmod 0644 /etc/pam.d/thinlinc
+
+
+# systemctl disable firewalld
+# systemctl stop firewalld
+# systemctl mask firewalld
+
+yum -y install iptables-services
+systemctl enable iptables

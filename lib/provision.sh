@@ -154,5 +154,5 @@ if (( FAIL > 0 )); then
     oups "\a\n${FAIL} servers failed to be configured"
 else
     # Finally...
-    thumb_up "Servers configured"
+    thumb_up "\nServers configured"
 fi

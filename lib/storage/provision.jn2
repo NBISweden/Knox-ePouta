@@ -3,55 +3,21 @@
 echo "Configuring iptables"
 sed -i "/^-A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT/ d" /etc/sysconfig/iptables
 # Insert it before the other line
-sed -i "/^-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT/ i \
+sed -i "/^-A INPUT -p tcp -m state --state NEW -m tcp --dport 22 -j ACCEPT/ i \
 -A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT" /etc/sysconfig/iptables
-service iptables restart
-
-echo "System config"
-## RegExp, Replacement
-{% set lines = [
-	('^\s*net.ipv4.ip_forward\s*=.*$',                 'net.ipv4.ip_forward=1'                 ),
-	('^\s*net.ipv4.conf.all.rp_filter\s*=.*$',         'net.ipv4.conf.all.rp_filter=0'         ),
-	('^\s*net.ipv4.conf.default.rp_filter\s*=.*$',     'net.ipv4.conf.default.rp_filter=0'     ),
-	('^\s*net.ipv4.conf.eth0.rp_filter\s*=.*$',        'net.ipv4.conf.eth0.rp_filter=0'        ),
-	('^\s*net.ipv4.conf.eth1.rp_filter\s*=.*$',        'net.ipv4.conf.eth1.rp_filter=0'        ),
-	('^\s*net.ipv6.conf.all.disable_ipv6\s*=.*$',      'net.ipv6.conf.all.disable_ipv6=1'      ),
-	('^\s*net.ipv6.conf.default.disable_ipv6\s*=.*$',  'net.ipv6.conf.default.disable_ipv6=1'  )
-] -%}
-{% for regexp, line in lines %}
-sed -i -e '/{{ regexp }}/ d' /etc/sysctl.conf
-echo '{{ line }}' >> /etc/sysctl.conf
-{% endfor %}
-
-# Activating kernel configurations (or use -e too)
-sysctl -e -p
-
-echo "Configuring RPCBind and NFS"
-if ! grep -q rpcbind /etc/hosts.deny ; then
-    echo "rpcbind mountd nfsd statd lockd rquotad : ALL" >> /etc/hosts.deny
-fi
-
-if ! grep -q rpcbind /etc/hosts.allow ; then
-    echo "rpcbind mountd nfsd statd lockd rquotad : ALL@storage" >> /etc/hosts.allow
-fi
-
-chkconfig rpcbind on
-service rpcbind restart
-
-chkconfig nfs on 
-service nfs restart
+systemctl restart iptables
 
 echo "Creating NFS share"
-mkdir -p /nfs/mosler/incoming
-mkdir -p /nfs/import/
+mkdir -p /nfs
 :> /etc/exports
 
-if ! grep -q "/nfs/mosler" /etc/exports; then
-    echo "/nfs/mosler {{ env['MGMT_CIDR'] }}(rw,sync,no_root_squash,no_subtree_check)" >> /etc/exports
+if ! grep -q "/nfs" /etc/exports; then
+    echo "/nfs {{ env['MGMT_CIDR'] }}(rw,sync,no_root_squash,no_all_squash,no_subtree_check)" >> /etc/exports
 fi
 
-if ! grep -q "/nfs/import" /etc/exports; then
-    echo "/nfs/import filsluss(rw,sync,no_root_squash,no_subtree_check)" >> /etc/exports
-fi
+#exportfs -ra
 
-exportfs -ra
+systemctl restart rpcbind
+systemctl restart nfs-server
+# systemctl restart nfs-lock
+# systemctl restart nfs-idmap

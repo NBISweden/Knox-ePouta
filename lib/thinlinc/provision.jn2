@@ -1,7 +1,7 @@
 # -*-sh-*-
 
-echo "Setting up Thinlinc"
-/opt/thinlinc/sbin/tl-setup -a {{ env['VAULT'] }}/tl_answers
+# echo "Setting up Thinlinc"
+# /opt/thinlinc/sbin/tl-setup -a {{ env['VAULT'] }}/tl_answers
 
-echo "Configuring Thinlinc web access"
-sed -i 's/^listen=.*$/listen=443/' /opt/thinlinc/etc/conf.d/webaccess.hconf
+# echo "Configuring Thinlinc web access"
+# sed -i 's/^listen=.*$/listen=443/' /opt/thinlinc/etc/conf.d/webaccess.hconf

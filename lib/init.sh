@@ -199,6 +199,9 @@ echo "==========================================================================
 echo "Making sudo not require TTY for the centos user"
 echo 'Defaults:centos !requiretty' > /etc/sudoers.d/centos
 echo "================================================================================"
+echo "Disabling SElinux"
+sed -i 's/SELINUX=.*/SELINUX=disabled/' /etc/sysconfig/selinux
+echo "================================================================================"
 echo "Adding the routing tables"
 echo '10 mgmt' >> /etc/iproute2/rt_tables
 echo '11 data' >> /etc/iproute2/rt_tables
@@ -213,6 +216,7 @@ EOF
 chown root:root /etc/hosts
 chmod 0644 /etc/hosts
 
+echo "================================================================================"
 echo "Resetting the network configuration for eth0. Bye-bye DHCP."
 cat > /etc/sysconfig/network-scripts/ifcfg-eth0 <<EOF
 TYPE=Ethernet
