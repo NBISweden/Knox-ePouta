@@ -126,7 +126,7 @@ do
                                  .render(env=os.environ))" \
 		   <${FOLDER}/sync.jn2 \
 		   >${_SCRIPT}
-	    ssh -tt -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x 2>&1' <${_SCRIPT}
+	    ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x 2>&1' <${_SCRIPT}
 	)
 	RET=$?
 	if [ $RET -eq 0 ]; then report_ok $machine; else report_fail $machine; fi
@@ -153,7 +153,7 @@ Host ${MACHINES[@]// /,} tos1
         UserKnownHostsFile /dev/null
 EOF
     scp -q -F ${SSH_CONFIG} ${MM_TMP}/ssh_key* ${FLOATING_IPs[supernode]}:${VAULT}/.
-    ssh -tt -F ${SSH_CONFIG} ${FLOATING_IPs[supernode]} 'sudo bash -e -x 2>&1' <<EOF &>/dev/null
+    ssh -F ${SSH_CONFIG} ${FLOATING_IPs[supernode]} 'sudo bash -e -x 2>&1' <<EOF &>/dev/null
 mv ${VAULT}/ssh_key /root/.ssh/id_rsa
 mv ${VAULT}/ssh_key.pub /root/.ssh/id_rsa.pub
 mv ${VAULT}/ssh_key.config /root/.ssh/config
@@ -165,7 +165,7 @@ EOF
     do
 	[ "$machine" == "supernode" ] && continue
 	scp -q -F ${SSH_CONFIG} ${MM_TMP}/ssh_key.pub ${FLOATING_IPs[$machine]}:${VAULT}/id_rsa.pub
-	ssh -tt -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x 2>&1' <<EOF &>/dev/null
+	ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x 2>&1' <<EOF &>/dev/null
 sudo sed -i -e '/supernode/d' /root/.ssh/authorized_keys
 cat ${VAULT}/id_rsa.pub >> /root/.ssh/authorized_keys
 rm ${VAULT}/id_rsa.pub
