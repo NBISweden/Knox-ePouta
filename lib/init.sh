@@ -196,6 +196,9 @@ echo "==========================================================================
 echo "Adjusting the timezone"
 echo 'Europe/Stockholm' > /etc/timezone
 echo "================================================================================"
+echo "Making sudo not require TTY for the centos user"
+echo 'Defaults:centos !requiretty' > /etc/sudoers.d/centos
+echo "================================================================================"
 echo "Adding the routing tables"
 echo '10 mgmt' >> /etc/iproute2/rt_tables
 echo '11 data' >> /etc/iproute2/rt_tables
