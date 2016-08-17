@@ -7,6 +7,7 @@ source $(dirname ${BASH_SOURCE[0]})/settings.sh
 #set -e 
 VM_NAME=prepare
 KEY_NAME=daz-micromosler
+BOOT_IMAGE_NAME=CentOS6
 IMAGE_NAME=CentOS6-micromosler
 DELETE_VM=yes
 DELETE_IMAGE=yes
@@ -17,6 +18,7 @@ function usage {
     echo -e "\t--quiet,-q         \tRemoves the verbose output"
     echo -e "\t--help,-h          \tOutputs this message and exits"
     echo -e "\t--vm <name>        \tName of the VM for preparation. Default: ${VM_NAME}"
+    echo -e "\t--boot-image <name>\tName of the glance image to boot from. Default: ${BOOT_IMAGE_NAME}"
     echo -e "\t--image <name>     \tName of the glance image to snapshot. Default: ${IMAGE_NAME}"
     echo -e "\t--key <name>       \tName of the public ssh key. Default: ${KEY_NAME}"
     echo -e "\t--packages <list>  \tComma-separated list of extra packages to install"
@@ -31,6 +33,7 @@ while [ $# -gt 0 ]; do
         --all|-a) _ALL=yes;;
         --quiet|-q) VERBOSE=no;;
         --vm) [ -n $2 ] && VM_NAME=$2; shift;;
+        --boot-image) [ -n $2 ] && BOOT_IMAGE_NAME=$2; shift;;
         --image) [ -n $2 ] && IMAGE_NAME=$2; shift;;
         --key) [ -n $2 ] && KEY_NAME=$2; shift;;
         --packages) [ -n $2 ] && PACKAGES="${2//,/ }"; shift;;
@@ -92,6 +95,9 @@ runcmd:
   - echo "System upgrade"
   - yum -y update
   - echo '================================================================================'
+  - echo "Python PIP upgrade"
+  - pip --proxy http://130.238.7.178:3128 install --upgrade pip
+  - echo '================================================================================'
   - echo "Installing packages we always want"
   - yum -y install lsof strace jq tcpdump nmap nc cloud-utils-growpart
   - echo '================================================================================'
@@ -150,7 +156,7 @@ REST_PID=$!
 # No need to add ssh-keys, since we won't log onto it
 [ -n $PACKAGES ] && WITH_SSH="--security-group ${OS_TENANT_NAME}-sg --key-name ${KEY_NAME}"
 echo "Booting a '${VM_NAME}' VM"
-nova boot --flavor 'm1.small' --image 'CentOS6' \
+nova boot --flavor 'm1.small' --image ${BOOT_IMAGE_NAME} \
 --nic net-id=$(neutron net-list --tenant_id=$TENANT_ID | awk '/ '${OS_TENANT_NAME}-mgmt-net' /{print $2}') \
 ${WITH_SSH} --user-data ${CLOUDINIT_CMDS} "${VM_NAME}"
 

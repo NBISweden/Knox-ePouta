@@ -135,7 +135,7 @@ EOF
 	       >>${_SCRIPT}
 
 	{ # Scoping, in that current shell
-	    ssh -t -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x 2>&1' <${_SCRIPT} &>${_LOG}
+	    ssh -tt -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x 2>&1' <${_SCRIPT} &>${_LOG}
 	    RET=$?
 	    if [ $RET -eq 0 ]; then report_ok $machine; else report_fail $machine; fi
 	    print_progress

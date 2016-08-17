@@ -1,11 +1,16 @@
 # µ-Mosler setup on Knox
 
-This set of scripts allows you to (re)create a test environment in an
-Openstack cluster.  This created set of virtual machines is called
-vanilla-Mosler. Our openstack cluster is called Knox.
+This set of scripts allows you to create a test environment in an
+Openstack cluster.  This created set of virtual machines will be the
+base for testing the connection to the
+[ePouta cloud](https://research.csc.fi/epouta). We will then use that
+set of VMs to (re)create
+[Mosler](https://bils.se/resources/mosler.html) and further improve or
+extend it (codenamed µ-Mosler). Our openstack cluster is called Knox.
 
 ## Requirements
-You first need to create a file (named 'user.rc') in order to set up your openstack credentials. That file will contain 3 variables:
+You first need to create a file (named 'user.rc') in order to set up
+your openstack credentials. That file will contain 3 variables:
 
 	export OS_TENANT_NAME=<tenant-name>
 	export OS_USERNAME=<username>
