@@ -5,8 +5,8 @@ source $(dirname ${BASH_SOURCE[0]})/settings.sh
 
 # Exit on errors
 #set -e 
+NET=no
 VM_NAME=prepare
-KEY_NAME=daz-micromosler
 BOOT_IMAGE_NAME=CentOS6
 IMAGE_NAME=CentOS6-micromosler
 DELETE_VM=yes
@@ -18,10 +18,9 @@ function usage {
     echo -e "\t--quiet,-q         \tRemoves the verbose output"
     echo -e "\t--help,-h          \tOutputs this message and exits"
     echo -e "\t--vm <name>        \tName of the VM for preparation. Default: ${VM_NAME}"
+    echo -e "\t--net              \tCreate a temporary network '${OS_TENANT_NAME}-prepare-net' to boot on"
     echo -e "\t--boot-image <name>\tName of the glance image to boot from. Default: ${BOOT_IMAGE_NAME}"
     echo -e "\t--image <name>     \tName of the glance image to snapshot. Default: ${IMAGE_NAME}"
-    echo -e "\t--key <name>       \tName of the public ssh key. Default: ${KEY_NAME}"
-    echo -e "\t--packages <list>  \tComma-separated list of extra packages to install"
     echo -e "\t--no-delete-image  \tDo not delete the given image first"
     echo -e "\t--no-delete-vm     \tDo not delete the temporary VM afterwards"
     echo -e "\t-- ...             \tAny other options appearing after the -- will be ignored"
@@ -33,10 +32,9 @@ while [ $# -gt 0 ]; do
         --all|-a) _ALL=yes;;
         --quiet|-q) VERBOSE=no;;
         --vm) [ -n $2 ] && VM_NAME=$2; shift;;
+        --net) NET=yes; shift;;
         --boot-image) [ -n $2 ] && BOOT_IMAGE_NAME=$2; shift;;
         --image) [ -n $2 ] && IMAGE_NAME=$2; shift;;
-        --key) [ -n $2 ] && KEY_NAME=$2; shift;;
-        --packages) [ -n $2 ] && PACKAGES="${2//,/ }"; shift;;
         --no-delete-image) DELETE_IMAGE=no;;
         --no-delete-vm) DELETE_VM=no;;
         --help|-h) usage; exit 0;;
@@ -142,49 +140,60 @@ function cleanup {
 	echo "Deleting the '${VM_NAME}' VM"
 	nova delete "${VM_NAME}"  > /dev/null
     fi
+
+    # if [ "$DELETE_NET" = "yes" ]; then
+    # 	echo "Deleting router and networks"
+    # fi
 }
 
 trap "cleanup" INT TERM #EXIT
 ########################################################################
 
+EXTNET_ID=$(neutron net-list | awk '/ public /{print $2}')
+if [ -z "$EXTNET_ID" ]; then
+    echo "ERROR: Could not find the external network" > ${ORG_FD1}
+    exit 1
+fi
+
+if [ ${NET} = "yes" ]; then
+
+    echo "Preparing router and network"
+
+    PREPARE_ROUTER_ID=$(neutron router-create ${OS_TENANT_NAME}-prepare-router | awk '/ id / { print $4 }')
+    
+    if [ -z "$PREPARE_ROUTER_ID" ]; then
+	echo "Router issues. Exiting..."
+	exit 1
+    else
+	echo -e "Attaching Management router to the External \"public\" network"
+	neutron router-gateway-set $PREPARE_ROUTER_ID $EXTNET_ID >/dev/null
+    fi
+    
+    # Creating the management and data networks
+    neutron net-create ${OS_TENANT_NAME}-prepare-net >/dev/null
+    neutron subnet-create --name ${OS_TENANT_NAME}-prepare-subnet ${OS_TENANT_NAME}-prepare-net --gateway 192.168.1.1 --enable-dhcp 192.168.1.0/24 >/dev/null
+    neutron router-interface-add ${OS_TENANT_NAME}-prepare-router ${OS_TENANT_NAME}-prepare-subnet >/dev/null
+
+fi # End ${NET} config
+
+
+########################################################################
 echo "Starting the REST phone home server (on port: ${PORT})"
 fuser -k $PORT/tcp || true
 python ${MM_TMP}/prepare.py $PORT &
 REST_PID=$!
 
 # Booting a machine, getting a temporary ip from DHCP
-# No need to add ssh-keys, since we won't log onto it
-[ -n $PACKAGES ] && WITH_SSH="--security-group ${OS_TENANT_NAME}-sg --key-name ${KEY_NAME}"
+# No need to add ssh-keys, if we won't log onto it
 echo "Booting a '${VM_NAME}' VM"
 nova boot --flavor 'm1.small' --image ${BOOT_IMAGE_NAME} \
---nic net-id=$(neutron net-list --tenant_id=$TENANT_ID | awk '/ '${OS_TENANT_NAME}-mgmt-net' /{print $2}') \
+--nic net-id=$(neutron net-list --tenant_id=$TENANT_ID | awk '/ '${OS_TENANT_NAME}-prepare-net' /{print $2}') \
 ${WITH_SSH} --user-data ${CLOUDINIT_CMDS} "${VM_NAME}"
 
 echo "Waiting for the '${VM_NAME}' VM to be ready."
 wait ${REST_PID}
 #echo "It just phoned home!"
 
-if [ -n $PACKAGES ]; then
-
-    # Associate a floating IP
-    FLOATING_IP=$(nova floating-ip-create public | awk '/ public / {print $4}')
-    nova floating-ip-associate "${VM_NAME}" ${FLOATING_IP}
-    # Configuring the repo for Openstack
-    rsync -avL -e "ssh -l centos -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" lib/controller/files/rdo-release.repo ${FLOATING_IP}:.
-    rsync -avL -e "ssh -l centos -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" lib/controller/files/RPM-GPG-KEY-Icehouse-SIG ${FLOATING_IP}:.
-    ssh -l centos -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${FLOATING_IP} 'sudo bash -x -e' &>${MM_TMP}/prepare.log <<EOF
-rsync /home/centos/rdo-release.repo /etc/yum.repos.d/rdo-release.repo
-rsync /home/centos/RPM-GPG-KEY-Icehouse-SIG /etc/pki/rpm-gpg/RPM-GPG-KEY-Icehouse-SIG
-yum clean all
-yum -y install rabbitmq-server mysql-server python-imaging python-qrcode MySQL-python
-yum -y install openstack-nova openstack-nova-compute openstack-neutron openstack-neutron-ml2 openstack-dashboard openstack-glance openstack-heat-api openstack-heat-api-cfn openstack-heat-engine openstack-keystone
-yum -y install python-novaclient python-keystoneclient python-neutronclient python-glanceclient python-heatclient python-neutronclient python-ceilometerclient python-glance python-keystone python-swiftclient python-troveclient
-EOF
-
-    # Removing the floating IP
-    nova floating-ip-disassociate ${VM_NAME} ${FLOATING_IP}
-    nova floating-ip-delete ${FLOATING_IP}
-fi # End extra packages
 
 echo "Stopping it before snapshoting."
 nova stop ${VM_NAME}
