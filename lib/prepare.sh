@@ -32,7 +32,7 @@ while [ $# -gt 0 ]; do
         --all|-a) _ALL=yes;;
         --quiet|-q) VERBOSE=no;;
         --vm) [ -n $2 ] && VM_NAME=$2; shift;;
-        --net) NET=yes; shift;;
+        --net) NET=yes;;
         --boot-image) [ -n $2 ] && BOOT_IMAGE_NAME=$2; shift;;
         --image) [ -n $2 ] && IMAGE_NAME=$2; shift;;
         --no-delete-image) DELETE_IMAGE=no;;
