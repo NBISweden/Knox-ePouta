@@ -92,6 +92,8 @@ FAIL=0
 reset_progress
 print_progress
 #export NFS_SERVER=${MACHINE_IPs[storage]}
+#export NEXTFLOW_SERVER=$(getent hosts get.nextflow.io | awk '{ print $1 }')
+#export NEXTFLOW_SERVER=$(host unix.stackexchange.com | awk '/has address/ { print $4 ; exit }')
 
 # set -e # exit in errors
 # trap 'print_progress; oups "\a\nErrors found: Aborting"' ERR

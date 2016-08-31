@@ -5,6 +5,7 @@ yum -y install nc nmap tcpdump iptables-services nfs-utils chrony
 systemctl enable iptables
 systemctl enable rpcbind
 
+# Installing dependencies
+yum install bzip2 perl git gcc java zlib zlib-devel gcc-c++ R bwa samtools
+# That will install java-1.8.0-openjdk.x86_64
 
-yum -y install git
-git config --global http.proxy http://130.238.7.178:3128

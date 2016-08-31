@@ -36,7 +36,65 @@ storage:/nfs/mosler $NFS_LOCATION  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,t
 EOF
 fi
 
+mkdir -p /usr/local/bin
+
+##############################################################
+git config --global http.proxy http://130.238.7.178:3128
+
+##############################################################
+# Picard
+# rm -f picard.tar.gz
+# curl --proxy http://130.238.7.178:3128 -o picard.tar.gz -L https://github.com/broadinstitute/picard/tarball/master
+rm -rf picard
+git clone https://github.com/broadinstitute/picard.git
+pushd picard
+sed -i '/proxy/ d' settings.gradle
+echo "systemProp.http.proxyHost=130.238.7.178" >> settings.gradle
+echo "systemProp.http.proxyPort=3128" >> settings.gradle
+
+sed -i '/proxy/ d' gradle/wrapper/gradle-wrapper.properties
+echo "systemProp.http.proxyHost=130.238.7.178" >> gradle/wrapper/gradle-wrapper.properties
+echo "systemProp.http.proxyPort=3128" >> gradle/wrapper/gradle-wrapper.properties
+
+./gradlew -Dhttp.proxyHost=130.238.7.178 -Dhttp.proxyPort=3128 shadowJar
+popd
+
+##############################################################
+# GATK
+#curl --proxy http://130.238.7.178:3128 -o gatk.tar.gz -L https://software.broadinstitute.org/gatk/download/
+
+##############################################################
+# Manta
+
+##############################################################
+# Strelka
+# from https://sites.google.com/site/strelkasomaticvariantcaller/home/strelka-workflow-installation
+rm -f strelka.tar.gz
+curl --proxy http://130.238.7.178:3128 -o strelka.tar.gz -L https://sites.google.com/site/strelkasomaticvariantcaller/home/download/strelka_workflow-1.0.15.tar.gz?attredirects=0&d=1
+rm -rf strelka_workflow
+tar -xzf strelka.tar.gz
+mv strelka_workflow-* strelka_workflow # Got lucky with the names
+pushd strelka_workflow
+./configure #--prefix=/usr/local/bin
+make
+popd
+
+##############################################################
+# NextFlow
+export http_proxy=http://130.238.7.178:3128
+sed -i '/http_proxy/ d' ~/.wgetrc
+echo 'http_proxy = http://130.238.7.178:3128' >> ~/.wgetrc
+
+#curl -fsSL get.nextflow.io > nextflow.bash
+#sed -i 's;curl -fsSL;curl -fsSL --proxy http://130.238.7.178:3128;' nextflow.bash
+
+curl -fsSL get.nextflow.io | bash
+# Moving nextflow to /usr/local/bin
+mv nextflow /usr/local/bin/.
+chmod +x /usr/local/bin/nextflow
+
 ##############################################################
 # Git project CAW
 # Fix the ssh key so we don't use user/password combinations
 # git clone https://github.com/SciLifeLab/CAW.git
+
