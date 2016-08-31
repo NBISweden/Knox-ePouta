@@ -4,3 +4,7 @@ yum -y install nc nmap tcpdump iptables-services nfs-utils chrony
 
 systemctl enable iptables
 systemctl enable rpcbind
+
+
+yum -y install git
+git config --global http.proxy http://130.238.7.178:3128

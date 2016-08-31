@@ -27,3 +27,7 @@ storage:/nfs/mosler $NFS_LOCATION  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,t
 EOF
 fi
 
+##############################################################
+# Git project CAW
+# Fix the ssh key so we don't use user/password combinations
+# git clone https://github.com/SciLifeLab/CAW.git
