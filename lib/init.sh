@@ -345,20 +345,6 @@ do
 done
 
 ########################################################################
-# Allowing external network ${EXT_CIDR} from the neutron back to the controller
-# We update the port corresponding to eth0 on the neutron node, so that the bridge can talk back to the controller.
-# 
-echo -n "Handling external network ${EXT_CIDR} within Openstack"
-( set -e # new shell, new env, exit if it errors on the way
-  NEUTRON_ETH0=$(neutron port-list | awk "/${MACHINE_IPs[neutron]}/ {print \$2}")
-  [ ! -z "${NEUTRON_ETH0}" ] && neutron port-update ${NEUTRON_ETH0} --allowed-address-pairs type=dict list=true ip_address=${EXT_CIDR} >/dev/null
-  # NEUTRON_ETH1=$(neutron port-list | awk "/${DATA_IPs[neutron]}/ {print \$2}")
-  # [ ! -z "${NEUTRON_ETH1}" ] && neutron port-update ${NEUTRON_ETH1} --allowed-address-pairs type=dict list=true ip_address=${EXT_CIDR} >/dev/null
-  echo -e $' \e[32m\xE2\x9C\x93\e[0m'    # ok (checkmark)
-) || echo -e $' \e[31m\xE2\x9C\x97\e[0m' # fail (cross)
-
-
-########################################################################
 exec 1>${ORG_FD1}
 
 ########################################################################
