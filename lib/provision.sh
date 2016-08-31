@@ -119,7 +119,13 @@ function wait_port {
     local -i stride=20
     while (( t > 0 )) ; do
 	echo -e "Time left: $t"
-	nc -4 -z -v $1 $2 && return 0
+	if nc -h 2>&1 | grep -q -- '-z'; then
+		nc -4 -z -v $1 $2 
+	elif [[ -x $(which ncat) ]]; then
+		ncat -w 1 $1 $2 </dev/null &>/dev/null
+	else
+		echo "Neither netcat nor nmap are present for zero I/O scanning" && break
+	fi && return 0
 	(( t-=backoff ))
 	sleep $backoff
         if (( (t % stride) == 0 )); then (( backoff*=2 )); fi

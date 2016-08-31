@@ -1,38 +1,8 @@
 # -*-sh-*-
 
-echo "Installing Thinlinc packages"
-yum -y install {{ env['VAULT'] }}/*x86_64.rpm {{ env['VAULT'] }}/*noarch.rpm xauth inotify-tools
+# echo "Installing Thinlinc packages"
+# yum -y install {{ env['VAULT'] }}/*x86_64.rpm {{ env['VAULT'] }}/*noarch.rpm xauth inotify-tools
 
-echo "Copying config files"
-{% set files = [ 'auth_token',
-		 'establish_user',
-		 'mapproj',
-		 'pam_auth_token',
-		 'project',
-		 'projectallowed',
-		 'vsmconfigurator.sh'
-	       ] -%}
-{% for file in files %}
-rsync -a {{ env['VAULT'] }}/{{ file }}  /usr/local/sbin/{{ file }}
-chown root:root /usr/local/sbin/{{ file }}
-chmod 0755 /usr/local/sbin/{{ file }}
-{% endfor %}
+yum -y install nc nmap tcpdump chrony iptables-services
 
-# Not found
-# /usr/local/sbin/ssh_auth_token
-
-rsync -a {{ env['VAULT'] }}/sshd /etc/pam.d/sshd
-chown root:root /etc/pam.d/sshd
-chmod 0644 /etc/pam.d/sshd
-
-rsync -a {{ env['VAULT'] }}/thinlinc /etc/pam.d/thinlinc
-chown root:root /etc/pam.d/thinlinc
-chmod 0644 /etc/pam.d/thinlinc
-
-
-# systemctl disable firewalld
-# systemctl stop firewalld
-# systemctl mask firewalld
-
-yum -y install iptables-services
 systemctl enable iptables

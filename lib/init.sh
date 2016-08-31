@@ -4,13 +4,13 @@
 source $(dirname ${BASH_SOURCE[0]})/settings.sh
 
 # Default values
-_ALL=no
+_NET=no
 _IMAGE=CentOS7
 
 function usage {
     echo "Usage: ${MM_CMD:-$0} [options]"
     echo -e "\noptions are"
-    echo -e "\t--all,-a         \tCreates also networks, routers, security groups and floating IPs"
+    echo -e "\t--net            \tCreates also networks, routers, security groups and floating IPs"
     echo -e "\t--machines <list>,"
     echo -e "\t        -m <list>\tA comma-separated list of machines"
     echo -e "\t                 \tDefaults to: \"${MACHINES[@]// /,}\"."
@@ -25,7 +25,7 @@ function usage {
 # While there are arguments or '--' is reached
 while [ $# -gt 0 ]; do
     case "$1" in
-        --all|-a) _ALL=yes;;
+        --net) _NET=yes;;
         --quiet|-q) VERBOSE=no;;
         --machines|-m) CUSTOM_MACHINES=$2; shift;;
         --image|-i) _IMAGE=$2; shift;;
@@ -101,7 +101,7 @@ if [ -z "$EXTNET_ID" ]; then
     exit 1
 fi
 
-if [ ${_ALL} = "yes" ]; then
+if [ ${_NET} = "yes" ]; then
 
     echo "Creating routers and networks"
 
@@ -150,7 +150,7 @@ if [ ${_ALL} = "yes" ]; then
 
     #nova quota fixing
 
-fi # End _ALL config
+fi # End _NET config
 
 
 # Testing if the image exists
@@ -164,9 +164,10 @@ MGMT_NET=$(neutron net-list --tenant_id=${TENANT_ID} | awk "/ ${OS_TENANT_NAME}-
 DATA_NET=$(neutron net-list --tenant_id=${TENANT_ID} | awk "/ ${OS_TENANT_NAME}-data-net /{print \$2}")
 DATA_SUBNET=$(neutron subnet-list --tenant_id=${TENANT_ID} | awk "/ ${OS_TENANT_NAME}-data-subnet /{print \$2}")
 
-echo "Management Net: $MGMT_NET"
-echo "Data Net: $DATA_NET"
-echo "Data SubNet: $DATA_SUBNET"
+# echo "Management Net: $MGMT_NET"
+# echo "Data Net: $DATA_NET"
+# echo "Data SubNet: $DATA_SUBNET"
+echo "Checking network information"
 
 if [ -z "$MGMT_NET" ] || [ -z "$DATA_NET" ] || [ -z "$DATA_SUBNET" ]; then
     echo "Error: Could not find the Management or Data network" > ${ORG_FD1}
@@ -182,6 +183,7 @@ fuser -k ${PORT}/tcp || true
 trap "fuser -k ${PORT}/tcp &>/dev/null || true; exit 1" SIGINT SIGTERM EXIT
 python ${MM_HOME}/lib/boot_progress.py $PORT "${MACHINES[@]}" 2>&1 &
 REST_PID=$!
+sleep 2
 
 function boot_machine {
     local machine=$1
@@ -198,9 +200,11 @@ echo 'Europe/Stockholm' > /etc/timezone
 echo "================================================================================"
 echo "Making sudo not require TTY for the centos user"
 echo 'Defaults:centos !requiretty' > /etc/sudoers.d/centos
+echo 'Defaults:root !requiretty' >> /etc/sudoers.d/centos
 echo "================================================================================"
 echo "Disabling SElinux"
-sed -i 's/SELINUX=.*/SELINUX=disabled/' /etc/sysconfig/selinux
+[ -f /etc/sysconfig/selinux ] && sed -i 's/SELINUX=.*/SELINUX=disabled/' /etc/sysconfig/selinux
+[ -f /etc/selinux/config ] && sed -i 's/SELINUX=.*/SELINUX=disabled/' /etc/selinux/config
 echo "================================================================================"
 echo "Adding the routing tables"
 echo '10 mgmt' >> /etc/iproute2/rt_tables
@@ -306,12 +310,14 @@ echo "Cloudinit phone home"
 curl http://${PHONE_HOME}:$PORT/machine/$machine/ready 2>&1 > /dev/null || true
 ENDCLOUDINIT
 
+#[ "$machine" == "controller" ] && _SWAP="--swap 2048" 
 
 # Booting a machine
 echo -e "\t* $machine"
 nova boot --flavor $flavor --image ${_IMAGE} --security-groups default,${OS_TENANT_NAME}-sg \
 --nic net-id=${MGMT_NET},v4-fixed-ip=$ip $DN \
 --user-data ${_VM_INIT} \
+${_SWAP} \
 $machine &>/dev/null
 
 } # End boot_machine function
@@ -338,18 +344,18 @@ do
     } || echo -e $'\e[31m\xE2\x9C\x97\e[0m' # fail (cross)
 done
 
-# ########################################################################
-# # Allowing external network ${MOSLER_EXT_CIDR} from the networking-node back to the openstack-controller
-# # We update the port corresponding to eth0 on the neutron node, so that the bridge can talk back to the controller.
-# # 
-# echo -n "Handling external network ${MOSLER_EXT_CIDR} within Openstack"
-# ( set -e # new shell, new env, exit if it errors on the way
-#   NEUTRON_ETH0=$(neutron port-list | awk "/${MACHINE_IPs[networking-node]}/ {print \$2}")
-#   [ ! -z "${NEUTRON_ETH0}" ] && neutron port-update ${NEUTRON_ETH0} --allowed-address-pairs type=dict list=true ip_address=${MOSLER_EXT_CIDR} >/dev/null
-#   # NEUTRON_ETH1=$(neutron port-list | awk "/${DATA_IPs[networking-node]}/ {print \$2}")
-#   # [ ! -z "${NEUTRON_ETH1}" ] && neutron port-update ${NEUTRON_ETH1} --allowed-address-pairs type=dict list=true ip_address=${MOSLER_EXT_CIDR} >/dev/null
-#   echo -e $' \e[32m\xE2\x9C\x93\e[0m'    # ok (checkmark)
-# ) || echo -e $' \e[31m\xE2\x9C\x97\e[0m' # fail (cross)
+########################################################################
+# Allowing external network ${EXT_CIDR} from the neutron back to the controller
+# We update the port corresponding to eth0 on the neutron node, so that the bridge can talk back to the controller.
+# 
+echo -n "Handling external network ${EXT_CIDR} within Openstack"
+( set -e # new shell, new env, exit if it errors on the way
+  NEUTRON_ETH0=$(neutron port-list | awk "/${MACHINE_IPs[neutron]}/ {print \$2}")
+  [ ! -z "${NEUTRON_ETH0}" ] && neutron port-update ${NEUTRON_ETH0} --allowed-address-pairs type=dict list=true ip_address=${EXT_CIDR} >/dev/null
+  # NEUTRON_ETH1=$(neutron port-list | awk "/${DATA_IPs[neutron]}/ {print \$2}")
+  # [ ! -z "${NEUTRON_ETH1}" ] && neutron port-update ${NEUTRON_ETH1} --allowed-address-pairs type=dict list=true ip_address=${EXT_CIDR} >/dev/null
+  echo -e $' \e[32m\xE2\x9C\x93\e[0m'    # ok (checkmark)
+) || echo -e $' \e[31m\xE2\x9C\x97\e[0m' # fail (cross)
 
 
 ########################################################################
