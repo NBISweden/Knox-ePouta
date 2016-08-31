@@ -8,6 +8,15 @@ sed -i "/^-A INPUT -p tcp -m state --state NEW -m tcp --dport 22 -j ACCEPT/ i \
 -A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT" /etc/sysconfig/iptables
 systemctl restart iptables
 
+
+##############################################################
+# Adding ntp1.it.uu.se. No DNS => ip only
+sed -i "/server 130.238.15.1 iburst/ d" /etc/chrony.conf
+echo "server 130.238.15.1 iburst" >> /etc/chrony.conf
+
+systemctl enable chronyd.service
+systemctl restart chronyd.service
+
 ##############################################################
 # Mount the nfs share as /meles
 NFS_LOCATION=/meles

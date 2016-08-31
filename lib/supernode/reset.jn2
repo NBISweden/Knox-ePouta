@@ -16,3 +16,8 @@ if mount | grep -q $NFS_LOCATION ;then
     service crond start
 fi
 sed -i '/storage:.*/ d' /etc/fstab
+
+##############################################################
+sed -i "/server 130.238.15.1 iburst/ d" /etc/chrony.conf
+systemctl stop chronyd.service
+systemctl disable chronyd.service

@@ -1,2 +1,12 @@
 # -*-sh-*-
 
+
+sed -i "/^-A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT/ d" /etc/sysconfig/iptables
+sed -i "/^-A INPUT -m state --state NEW -s {{ env['EXT_CIDR']|replace('/','\/') }} -j ACCEPT/ d" /etc/sysconfig/iptables
+systemctl restart iptables
+
+#############################################################
+
+sed -i '/server supernode iburst/ d' /etc/chrony.conf
+systemctl stop chronyd.service
+systemctl disable chronyd.service

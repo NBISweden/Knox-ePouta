@@ -16,8 +16,8 @@ systemctl restart iptables
 
 #############################################################
 
-sed -i '/server controller iburst/ d' /etc/chrony.conf
-echo 'server controller iburst' >> /etc/chrony.conf
+sed -i '/server supernode iburst/ d' /etc/chrony.conf
+echo 'server supernode iburst' >> /etc/chrony.conf
 systemctl enable chronyd.service
 systemctl restart chronyd.service
 
