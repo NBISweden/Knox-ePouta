@@ -86,6 +86,9 @@ export DATA_IPs=(\
 export DATA_GATEWAY=10.10.10.1
 export DATA_CIDR=10.10.10.0/24
 
+# For the external network within the 'over'-openstack
+export EXT_CIDR=172.18.0.0/24
+
 declare -A FLOATING_IPs
 export FLOATING_IPs=(\
     [supernode]=10.254.0.57 \
