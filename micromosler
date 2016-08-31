@@ -25,6 +25,8 @@ function usage {
     echo ""
 }
 
+_ALL=no
+
 case "$1" in
     init|clean|sync|provision|prepare|ping|snapshot|boot|reset)
 	TASK=$1
@@ -38,16 +40,54 @@ case "$1" in
 	export MM_CMD="$0 connect"
 	$(dirname ${BASH_SOURCE[0]})/lib/goto.sh $@ # pass the remaining arguments
 	;;
-    all)
-	echo "Not implemented yet";
-	set -e # exit on error
-	# $0 clean -q
-	# $0 init -i CentOS6-mm-extended -q
-	# # echo "Waiting the machines to be ready"
-	# sleep 300 # 5min
-	# $0 sync -q
-	# $0 provision --cheat -q
-	exit 2;;
+    all) _ALL=yes;;
     *) echo "$0: error - unrecognized command $1" 1>&2; usage; exit 1;;
 esac
 
+if [ "${_ALL}" = "yes" ]; then
+
+    if [[ "$@" =~ "--help" ]] || [[ "$@" =~ "-h" ]]; then
+	echo "Usage: $0 all [options]"
+	echo -e "\noptions are"
+	echo -e "\t--net            \tCreates also networks, routers, security groups and floating IPs"
+	echo -e "\t--image <img>,"
+	echo -e "\t     -i <img>    \tGlance image to use. Defaults to ${_IMAGE}"
+	echo -e "\t-q               \tShhh...Bambi is sleeping..."
+	echo -e "\t--help,-h        \tOutputs this message and exits"
+	exit 0
+    fi
+
+    shift # Remove the command name from $@
+
+    ARGS="$@"
+    if [[ "$ARGS" =~ "-q" ]]; then
+	_QUIET="yes"
+	ARGS=${ARGS/--quiet/}
+	ARGS=${ARGS/-q/}
+    fi
+
+    echo "MicroMosler - All in one"
+
+    mkdir -p ${MM_TMP}
+    [ ${_QUIET} == 'yes' ] && exec 1>${MM_TMP}/all-in-one.log
+    ORG_FD1=$(tty)
+
+    set -e # exit on error
+    echo "Booting the VMs"
+    $0 init ${ARGS}
+
+    T=20
+    echo -n "Waiting the VMs to reboot: Sleeping $T seconds"
+    #sleep $T
+    for i in {1..$T}; do echo -n '.'; sleep 1; done; echo ''
+
+    echo "Syncing the VMs"
+    $0 sync
+
+    echo "Provisioning the VMs"
+    $0 provision
+
+    exec 1>${ORG_FD1}
+    echo "Environment ready"
+
+fi
