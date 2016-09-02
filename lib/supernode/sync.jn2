@@ -9,6 +9,11 @@ systemctl enable rpcbind
 yum -y install tar make bzip2 perl git zlib zlib-devel java-1.8.0-openjdk java-1.8.0-openjdk-devel libstdc++-static gcc gcc-c++
 
 # Installing texlive....it's looooonng !!
+# yum -y install R bwa samtools
+
+# So I install a dummy-texlive package instead. Let's see if that breaks later...
+curl -OL http://mirrors.ctan.org/support/texlive/texlive-dummy/EnterpriseLinux-7/texlive-dummy-2012a-1.el7.noarch.rpm
+yum -y install texlive-dummy-2012a-1.el7.noarch.rpm
 yum -y install R bwa samtools
 
 # Setting up the web proxy in the environment

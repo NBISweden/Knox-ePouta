@@ -42,6 +42,7 @@ fi
 mkdir -p /usr/local/bin
 [[ "$PATH" =~ "/usr/local/bin" ]] || export PATH=/usr/local/bin:$PATH
 # uu_proxy was set up in the sync script
+export http_proxy="http://uu_proxy:3128/"
 export _JAVA_OPTIONS='-Dhttp.proxyHost=uu_proxy -Dhttp.proxyPort=3128 -Djava.net.preferIPv4Stack=true'
 export GRADLE_OPTS=${_JAVA_OPTIONS}
 
