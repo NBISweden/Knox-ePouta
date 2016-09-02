@@ -21,3 +21,11 @@ sed -i '/storage:.*/ d' /etc/fstab
 sed -i "/server 130.238.15.1 iburst/ d" /etc/chrony.conf
 systemctl stop chronyd.service
 systemctl disable chronyd.service
+
+##############################################################
+sed -i "/http_proxy/ d" /etc/environment
+# sed -i "/https_proxy/ d" /etc/environment
+# sed -i "/ftp_proxy/ d" /etc/environment
+# sed -i "/no_proxy/ d" /etc/environment
+
+sed -i '/http_proxy/ d' ~/.wgetrc

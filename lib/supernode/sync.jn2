@@ -6,6 +6,20 @@ systemctl enable iptables
 systemctl enable rpcbind
 
 # Installing dependencies
-yum install bzip2 perl git gcc java zlib zlib-devel gcc-c++ R bwa samtools
-# That will install java-1.8.0-openjdk.x86_64
+yum -y install tar make bzip2 perl git zlib zlib-devel java-1.8.0-openjdk java-1.8.0-openjdk-devel libstdc++-static gcc gcc-c++
 
+# Installing texlive....it's looooonng !!
+yum -y install R bwa samtools
+
+# Setting up the web proxy in the environment
+sed -i -e '/uu_proxy/ d' /etc/hosts
+echo "130.238.7.178 uu_proxy" >> /etc/hosts
+for f in /etc/environment ~/.wgetrc
+do
+    [ -e $f ] && sed -i "/http_proxy/ d" $f
+    [ -e $f ] && sed -i "/https_proxy/ d" $f
+    cat >> $f <<EOF 
+http_proxy="http://uu_proxy:3128/"
+https_proxy="https://uu_proxy:3128/"
+EOF
+done
