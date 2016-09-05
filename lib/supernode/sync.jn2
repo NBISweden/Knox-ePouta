@@ -12,7 +12,7 @@ yum -y install tar make bzip2 perl git zlib zlib-devel java-1.8.0-openjdk java-1
 # yum -y install R bwa samtools
 
 # So I install a dummy-texlive package instead. Let's see if that breaks later...
-curl -OL http://mirrors.ctan.org/support/texlive/texlive-dummy/EnterpriseLinux-7/texlive-dummy-2012a-1.el7.noarch.rpm
+curl --proxy http://uu_proxy:3128 -OL http://mirrors.ctan.org/support/texlive/texlive-dummy/EnterpriseLinux-7/texlive-dummy-2012a-1.el7.noarch.rpm
 yum -y install texlive-dummy-2012a-1.el7.noarch.rpm
 yum -y install R bwa samtools
 # It cuts down the dependencies from 300 to 100 packages.
@@ -29,3 +29,4 @@ http_proxy="http://uu_proxy:3128/"
 https_proxy="https://uu_proxy:3128/"
 EOF
 done
+
