@@ -105,7 +105,7 @@ do
 	    
 	    # Copying all files to the VAULT on that machine
 	    [ -d ${FOLDER}/files ] &&
-		rsync -av -e "ssh -F ${SSH_CONFIG}" ${FOLDER}/files/ ${FLOATING_IPs[$machine]}:${VAULT}/.
+		rsync -avL -e "ssh -F ${SSH_CONFIG}" ${FOLDER}/files/ ${FLOATING_IPs[$machine]}:${VAULT}/.
 	    
 	    # [ "$machine" == "thinlinc" ] && [ -d $TL_HOME ] &&
 	    # 	rsync -av -e "ssh -F ${SSH_CONFIG}" $TL_HOME/ ${FLOATING_IPs[$machine]}:${VAULT}/.

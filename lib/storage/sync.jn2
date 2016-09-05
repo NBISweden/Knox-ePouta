@@ -7,3 +7,4 @@ systemctl enable rpcbind
 systemctl enable nfs-server
 # systemctl enable nfs-lock
 # systemctl enable nfs-idmap
+

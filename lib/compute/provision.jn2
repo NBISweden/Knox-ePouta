@@ -21,3 +21,9 @@ echo 'server supernode iburst' >> /etc/chrony.conf
 systemctl enable chronyd.service
 systemctl restart chronyd.service
 
+#############################################################
+# Munge and SLURM
+systemctl enable munge
+systemctl restart munge
+systemctl enable slurmd.service
+systemctl restart slurmd.service

@@ -6,4 +6,19 @@ yum -y install nc nmap tcpdump chrony iptables-services
 
 systemctl enable iptables
 
+# Munge
+yum -y install munge munge-devel munge-libs 
 
+# chown -R munge: /etc/munge/ /var/log/munge/
+# chmod 0700 /etc/munge/ /var/log/munge/
+rsync -a --no-perms {{ env['VAULT'] }}/munge.key /etc/munge/munge.key
+chown munge:munge /etc/munge/munge.key
+chmod 700 /etc/munge/munge.key
+
+# Dev libs for Slurm
+yum -y install openssl openssl-devel pam-devel numactl numactl-devel hwloc hwloc-devel lua lua-devel readline-devel rrdtool-devel ncurses-devel man2html libibmad libibumad perl-ExtUtils-MakeMaker
+yum -y install {{ env['VAULT'] }}/slurm*.rpm 
+
+rsync -a --no-perms {{ env['VAULT'] }}/slurm.conf /etc/slurm/slurm.conf
+chown slurm:slurm /etc/slurm/slurm.conf
+chmod 644 /etc/slurm/slurm.conf

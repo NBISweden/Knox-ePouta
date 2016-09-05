@@ -28,12 +28,8 @@ else
 fi
 
 mount -t nfs storage:/nfs $NFS_LOCATION || exit 1 # Using 'storage' instead of {{ env['NFS_SERVER'] }}
-
-if ! grep -q "storage:" /etc/fstab; then
-    cat >> /etc/fstab <<EOF
-storage:/nfs/mosler $NFS_LOCATION  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0
-EOF
-fi
+sed -i -e '/storage:/ d' /etc/fstab
+echo "storage:/nfs $NFS_LOCATION  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
 
 
 ##############################################################
@@ -42,12 +38,12 @@ mkdir -p /usr/local/bin
 [[ "$PATH" =~ "/usr/local/bin" ]] || export PATH=/usr/local/bin:$PATH
 # uu_proxy was set up in the sync script
 export http_proxy="http://uu_proxy:3128/"
+#export https_proxy="https://uu_proxy:3128/"
 export _JAVA_OPTIONS='-Dhttp.proxyHost=uu_proxy -Dhttp.proxyPort=3128 -Djava.net.preferIPv4Stack=true'
 export GRADLE_OPTS=${_JAVA_OPTIONS}
 
-
-##############################################################
-#git config --global http.proxy http://uu_proxy:3128
+git config --global http.proxy http://uu_proxy:3128
+git config --global https.proxy https://uu_proxy:3128
 
 ##############################################################
 # Gradle
@@ -100,17 +96,18 @@ popd
 
 ##############################################################
 # Manta
-MANTA_VERSION=1.0.0 # CAW requires 0.27.1
-[ ! -d manta ] && git clone https://github.com/Illumina/manta.git
-pushd manta
-git pull # to update
-mkdir -p ./build # can't be run from its source directory
-pushd ./build 
-# export CC=/path/to/cc
-# export CXX=/path/to/c++
-../configure
+#MANTA_VERSION=1.0.0 # CAW requires 0.27.1
+if [ ! -d manta/build ]; then
+    git clone https://github.com/Illumina/manta.git
+    mkdir -p manta/build # can't be run from its source directory
+    pushd manta/build
+    # export CC=/path/to/cc
+    # export CXX=/path/to/c++
+    ../configure
+    popd
+fi
+pushd manta/build
 make install
-popd
 popd
 
 ##############################################################
@@ -135,7 +132,75 @@ mv nextflow /usr/local/bin/.
 chmod +x /usr/local/bin/nextflow
 
 ##############################################################
+# Munge and Slurm
+systemctl enable munge
+systemctl restart munge
+systemctl enable slurmctld.service
+systemctl restart slurmctld.service
+# No need to add to iptables: ports 6817/udp 6817/tcp 6818/tcp 7321/tcp
+
+
+##############################################################
 # Git project CAW
-# Fix the ssh key so we don't use user/password combinations
-# git clone https://github.com/SciLifeLab/CAW.git
+if [ ! -d CAW ]; then
+    git clone https://github.com/SciLifeLab/CAW.git
+fi
+
+# pre-processing. Nasty part that requires a lot of CPU and temporary disk space
+# once we have the pre-processed reads, we run the remainder (variant call, finding mutations)
+
+cat > mm.config <<EOF
+/* -------------------------------------------------
+ * Nextflow config file for CAW project
+ * working on milou (UPPMAX)
+ * Set up with test data
+ * -------------------------------------------------
+ * Should be saved either with Nextflow installation
+ * or as file ~/.nextflow/config
+ */
+
+process {
+  executor = 'slurm'
+  cpus = 1
+  memory = '2 GB'
+  time = '48h'
+  queue = 'node'
+  clusterOptions = {
+    '-A b2013064 -t 24:00:00'
+  }
+}
+
+params {
+  cawDir       = '~/dev/CAW-fork' // Your own CAW directory
+  sample       = 'data/tsv/tiny.tsv'
+  sampleVcf    = 'data/chr17-1M-2M-test.vcf'
+  out          = ''
+  genome       = '/sw/data/uppnex/ToolBox/ReferenceAssemblies/hg38make/bundle/2.8/b37/human_g1k_v37_decoy.fasta'
+  genomeIndex  = '/sw/data/uppnex/ToolBox/ReferenceAssemblies/hg38make/bundle/2.8/b37/human_g1k_v37_decoy.fasta.fai'
+  mantaRef     = '/proj/b2013064/jesper/human_g1k_v37_decoy.fasta'
+  mantaIndex   = '/proj/b2013064/jesper/human_g1k_v37_decoy.fasta.fai'
+  genomeDict   = '/sw/data/uppnex/ToolBox/ReferenceAssemblies/hg38make/bundle/2.8/b37/human_g1k_v37_decoy.dict'
+  cosmic       = '/sw/data/uppnex/ToolBox/ReferenceAssemblies/hg38make/bundle/2.8/b37/b37_cosmic_v74.noCHR.sort.vcf'
+  cosmicIndex  = '/sw/data/uppnex/ToolBox/ReferenceAssemblies/hg38make/bundle/2.8/b37/b37_cosmic_v74.noCHR.sort.vcf.idx'
+  dbsnp        = '/sw/data/uppnex/ToolBox/ReferenceAssemblies/hg38make/bundle/2.8/b37/dbsnp_138.b37.vcf'
+  dbsnpIndex   = '/sw/data/uppnex/ToolBox/ReferenceAssemblies/hg38make/bundle/2.8/b37/dbsnp_138.b37.vcf.idx'
+  kgIndels     = '/sw/data/uppnex/ToolBox/ReferenceAssemblies/hg38make/bundle/2.8/b37/1000G_phase1.indels.b37.vcf'
+  kgIndex      = '/sw/data/uppnex/ToolBox/ReferenceAssemblies/hg38make/bundle/2.8/b37/1000G_phase1.indels.b37.vcf.idx'
+  millsIndels  = '/sw/data/uppnex/ToolBox/ReferenceAssemblies/hg38make/bundle/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf'
+  millsIndex   = '/sw/data/uppnex/ToolBox/ReferenceAssemblies/hg38make/bundle/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf.idx'
+  mutect1Home  = '/sw/apps/bioinfo/mutect/1.1.5/milou'
+  snpeffHome   = '/sw/apps/bioinfo/snpEff/4.2/milou'
+  snpeffDb     = 'GRCh37.75'
+  picardHome   = '/sw/apps/bioinfo/picard/1.118/milou'
+  gatkHome     = '/sw/apps/bioinfo/GATK/3.3.0'
+  vardictHome  = '/sw/apps/bioinfo/VarDictJava/1.4.5/milou/VarDictJava'
+  mutect2Home  = '/sw/apps/bioinfo/GATK/3.6'
+  strelkaHome  = '~/Strelka'
+  strelkaCFG   = '~/dev/CAW-fork/strelka_config.ini'
+  SNIC_tmp_dir = '${SNIC_TMP?:"/tmp"}'
+  intervals    = 'repeats/centromeres.list'
+}
+EOF
+
+#nextflow run MultiFQtoVC.nf -c mm.config --sample mysample.tsv
 
