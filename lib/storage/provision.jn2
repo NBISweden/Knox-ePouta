@@ -19,14 +19,7 @@ systemctl restart chronyd.service
 
 # Creating NFS share
 mkdir -p /nfs
-rsync -a --no-perms {{ env['VAULT'] }}/slurm.conf /nfs/.
-rsync -a --no-perms {{ env['VAULT'] }}/slurm*.rpm /nfs/.
-
-:> /etc/exports
-if ! grep -q "/nfs" /etc/exports; then
-    echo "/nfs {{ env['MGMT_CIDR'] }}(rw,sync,no_root_squash,no_all_squash,no_subtree_check)" >> /etc/exports
-fi
-
+echo "/nfs {{ env['MGMT_CIDR'] }}(rw,sync,no_root_squash,no_all_squash,no_subtree_check)" > /etc/exports
 #exportfs -ra
 
 systemctl restart rpcbind

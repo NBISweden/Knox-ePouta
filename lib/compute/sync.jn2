@@ -9,16 +9,45 @@ systemctl enable iptables
 # Munge
 yum -y install munge munge-devel munge-libs 
 
-# chown -R munge: /etc/munge/ /var/log/munge/
-# chmod 0700 /etc/munge/ /var/log/munge/
+# if getent passwd | grep -q munge; then :; else
+#     export MUNGEUSER=981
+#     groupadd -g $MUNGEUSER munge
+#     useradd  -m -c "MUNGE Uid 'N' Gid Emporium" -d /var/lib/munge -u $MUNGEUSER -g munge  -s /sbin/nologin munge
+# fi
+
+chown -R munge: /etc/munge/ /var/log/munge/
+chmod 0700 /etc/munge/ /var/log/munge/
 rsync -a --no-perms {{ env['VAULT'] }}/munge.key /etc/munge/munge.key
 chown munge:munge /etc/munge/munge.key
 chmod 700 /etc/munge/munge.key
 
 # Dev libs for Slurm
 yum -y install openssl openssl-devel pam-devel numactl numactl-devel hwloc hwloc-devel lua lua-devel readline-devel rrdtool-devel ncurses-devel man2html libibmad libibumad perl-ExtUtils-MakeMaker
-yum -y install {{ env['VAULT'] }}/slurm*.rpm 
+
+if getent passwd | grep -q slurm; then :; else
+    export SLURMUSER=982
+    groupadd -g $SLURMUSER slurm
+    useradd  -m -c "SLURM workload manager" -d /var/lib/slurm -u $SLURMUSER -g slurm  -s /bin/bash slurm
+fi
+
+# Test if installed, since rpm -Uvh returns an exit status of 1
+pushd {{ env['VAULT'] }}
+for package in slurm*.rpm
+do
+    if ! rpm -q ${package%.rpm} > /dev/null ; then 
+	rpm -ivh $package
+    fi
+done
+popd
+
 
 rsync -a --no-perms {{ env['VAULT'] }}/slurm.conf /etc/slurm/slurm.conf
 chown slurm:slurm /etc/slurm/slurm.conf
 chmod 644 /etc/slurm/slurm.conf
+
+mkdir -p /var/spool/slurmd /var/log/slurm
+chown slurm: /var/spool/slurmd /var/log/slurm
+chmod 755 /var/spool/slurmd /var/log/slurm
+
+touch /var/log/slurm/slurmd.log
+chown slurm: /var/log/slurm/slurmd.log
