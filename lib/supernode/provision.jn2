@@ -18,18 +18,26 @@ systemctl restart chronyd.service
 
 ##############################################################
 # Mount the nfs share as /meles
-NFS_LOCATION=/meles
-mkdir -p $NFS_LOCATION
 
-if mount | grep -q $NFS_LOCATION ;then
-    umount $NFS_LOCATION
-else
-    sleep 20 # wait a bit for the nfs server
-fi
+SLURM_LOCATION=/mnt/slurm
+CAW_DATA=/mnt/data
+CAW_SW=/mnt/sw
 
-mount -t nfs storage:/nfs $NFS_LOCATION || exit 1 # Using 'storage' instead of {{ env['NFS_SERVER'] }}
+mkdir -p $SLURM_LOCATION
+mkdir -p $CAW_SW $CAW_DATA
+
+if mount | grep -q $CAW_DATA ;then umount $CAW_DATA; fi
+if mount | grep -q $CAW_SW ;then umount $CAW_SW; fi
+if mount | grep -q $SLURM_LOCATION ;then umount $SLURM_LOCATION; fi
+sleep 5
+
+mount -t nfs storage:/nfs/slurm $SLURM_LOCATION || exit 1
+mount -t nfs storage:/nfs/data $CAW_DATA || exit 1
+mount -t nfs storage:/nfs/sw $CAW_SW || exit 1
 sed -i -e '/storage:/ d' /etc/fstab
-echo "storage:/nfs $NFS_LOCATION  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
+echo "storage:/nfs/data $CAW_DATA  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
+echo "storage:/nfs/sw $CAW_SW  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
+echo "storage:/nfs/slurm $SLURM_LOCATION  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
 
 
 ##############################################################
@@ -45,87 +53,51 @@ export GRADLE_OPTS=${_JAVA_OPTIONS}
 git config --global http.proxy http://uu_proxy:3128
 git config --global https.proxy https://uu_proxy:3128
 
-##############################################################
-# Gradle
-GRADLE_VERSION=2.13
-if [ ! -d gradle-${GRADLE_VERSION} ]; then
-    rm -rf gradle-${GRADLE_VERSION}-bin.zip
-    curl -o gradle-${GRADLE_VERSION}-bin.zip -L https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
-    unzip gradle-${GRADLE_VERSION}-bin.zip
-fi
-export GRADLE_HOME=$(pwd)/gradle-${GRADLE_VERSION}
-[[ "$PATH" =~ "${GRADLE_HOME}/bin" ]] || export PATH=${GRADLE_HOME}/bin:$PATH
-
-# Adding settings for HTTP and HTTPS proxy
-mkdir -p ~/.gradle
-[ -f ~/.gradle/gradle.properties ] && sed -i -e '/systemProp\.https\?\.proxy/ d' ~/.gradle/gradle.properties
-echo "systemProp.http.proxyHost=uu_proxy" >> ~/.gradle/gradle.properties
-echo "systemProp.http.proxyPort=3128" >> ~/.gradle/gradle.properties
-echo "systemProp.https.proxyHost=uu_proxy" >> ~/.gradle/gradle.properties
-echo "systemProp.https.proxyPort=3128" >> ~/.gradle/gradle.properties
-echo 'systemProp.http.nonProxyHosts="uu_proxy|localhost"' >> ~/.gradle/gradle.properties
-
-##############################################################
-# Picard
-# rm -f picard.tar.gz
-# curl -o picard.tar.gz -L https://github.com/broadinstitute/picard/tarball/master
-[ ! -d picard ] && git clone https://github.com/broadinstitute/picard.git
-pushd picard
-git pull # to update
-# Gradle is in the PATH. See above.
-gradle shadowJar
-popd
-
-##############################################################
-# GIT LFS as RPM
-if yum list installed | grep -q git-lfs; then : ; else
-    curl -o git-lfs-1.4.1-1.el7.x86_64.rpm -L https://packagecloud.io/github/git-lfs/packages/el/7/git-lfs-1.4.1-1.el7.x86_64.rpm/download
-    yum -y install git-lfs-1.4.1-1.el7.x86_64.rpm
-fi
-
-##############################################################
-# GATK
-[ ! -d gatk ] && git clone https://github.com/broadinstitute/gatk.git
-pushd gatk
-git pull # to update
-git lfs install
-git lfs pull
-gradle installAll
-# gradle localJar
-popd
-
-##############################################################
-# Manta
-#MANTA_VERSION=1.0.0 # CAW requires 0.27.1
-#if [ ! -x /usr/local/bin/manta ]; then
-if [ ! -d manta/build ]; then
-    git clone https://github.com/Illumina/manta.git
-    mkdir -p manta/build # can't be run from its source directory
-    pushd manta/build
-    export CC=/bin/cc
-    export CXX=/bin/c++
-    ../configure
-    popd
-fi
-make -C manta/build install
-#fi
+# ##############################################################
+# # Manta
+# # See: https://github.com/Illumina/manta
+# #MANTA_VERSION=1.0.0 # CAW requires 0.27.1
+# #if [ ! -x /usr/local/bin/manta ]; then
+# if [ ! -d manta/build ]; then
+#     git clone https://github.com/Illumina/manta.git
+#     mkdir -p manta/build # can't be run from its source directory
+#     pushd manta/build
+#     export CC=/bin/cc
+#     export CXX=/bin/c++
+#     ../configure
+#     popd
+# fi
+# make -C manta/build install
+# #fi
 
 ##############################################################
 # Strelka
-# from https://sites.google.com/site/strelkasomaticvariantcaller/home/strelka-workflow-installation
+# See: https://sites.google.com/site/strelkasomaticvariantcaller/home/strelka-workflow-installation
 STRELKA_VERSION=1.0.15 # required by CAW
 if [ ! -d strelka_workflow-${STRELKA_VERSION} ]; then
     rm -f strelka_workflow-${STRELKA_VERSION}.tar.gz
     curl -o strelka_workflow-${STRELKA_VERSION}.tar.gz -L "https://sites.google.com/site/strelkasomaticvariantcaller/home/download/strelka_workflow-${STRELKA_VERSION}.tar.gz?attredirects=0&d=1"
     tar -xzf strelka_workflow-${STRELKA_VERSION}.tar.gz
+    pushd strelka_workflow-${STRELKA_VERSION}
+    ./configure #--prefix=/usr/local/bin
+    popd
 fi
-pushd strelka_workflow-${STRELKA_VERSION}
-./configure #--prefix=/usr/local/bin
-make
-popd
+make -C strelka_workflow-${STRELKA_VERSION}
 
 ##############################################################
 # Munge and Slurm
+# See: https://wiki.fysik.dtu.dk/niflheim/SLURM
+
+# Test if installed, since rpm -Uvh returns an exit status of 1
+pushd /mnt/slurm
+for package in slurm*.rpm
+do
+    if ! rpm -q ${package%.rpm} > /dev/null ; then 
+	rpm -ivh $package
+    fi
+done
+popd
+
 systemctl enable munge
 systemctl restart munge
 systemctl enable slurmctld.service
@@ -134,13 +106,16 @@ systemctl restart slurmctld.service
 
 ##############################################################
 # NextFlow
+# See: https://www.nextflow.io/
 curl -fsSL get.nextflow.io | bash
 # Moving nextflow to /usr/local/bin
 mv -f nextflow /usr/local/bin/.
 chmod +x /usr/local/bin/nextflow
 
+
 ##############################################################
 # Git project CAW
+# See: https://github.com/SciLifeLab/CAW/
 if [ ! -d CAW ]; then
     git clone https://github.com/SciLifeLab/CAW.git
 fi
@@ -150,59 +125,10 @@ fi
 
 pushd CAW
 
-cat > mm.config <<'EOF'
-/* -------------------------------------------------
- * Nextflow config file for CAW project
- * working on milou (UPPMAX)
- * Set up with test data
- * -------------------------------------------------
- * Should be saved either with Nextflow installation
- * or as file ~/.nextflow/config
- */
+# in /root/.bashrc: function module () { return 0; }
 
-process {
-  executor = 'slurm'
-  cpus = 1
-  memory = '2 GB'
-  time = '48h'
-  queue = 'node'
-  clusterOptions = {
-    '-A b2013064 -t 24:00:00'
-  }
-}
+rsync -a --no-perms /home/centos/{{ env['VAULT'] }}/mm.config config/.
 
-params {
-  cawDir       = '~/dev/CAW-fork' // Your own CAW directory
-  sample       = 'data/tsv/tiny.tsv'
-  sampleVcf    = 'data/chr17-1M-2M-test.vcf'
-  out          = ''
-  genome       = '/sw/data/uppnex/ToolBox/ReferenceAssemblies/hg38make/bundle/2.8/b37/human_g1k_v37_decoy.fasta'
-  genomeIndex  = '/sw/data/uppnex/ToolBox/ReferenceAssemblies/hg38make/bundle/2.8/b37/human_g1k_v37_decoy.fasta.fai'
-  mantaRef     = '/proj/b2013064/jesper/human_g1k_v37_decoy.fasta'
-  mantaIndex   = '/proj/b2013064/jesper/human_g1k_v37_decoy.fasta.fai'
-  genomeDict   = '/sw/data/uppnex/ToolBox/ReferenceAssemblies/hg38make/bundle/2.8/b37/human_g1k_v37_decoy.dict'
-  cosmic       = '/sw/data/uppnex/ToolBox/ReferenceAssemblies/hg38make/bundle/2.8/b37/b37_cosmic_v74.noCHR.sort.vcf'
-  cosmicIndex  = '/sw/data/uppnex/ToolBox/ReferenceAssemblies/hg38make/bundle/2.8/b37/b37_cosmic_v74.noCHR.sort.vcf.idx'
-  dbsnp        = '/sw/data/uppnex/ToolBox/ReferenceAssemblies/hg38make/bundle/2.8/b37/dbsnp_138.b37.vcf'
-  dbsnpIndex   = '/sw/data/uppnex/ToolBox/ReferenceAssemblies/hg38make/bundle/2.8/b37/dbsnp_138.b37.vcf.idx'
-  kgIndels     = '/sw/data/uppnex/ToolBox/ReferenceAssemblies/hg38make/bundle/2.8/b37/1000G_phase1.indels.b37.vcf'
-  kgIndex      = '/sw/data/uppnex/ToolBox/ReferenceAssemblies/hg38make/bundle/2.8/b37/1000G_phase1.indels.b37.vcf.idx'
-  millsIndels  = '/sw/data/uppnex/ToolBox/ReferenceAssemblies/hg38make/bundle/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf'
-  millsIndex   = '/sw/data/uppnex/ToolBox/ReferenceAssemblies/hg38make/bundle/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf.idx'
-  mutect1Home  = '/sw/apps/bioinfo/mutect/1.1.5/milou'
-  snpeffHome   = '/sw/apps/bioinfo/snpEff/4.2/milou'
-  snpeffDb     = 'GRCh37.75'
-  picardHome   = '/sw/apps/bioinfo/picard/1.118/milou'
-  gatkHome     = '/sw/apps/bioinfo/GATK/3.3.0'
-  vardictHome  = '/sw/apps/bioinfo/VarDictJava/1.4.5/milou/VarDictJava'
-  mutect2Home  = '/sw/apps/bioinfo/GATK/3.6'
-  strelkaHome  = '~/Strelka'
-  strelkaCFG   = '~/dev/CAW-fork/strelka_config.ini'
-  SNIC_tmp_dir = '${SNIC_TMP?:"/tmp"}'
-  intervals    = 'repeats/centromeres.list'
-}
-EOF
-
-nextflow run MultiFQtoVC.nf -c mm.config --sample sample.tsv
+# nextflow run MultiFQtoVC.nf -c config/mm.config --sample data/tsv/sample.tsv
 
 popd

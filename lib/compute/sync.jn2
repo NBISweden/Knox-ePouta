@@ -30,17 +30,8 @@ if getent passwd | grep -q slurm; then :; else
     useradd  -m -c "SLURM workload manager" -d /var/lib/slurm -u $SLURMUSER -g slurm  -s /bin/bash slurm
 fi
 
-# Test if installed, since rpm -Uvh returns an exit status of 1
-pushd {{ env['VAULT'] }}
-for package in slurm*.rpm
-do
-    if ! rpm -q ${package%.rpm} > /dev/null ; then 
-	rpm -ivh $package
-    fi
-done
-popd
-
-
+mkdir -p /etc/slurm
+chown slurm:slurm /etc/slurm
 rsync -a --no-perms {{ env['VAULT'] }}/slurm.conf /etc/slurm/slurm.conf
 chown slurm:slurm /etc/slurm/slurm.conf
 chmod 644 /etc/slurm/slurm.conf

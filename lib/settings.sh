@@ -35,6 +35,9 @@ export VERBOSE=yes
 [ -n "$MM_HOME" ]       || readonly MM_HOME=$ABOVE
 #[ -n "$TL_HOME" ]       || readonly TL_HOME=/home/jonas/thinlinc
 
+[ -n "$CAW_DATA" ]     || readonly CAW_DATA=/home/fred/CAW/data
+[ -n "$CAW_SW" ]       || readonly CAW_SW=/home/fred/CAW/sw
+
 [ -n "$MM_TMP" ]      || readonly MM_TMP=${MM_HOME}/tmp/${OS_TENANT_NAME}
 mkdir -p ${MM_TMP}
 export MM_TMP

@@ -22,8 +22,40 @@ systemctl enable chronyd.service
 systemctl restart chronyd.service
 
 #############################################################
+
+SLURM_LOCATION=/mnt/slurm
+CAW_DATA=/mnt/data
+CAW_SW=/mnt/sw
+
+mkdir -p $CAW_SW $CAW_DATA $SLURM_LOCATION
+
+if mount | grep -q $CAW_DATA ;then umount $CAW_DATA; fi
+if mount | grep -q $CAW_SW ;then umount $CAW_SW; fi
+if mount | grep -q $SLURM_LOCATION ;then umount $SLURM_LOCATION; fi
+sleep 5
+
+mount -t nfs storage:/nfs/data $CAW_DATA || exit 1
+mount -t nfs storage:/nfs/sw $CAW_SW || exit 1
+mount -t nfs storage:/nfs/slurm $SLURM_LOCATION || exit 1
+sed -i -e '/storage:/ d' /etc/fstab
+echo "storage:/nfs/data $CAW_DATA  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
+echo "storage:/nfs/sw $CAW_SW  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
+echo "storage:/nfs/slurm $SLURM_LOCATION  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
+
+#############################################################
 # Munge and SLURM
+# Test if installed, since rpm -Uvh returns an exit status of 1
+pushd /mnt/slurm
+for package in slurm*.rpm
+do
+    if ! rpm -q ${package%.rpm} > /dev/null ; then 
+	rpm -ivh $package
+    fi
+done
+popd
+
 systemctl enable munge
 systemctl restart munge
 systemctl enable slurmd.service
 systemctl restart slurmd.service
+

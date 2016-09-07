@@ -19,7 +19,18 @@ systemctl restart chronyd.service
 
 # Creating NFS share
 mkdir -p /nfs
-echo "/nfs {{ env['MGMT_CIDR'] }}(rw,sync,no_root_squash,no_all_squash,no_subtree_check)" > /etc/exports
+[ -d /nfs/slurm ] && unlink /nfs/slurm
+[ -d /nfs/data ] && unlink /nfs/data
+[ -d /nfs/sw ] && unlink /nfs/sw
+
+ln -s /home/centos/{{ env['VAULT'] }}/data /nfs/data
+ln -s /home/centos/{{ env['VAULT'] }}/sw /nfs/sw
+ln -s /home/centos/{{ env['VAULT'] }}/slurm /nfs/slurm
+
+:> /etc/exports
+echo "/nfs/slurm {{ env['MGMT_CIDR'] }}(rw,sync,no_root_squash,no_all_squash,no_subtree_check)" >> /etc/exports
+echo "/nfs/data {{ env['MGMT_CIDR'] }}(rw,sync,no_root_squash,no_all_squash,no_subtree_check)" >> /etc/exports
+echo "/nfs/sw {{ env['MGMT_CIDR'] }}(rw,sync,no_root_squash,no_all_squash,no_subtree_check)" >> /etc/exports
 #exportfs -ra
 
 systemctl restart rpcbind

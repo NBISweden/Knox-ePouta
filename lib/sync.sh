@@ -84,6 +84,7 @@ trap 'cleanup' INT TERM #EXIT #HUP ERR
 # trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
 #export TL_HOME MOSLER_IMAGES
+export CAW_SW CAW_DATA
 
 echo "Syncing servers"
 FAIL=0
@@ -109,6 +110,12 @@ do
 	    
 	    # [ "$machine" == "thinlinc" ] && [ -d $TL_HOME ] &&
 	    # 	rsync -av -e "ssh -F ${SSH_CONFIG}" $TL_HOME/ ${FLOATING_IPs[$machine]}:${VAULT}/.
+
+	    if [ "$machine" == "storage" ]; then
+		ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} mkdir -p ${VAULT}/sw ${VAULT}/data
+		[ -d $CAW_SW ] && rsync -av -e "ssh -F ${SSH_CONFIG}" $CAW_SW/ ${FLOATING_IPs[$machine]}:${VAULT}/sw/.
+		[ -d $CAW_DATA ] && rsync -av -e "ssh -F ${SSH_CONFIG}" $CAW_DATA/ ${FLOATING_IPs[$machine]}:${VAULT}/data/.
+	    fi
 	    
 	    # Phase 2: running some commands
 	    _SCRIPT=${MM_TMP}/$machine/sync/run.sh
