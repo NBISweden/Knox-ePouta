@@ -98,11 +98,14 @@ do
 done
 popd
 
-systemctl enable munge
-systemctl restart munge
-systemctl enable slurmctld.service
+# Nuke the logs
+for log in munge/munged.log slurm/slurmctld.log  slurm/slurm_job{acct,comp}.log; do :> /var/log/$log; done
+
+systemctl restart munge.service
 systemctl restart slurmctld.service
 # No need to add to iptables: ports 6817/udp 6817/tcp 6818/tcp 7321/tcp
+systemctl enable munge.service
+systemctl enable slurmctld.service
 
 ##############################################################
 # NextFlow

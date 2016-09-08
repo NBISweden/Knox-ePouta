@@ -54,8 +54,13 @@ do
 done
 popd
 
-systemctl enable munge
-systemctl restart munge
-systemctl enable slurmd.service
+# Nuke the logs
+:> /var/log/munge/munged.log
+:> /var/log/slurm/slurmd.log
+
+systemctl restart munge.service
 systemctl restart slurmd.service
+
+systemctl enable munge.service
+systemctl enable slurmd.service
 
