@@ -27,13 +27,74 @@ ln -s /home/centos/{{ env['VAULT'] }}/data /nfs/data
 ln -s /home/centos/{{ env['VAULT'] }}/sw /nfs/sw
 ln -s /home/centos/{{ env['VAULT'] }}/slurm /nfs/slurm
 
+MM_PROJECTS=/nfs/projects
+mkdir -p $MM_PROJECTS
+rm -rf ${MM_PROJECTS}/ready
+
 :> /etc/exports
 echo "/nfs/slurm {{ env['MGMT_CIDR'] }}(rw,sync,no_root_squash,no_all_squash,no_subtree_check)" >> /etc/exports
 echo "/nfs/data {{ env['MGMT_CIDR'] }}(rw,sync,no_root_squash,no_all_squash,no_subtree_check)" >> /etc/exports
 echo "/nfs/sw {{ env['MGMT_CIDR'] }}(rw,sync,no_root_squash,no_all_squash,no_subtree_check)" >> /etc/exports
+echo "$MM_PROJECTS {{ env['MGMT_CIDR'] }}(rw,sync,no_root_squash,no_all_squash,no_subtree_check)" >> /etc/exports
 #exportfs -ra
 
 systemctl restart rpcbind
 systemctl restart nfs-server
 # systemctl restart nfs-lock
 # systemctl restart nfs-idmap
+
+##############################################################
+# Settings
+# uu_proxy was set up in the sync script
+export http_proxy="http://uu_proxy:3128/"
+#export https_proxy="https://uu_proxy:3128/"
+export _JAVA_OPTIONS='-Dhttp.proxyHost=uu_proxy -Dhttp.proxyPort=3128 -Djava.net.preferIPv4Stack=true'
+
+git config --global http.proxy http://uu_proxy:3128
+git config --global https.proxy https://uu_proxy:3128
+
+##############################################################
+# Manta
+# See: https://github.com/Illumina/manta
+#MANTA_VERSION=1.0.0 # CAW requires 0.27.1
+if [ ! -e ${MM_PROJECTS}/manta/build/ready ]; then
+    if [ ! -d ${MM_PROJECTS}/manta/build ]; then
+	rm -rf ${MM_PROJECTS}/manta
+	git clone https://github.com/Illumina/manta.git ${MM_PROJECTS}/manta
+	mkdir -p ${MM_PROJECTS}/manta/build # can't be run from its source directory
+	pushd ${MM_PROJECTS}/manta/build
+	export CC=/bin/cc
+	export CXX=/bin/c++
+	../configure
+	popd
+    fi
+    make -C ${MM_PROJECTS}/manta/build install
+    touch ${MM_PROJECTS}/manta/build/ready
+fi
+
+##############################################################
+# Strelka
+# See: https://sites.google.com/site/strelkasomaticvariantcaller/home/strelka-workflow-installation
+STRELKA_VERSION=1.0.15 # required by CAW
+if [ ! -d ${MM_PROJECTS}/strelka_workflow-${STRELKA_VERSION} ]; then
+    rm -f ${MM_PROJECTS}/strelka_workflow-${STRELKA_VERSION}.tar.gz
+    curl -o ${MM_PROJECTS}/strelka_workflow-${STRELKA_VERSION}.tar.gz -L "https://sites.google.com/site/strelkasomaticvariantcaller/home/download/strelka_workflow-${STRELKA_VERSION}.tar.gz?attredirects=0&d=1"
+    pushd ${MM_PROJECTS}
+    tar -xzf strelka_workflow-${STRELKA_VERSION}.tar.gz
+    pushd strelka_workflow-${STRELKA_VERSION}
+    ./configure #--prefix=/usr/local/bin
+    popd
+    popd
+fi
+make -C ${MM_PROJECTS}/strelka_workflow-${STRELKA_VERSION}
+
+##############################################################
+# Git project CAW
+# See: https://github.com/SciLifeLab/CAW/
+if [ ! -d ${MM_PROJECTS}/CAW ]; then
+    git clone https://github.com/SciLifeLab/CAW.git ${MM_PROJECTS}/CAW
+fi
+rm -rf ${MM_PROJECTS}/CAW/work
+
+##############################################################
+touch ${MM_PROJECTS}/ready

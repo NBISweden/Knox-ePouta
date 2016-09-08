@@ -46,6 +46,7 @@ cat > ${MM_TMP}/hosts <<ENDHOST
 127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
 ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
 
+130.238.7.178 uu_proxy
 ENDHOST
 for name in ${MACHINES[@]}; do echo "${MACHINE_IPs[$name]} $name" >> ${MM_TMP}/hosts; done
 

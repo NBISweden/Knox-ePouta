@@ -26,37 +26,41 @@ systemctl restart chronyd.service
 SLURM_LOCATION=/mnt/slurm
 CAW_DATA=/mnt/data
 CAW_SW=/mnt/sw
+MM_PROJECTS=/mnt/projects
 
-mkdir -p $CAW_SW $CAW_DATA $SLURM_LOCATION
+mkdir -p $SLURM_LOCATION $CAW_SW $CAW_DATA $MM_PROJECTS
 
 if mount | grep -q $CAW_DATA ;then umount $CAW_DATA; fi
 if mount | grep -q $CAW_SW ;then umount $CAW_SW; fi
 if mount | grep -q $SLURM_LOCATION ;then umount $SLURM_LOCATION; fi
+if mount | grep -q $MM_PROJECTS ;then umount $MM_PROJECTS; fi
 sleep 5
 
+mount -t nfs storage:/nfs/slurm $SLURM_LOCATION || exit 1
 mount -t nfs storage:/nfs/data $CAW_DATA || exit 1
 mount -t nfs storage:/nfs/sw $CAW_SW || exit 1
-mount -t nfs storage:/nfs/slurm $SLURM_LOCATION || exit 1
+mount -t nfs storage:/nfs/projects $MM_PROJECTS || exit 1
 sed -i -e '/storage:/ d' /etc/fstab
 echo "storage:/nfs/data $CAW_DATA  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
 echo "storage:/nfs/sw $CAW_SW  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
 echo "storage:/nfs/slurm $SLURM_LOCATION  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
+echo "storage:/nfs/projects $MM_PROJECTS  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
 
 #############################################################
 # Munge and SLURM
-# Test if installed, since rpm -Uvh returns an exit status of 1
-pushd /mnt/slurm
-for package in slurm*.rpm
+for package in '' -devel -munge -perlapi -plugins -sjobexit -sjstat -torque -pam_slurm # -openlava -seff -slurmdbd -slurmdb-direct -sql 
 do
-    if ! rpm -q ${package%.rpm} > /dev/null ; then 
-	rpm -ivh $package
+    if ! rpm -q slurm${package} >/dev/null; then
+	rpm -ivh /mnt/slurm/slurm${package}-16.05.4-1.el7.centos.x86_64.rpm
     fi
 done
-popd
 
 # Nuke the logs
+mkdir -p /var/log/{munge,slurm}
 :> /var/log/munge/munged.log
+chown -R munge:munge /var/log/munge
 :> /var/log/slurm/slurmd.log
+chown -R slurm:slurm /var/log/slurm
 
 systemctl restart munge.service
 systemctl restart slurmd.service

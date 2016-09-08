@@ -5,23 +5,8 @@ yum -y install nc nmap tcpdump iptables-services nfs-utils chrony
 systemctl enable iptables
 systemctl enable rpcbind
 
-# Installing dependencies
-yum -y install tar make bzip2 perl git zlib zlib-devel java-1.8.0-openjdk java-1.8.0-openjdk-devel libstdc++-static gcc gcc-c++
-
-# Installing texlive....it's looooonng !!
-# yum -y install R bwa samtools
-
-# So I install a dummy-texlive package instead. Let's see if that breaks later...
-if [ ! -e texlive-dummy-2012a-1.el7.noarch.rpm ]; then
-    curl --proxy http://uu_proxy:3128 -OL http://mirrors.ctan.org/support/texlive/texlive-dummy/EnterpriseLinux-7/texlive-dummy-2012a-1.el7.noarch.rpm
-    yum -y reinstall texlive-dummy-2012a-1.el7.noarch.rpm  # --nogpgcheck
-fi
-yum -y install R bwa samtools
-# It cuts down the dependencies from 300 to 100 packages.
-
 # Setting up the web proxy in the environment
-sed -i -e '/uu_proxy/ d' /etc/hosts
-echo "130.238.7.178 uu_proxy" >> /etc/hosts
+# uu_proxy is set up in the init script
 for f in /etc/environment ~/.wgetrc
 do
     [ -e $f ] && sed -i "/http_proxy/ d" $f
@@ -32,6 +17,8 @@ https_proxy="https://uu_proxy:3128/"
 EOF
 done
 
+yum -y install java-1.8.0-openjdk
+
 # Munge
 yum -y install munge munge-devel munge-libs 
 
@@ -41,6 +28,7 @@ yum -y install munge munge-devel munge-libs
 #     useradd  -m -c "MUNGE Uid 'N' Gid Emporium" -d /var/lib/munge -u $MUNGEUSER -g munge  -s /sbin/nologin munge
 # fi
 
+mkdir -p /var/log/munge
 chown -R munge: /etc/munge/ /var/log/munge/
 chmod 0700 /etc/munge/ /var/log/munge/
 rsync -a --no-perms {{ env['VAULT'] }}/munge.key /etc/munge/munge.key

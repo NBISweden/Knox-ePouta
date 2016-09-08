@@ -1,11 +1,28 @@
 # -*-sh-*-
 
 #############################################################
-
 yum -y install nc nmap tcpdump chrony iptables-services
 
 systemctl enable iptables
 
+#############################################################
+yum -y install java-1.8.0-openjdk
+
+# Installing texlive....it's looooonng !!
+# yum -y install R bwa samtools
+# So I install a dummy-texlive package instead. Let's see if that breaks later...
+[ ! -e texlive-dummy-2012a-1.el7.noarch.rpm ] &&
+    curl --proxy http://uu_proxy:3128 -OL http://mirrors.ctan.org/support/texlive/texlive-dummy/EnterpriseLinux-7/texlive-dummy-2012a-1.el7.noarch.rpm
+
+if ! rpm -q texlive-dummy-2012a > /dev/null ; then 
+    yum -y install texlive-dummy-2012a-1.el7.noarch.rpm  # --nogpgcheck
+fi
+
+yum -y install R bwa samtools
+# It cuts down the dependencies from 300 to 100 packages.
+
+
+#############################################################
 # Munge
 yum -y install munge munge-devel munge-libs 
 
@@ -21,6 +38,7 @@ rsync -a --no-perms {{ env['VAULT'] }}/munge.key /etc/munge/munge.key
 chown munge:munge /etc/munge/munge.key
 chmod 700 /etc/munge/munge.key
 
+#############################################################
 # Dev libs for Slurm
 yum -y install openssl openssl-devel pam-devel numactl numactl-devel hwloc hwloc-devel lua lua-devel readline-devel rrdtool-devel ncurses-devel man2html libibmad libibumad perl-ExtUtils-MakeMaker
 
