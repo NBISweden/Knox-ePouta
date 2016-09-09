@@ -60,23 +60,22 @@ if [ "${_ALL}" = "yes" ]; then
     shift # Remove the command name from $@
 
     ARGS="$@"
+    _QUIET='no'
     if [[ "$ARGS" =~ "-q" ]]; then
-	_QUIET="yes"
+	_QUIET='yes'
 	ARGS=${ARGS/--quiet/}
 	ARGS=${ARGS/-q/}
     fi
 
     echo "MicroMosler - All in one"
-
-    mkdir -p ${MM_TMP}
+    source $(dirname ${BASH_SOURCE[0]})/lib/settings.sh
     [ ${_QUIET} == 'yes' ] && exec 1>${MM_TMP}/all-in-one.log
-    ORG_FD1=$(tty)
 
     set -e # exit on error
     echo "Booting the VMs"
     $0 init ${ARGS}
 
-    T=20
+    T=30
     echo -n "Waiting the VMs to reboot: Sleeping $T seconds"
     #sleep $T
     for i in {1..$T}; do echo -n '.'; sleep 1; done; echo ''
@@ -87,7 +86,7 @@ if [ "${_ALL}" = "yes" ]; then
     echo "Provisioning the VMs"
     $0 provision
 
-    exec 1>${ORG_FD1}
+    exec 1>$(tty) # Back to normal
     echo "Environment ready"
 
 fi
