@@ -22,6 +22,8 @@ settings will probably be given to you by your _openstack administrator_.
 The scripts define some variables (in `lib/settings.sh`)
 * `MM_HOME` (that current folder)
 * `TL_HOME` (currently pointing to `/home/jonas/thinlinc`)
+* `CAW_DATA` (currently pointing to `/home/fred/CAW/data`)
+* `CAW_SW` (currently pointing to `/home/fred/CAW/sw`)
 
 The scripts assume that 
 * A CentOS7 glance image is installed
