@@ -10,6 +10,9 @@ systemctl enable nfs-server
 
 yum -y install tar make bzip2 perl git zlib zlib-devel libstdc++-static gcc gcc-c++
 
+# For the tools
+yum -y install ncurses-devel libcurl-devel gnutls-devel nss-devel openssl-devel perl-Data-Dumper
+
 # Setting up the web proxy in the environment
 # uu_proxy is set up in the init script
 for f in /etc/environment ~/.wgetrc

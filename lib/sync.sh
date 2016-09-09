@@ -115,6 +115,7 @@ do
 		ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} mkdir -p ${VAULT}/sw ${VAULT}/data
 		[ -d $CAW_SW ] && rsync -av -e "ssh -F ${SSH_CONFIG}" $CAW_SW/ ${FLOATING_IPs[$machine]}:${VAULT}/sw/.
 		[ -d $CAW_DATA ] && rsync -av -e "ssh -F ${SSH_CONFIG}" $CAW_DATA/ ${FLOATING_IPs[$machine]}:${VAULT}/data/.
+		# Don't rsync with -L. We want links to be links (Not follow them).
 	    fi
 	    
 	    # Phase 2: running some commands

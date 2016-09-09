@@ -18,23 +18,24 @@ systemctl restart chronyd.service
 #############################################################
 
 # Creating NFS share
-mkdir -p /nfs
-[ -d /nfs/slurm ] && unlink /nfs/slurm
-[ -d /nfs/data ] && unlink /nfs/data
-[ -d /nfs/sw ] && unlink /nfs/sw
+NFS_ROOT=/mnt
+mkdir -p $NFS_ROOT
+[ -d $NFS_ROOT/slurm ] && unlink $NFS_ROOT/slurm
+[ -d $NFS_ROOT/data ] && unlink $NFS_ROOT/data
+[ -d $NFS_ROOT/sw ] && unlink $NFS_ROOT/sw
 
-ln -s /home/centos/{{ env['VAULT'] }}/data /nfs/data
-ln -s /home/centos/{{ env['VAULT'] }}/sw /nfs/sw
-ln -s /home/centos/{{ env['VAULT'] }}/slurm /nfs/slurm
+ln -s /home/centos/{{ env['VAULT'] }}/data $NFS_ROOT/data
+ln -s /home/centos/{{ env['VAULT'] }}/sw $NFS_ROOT/sw
+ln -s /home/centos/{{ env['VAULT'] }}/slurm $NFS_ROOT/slurm
 
-MM_PROJECTS=/nfs/projects
+MM_PROJECTS=$NFS_ROOT/projects
 mkdir -p $MM_PROJECTS
-rm -rf ${MM_PROJECTS}/ready
+#rm -rf ${MM_PROJECTS}/ready
 
 :> /etc/exports
-echo "/nfs/slurm {{ env['MGMT_CIDR'] }}(rw,sync,no_root_squash,no_all_squash,no_subtree_check)" >> /etc/exports
-echo "/nfs/data {{ env['MGMT_CIDR'] }}(rw,sync,no_root_squash,no_all_squash,no_subtree_check)" >> /etc/exports
-echo "/nfs/sw {{ env['MGMT_CIDR'] }}(rw,sync,no_root_squash,no_all_squash,no_subtree_check)" >> /etc/exports
+echo "$NFS_ROOT/slurm {{ env['MGMT_CIDR'] }}(rw,sync,no_root_squash,no_all_squash,no_subtree_check)" >> /etc/exports
+echo "$NFS_ROOT/data {{ env['MGMT_CIDR'] }}(rw,sync,no_root_squash,no_all_squash,no_subtree_check)" >> /etc/exports
+echo "$NFS_ROOT/sw {{ env['MGMT_CIDR'] }}(rw,sync,no_root_squash,no_all_squash,no_subtree_check)" >> /etc/exports
 echo "$MM_PROJECTS {{ env['MGMT_CIDR'] }}(rw,sync,no_root_squash,no_all_squash,no_subtree_check)" >> /etc/exports
 #exportfs -ra
 
@@ -56,8 +57,8 @@ git config --global https.proxy https://uu_proxy:3128
 ##############################################################
 # Manta
 # See: https://github.com/Illumina/manta
-#MANTA_VERSION=1.0.0 # CAW requires 0.27.1
-if [ ! -e ${MM_PROJECTS}/manta/build/ready ]; then
+if [ ! -x /usr/local/bin/configManta.py ]; then
+    MANTA_VERSION=1.0.0 # CAW requires 0.27.1
     if [ ! -d ${MM_PROJECTS}/manta/build ]; then
 	rm -rf ${MM_PROJECTS}/manta
 	git clone https://github.com/Illumina/manta.git ${MM_PROJECTS}/manta
@@ -69,24 +70,38 @@ if [ ! -e ${MM_PROJECTS}/manta/build/ready ]; then
 	popd
     fi
     make -C ${MM_PROJECTS}/manta/build install
-    touch ${MM_PROJECTS}/manta/build/ready
+    # touch ${MM_PROJECTS}/manta/build/ready
 fi
 
 ##############################################################
 # Strelka
 # See: https://sites.google.com/site/strelkasomaticvariantcaller/home/strelka-workflow-installation
-STRELKA_VERSION=1.0.15 # required by CAW
-if [ ! -d ${MM_PROJECTS}/strelka_workflow-${STRELKA_VERSION} ]; then
-    rm -f ${MM_PROJECTS}/strelka_workflow-${STRELKA_VERSION}.tar.gz
+if [ ! -x /usr/local/bin/configureStrelkaWorkflow.pl ]; then
+    STRELKA_VERSION=1.0.15 # required by CAW
+    rm -rf ${MM_PROJECTS}/strelka_workflow-${STRELKA_VERSION}{,.tar.gz}
     curl -o ${MM_PROJECTS}/strelka_workflow-${STRELKA_VERSION}.tar.gz -L "https://sites.google.com/site/strelkasomaticvariantcaller/home/download/strelka_workflow-${STRELKA_VERSION}.tar.gz?attredirects=0&d=1"
-    pushd ${MM_PROJECTS}
-    tar -xzf strelka_workflow-${STRELKA_VERSION}.tar.gz
-    pushd strelka_workflow-${STRELKA_VERSION}
-    ./configure #--prefix=/usr/local/bin
+    tar -xzf ${MM_PROJECTS}/strelka_workflow-${STRELKA_VERSION}.tar.gz -C ${MM_PROJECTS}
+    pushd ${MM_PROJECTS}/strelka_workflow-${STRELKA_VERSION}
+    ./configure --prefix=/usr/local
     popd
+    make -C ${MM_PROJECTS}/strelka_workflow-${STRELKA_VERSION}
+    # Run the demo. Require perl-Data-Dumper
+    /usr/local/bin/demo/run_demo.bash
+fi
+
+##############################################################
+# Samtools
+SAMTOOLS_VERSION=1.3.1 # required by CAW
+if [ ! -x $NFS_ROOT/sw/samtools/${SAMTOOLS_VERSION}/bin/samtools ]; then
+    rm -f ${MM_PROJECTS}/samtools-${SAMTOOLS_VERSION}.tar.bz2
+    curl -o ${MM_PROJECTS}/samtools-${SAMTOOLS_VERSION}.tar.bz2 -L https://github.com/samtools/samtools/releases/download/${SAMTOOLS_VERSION}/samtools-${SAMTOOLS_VERSION}.tar.bz2
+    tar -xjf ${MM_PROJECTS}/samtools-${SAMTOOLS_VERSION}.tar.bz2 -C ${MM_PROJECTS}
+    pushd ${MM_PROJECTS}/samtools-${SAMTOOLS_VERSION}
+    ./configure --enable-plugins --enable-libcurl --prefix=$NFS_ROOT/sw/samtools/${SAMTOOLS_VERSION}/
+    make all all-htslib
+    make install install-htslib
     popd
 fi
-make -C ${MM_PROJECTS}/strelka_workflow-${STRELKA_VERSION}
 
 ##############################################################
 # Git project CAW

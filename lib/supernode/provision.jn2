@@ -26,28 +26,27 @@ MM_PROJECTS=/mnt/projects
 
 mkdir -p $SLURM_LOCATION $CAW_SW $CAW_DATA $MM_PROJECTS
 
-if mount | grep -q $CAW_DATA ;then umount $CAW_DATA; fi
+#if mount | grep -q $CAW_DATA ;then umount $CAW_DATA; fi
 if mount | grep -q $CAW_SW ;then umount $CAW_SW; fi
 if mount | grep -q $SLURM_LOCATION ;then umount $SLURM_LOCATION; fi
 if mount | grep -q $MM_PROJECTS ;then umount $MM_PROJECTS; fi
 sleep 5
 
-mount -t nfs storage:/nfs/slurm $SLURM_LOCATION || exit 1
-mount -t nfs storage:/nfs/data $CAW_DATA || exit 1
-mount -t nfs storage:/nfs/sw $CAW_SW || exit 1
-mount -t nfs storage:/nfs/projects $MM_PROJECTS || exit 1
+mount -t nfs storage:/mnt/slurm $SLURM_LOCATION || exit 1
+mount -t nfs storage:/mnt/data $CAW_DATA || exit 1
+mount -t nfs storage:/mnt/sw $CAW_SW || exit 1
+mount -t nfs storage:/mnt/projects $MM_PROJECTS || exit 1
 sed -i -e '/storage:/ d' /etc/fstab
-echo "storage:/nfs/data $CAW_DATA  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
-echo "storage:/nfs/sw $CAW_SW  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
-echo "storage:/nfs/slurm $SLURM_LOCATION  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
-echo "storage:/nfs/projects $MM_PROJECTS  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
+echo "storage:/mnt/data $CAW_DATA  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
+echo "storage:/mnt/sw $CAW_SW  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
+echo "storage:/mnt/slurm $SLURM_LOCATION  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
+echo "storage:/mnt/projects $MM_PROJECTS  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
 
 
 ##############################################################
 # Munge and Slurm
 # See: https://wiki.fysik.dtu.dk/niflheim/SLURM
-
-for package in '' -devel -munge -perlapi -plugins -sjobexit -sjstat -torque # -openlava -pam_slurm -seff -slurmdbd -slurmdb-direct -sql 
+for package in -plugins '' -devel -munge -perlapi -sjobexit -sjstat -torque -pam_slurm # -openlava -seff -slurmdbd -slurmdb-direct -sql 
 do
     if ! rpm -q slurm${package} >/dev/null; then
 	rpm -ivh /mnt/slurm/slurm${package}-16.05.4-1.el7.centos.x86_64.rpm
@@ -99,9 +98,13 @@ function wait_for_CAW {
 }
 wait_for_CAW 300
 
-
 # in /root/.bashrc: function module () { return 0; }
-rsync -a --no-perms /home/centos/{{ env['VAULT'] }}/mm.config ${MM_PROJECTS}/CAW/config/.
+#rsync -a --no-perms /home/centos/{{ env['VAULT'] }}/mm.config ${MM_PROJECTS}/CAW/config/.
 
 #[[ "$PATH" =~ "$CAW_SW" ]] || export PATH=$CAW_SW:$PATH
-$CAW_SW/nextflow run ${MM_PROJECTS}/CAW/MultiFQtoVC.nf -c ${MM_PROJECTS}/CAW/config/mm.config --sample ${MM_PROJECTS}/CAW/data/tsv/sample.tsv
+
+# pushd ${MM_PROJECTS}/CAW
+# NXF_DEBUG=1 &&
+#     $CAW_SW/nextflow run MultiFQtoVC.nf -c /home/centos/{{ env['VAULT'] }}/mm.config --sample data/tsv/sample.tsv
+# popd
+

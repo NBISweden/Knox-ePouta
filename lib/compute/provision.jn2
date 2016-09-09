@@ -36,19 +36,19 @@ if mount | grep -q $SLURM_LOCATION ;then umount $SLURM_LOCATION; fi
 if mount | grep -q $MM_PROJECTS ;then umount $MM_PROJECTS; fi
 sleep 5
 
-mount -t nfs storage:/nfs/slurm $SLURM_LOCATION || exit 1
-mount -t nfs storage:/nfs/data $CAW_DATA || exit 1
-mount -t nfs storage:/nfs/sw $CAW_SW || exit 1
-mount -t nfs storage:/nfs/projects $MM_PROJECTS || exit 1
+mount -t nfs storage:/mnt/slurm $SLURM_LOCATION || exit 1
+mount -t nfs storage:/mnt/data $CAW_DATA || exit 1
+mount -t nfs storage:/mnt/sw $CAW_SW || exit 1
+mount -t nfs storage:/mnt/projects $MM_PROJECTS || exit 1
 sed -i -e '/storage:/ d' /etc/fstab
-echo "storage:/nfs/data $CAW_DATA  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
-echo "storage:/nfs/sw $CAW_SW  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
-echo "storage:/nfs/slurm $SLURM_LOCATION  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
-echo "storage:/nfs/projects $MM_PROJECTS  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
+echo "storage:/mnt/data $CAW_DATA  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
+echo "storage:/mnt/sw $CAW_SW  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
+echo "storage:/mnt/slurm $SLURM_LOCATION  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
+echo "storage:/mnt/projects $MM_PROJECTS  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
 
 #############################################################
 # Munge and SLURM
-for package in '' -devel -munge -perlapi -plugins -sjobexit -sjstat -torque -pam_slurm # -openlava -seff -slurmdbd -slurmdb-direct -sql 
+for package in -plugins '' -devel -munge -perlapi -sjobexit -sjstat -torque -pam_slurm # -openlava -seff -slurmdbd -slurmdb-direct -sql 
 do
     if ! rpm -q slurm${package} >/dev/null; then
 	rpm -ivh /mnt/slurm/slurm${package}-16.05.4-1.el7.centos.x86_64.rpm
@@ -68,3 +68,9 @@ systemctl restart slurmd.service
 systemctl enable munge.service
 systemctl enable slurmd.service
 
+# [[ "$PATH" =~ "openmpi/bin" ]] || export PATH=/usr/lib64/openmpi/bin:$PATH
+# [[ "$LD_LIBRARY_PATH" =~ "openmpi/lib" ]] || export LD_LIBRARY_PATH=/usr/lib64/openmpi/lib:$PATH
+
+# Adding samtools to the PATH, for all users
+sed -i -e '/PATH=\/mnt\/sw\/samtools/ d' /etc/bashrc
+echo 'PATH=/mnt/sw/samtools/1.3.1/bin:$PATH' >> /etc/bashrc

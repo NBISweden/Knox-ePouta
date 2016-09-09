@@ -55,7 +55,7 @@ export PUBLIC_SSH_KEYS=(\
 # Declaring the machines
 
 declare -a MACHINES
-export MACHINES=('supernode' 'compute1' 'compute2' 'compute3' 'storage' 'thinlinc')
+export MACHINES=('supernode' 'compute1' 'compute2' 'compute3' 'storage') # 'thinlinc')
 
 declare -A FLAVORS
 export FLAVORS=(\
@@ -63,7 +63,7 @@ export FLAVORS=(\
     [compute1]=m1.large \
     [compute2]=m1.large \
     [compute3]=m1.large \
-    [storage]=m1.small \
+    [storage]=m1.storage \
     [thinlinc]=m1.small \
 )
 
