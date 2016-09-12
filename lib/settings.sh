@@ -33,7 +33,6 @@ export VERBOSE=yes
 # Note: Can source this file several times
 
 [ -n "$MM_HOME" ]       || readonly MM_HOME=$ABOVE
-#[ -n "$TL_HOME" ]       || readonly TL_HOME=/home/jonas/thinlinc
 
 [ -n "$MM_DATA" ]     || readonly MM_DATA=/home/fred/CAW/data
 [ -n "$MM_SW" ]       || readonly MM_SW=/home/fred/CAW/sw
@@ -55,7 +54,7 @@ export PUBLIC_SSH_KEYS=(\
 # Declaring the machines
 
 declare -a MACHINES
-export MACHINES=('supernode' 'compute1' 'compute2' 'compute3' 'storage') # 'thinlinc')
+export MACHINES=('supernode' 'compute1' 'compute2' 'compute3' 'storage')
 
 declare -A FLAVORS
 export FLAVORS=(\
@@ -64,7 +63,6 @@ export FLAVORS=(\
     [compute2]=m1.large \
     [compute3]=m1.large \
     [storage]=m1.storage \
-    [thinlinc]=m1.small \
 )
 
 declare -A MACHINE_IPs
@@ -74,7 +72,6 @@ export MACHINE_IPs=(\
     [compute2]=172.25.8.8 \
     [compute3]=172.25.8.9 \
     [storage]=172.25.8.10 \
-    [thinlinc]=172.25.8.11 \
 )
 export MGMT_GATEWAY=172.25.8.1
 export MGMT_CIDR=172.25.8.0/22
@@ -99,7 +96,6 @@ export FLOATING_IPs=(\
     [compute2]=10.254.0.59 \
     [compute3]=10.254.0.60 \
     [storage]=10.254.0.61 \
-    [thinlinc]=10.254.0.62 \
 )
 export FLOATING_GATEWAY=10.254.0.1
 export FLOATING_CIDR=10.254.0.0/24
@@ -118,7 +114,6 @@ export PROVISION=(\
     [compute2]=compute \
     [compute3]=compute \
     [storage]=storage \
-    [thinlinc]=thinlinc \
 )
 
 

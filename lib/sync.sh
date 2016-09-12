@@ -108,9 +108,6 @@ do
 	    [ -d ${FOLDER}/files ] &&
 		rsync -avL -e "ssh -F ${SSH_CONFIG}" ${FOLDER}/files/ ${FLOATING_IPs[$machine]}:${VAULT}/.
 	    
-	    # [ "$machine" == "thinlinc" ] && [ -d $TL_HOME ] &&
-	    # 	rsync -av -e "ssh -F ${SSH_CONFIG}" $TL_HOME/ ${FLOATING_IPs[$machine]}:${VAULT}/.
-
 	    if [[ "$machine" =~ "compute" ]]; then
 		ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} mkdir -p ${VAULT}/sw
 		echo "Copying files from $MM_SW/ to ${FLOATING_IPs[$machine]}:${VAULT}/sw/."
