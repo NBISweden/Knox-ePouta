@@ -6,7 +6,21 @@ yum -y install nc nmap tcpdump chrony iptables-services
 systemctl enable iptables
 
 #############################################################
-yum -y install java-1.8.0-openjdk
+# Setting up the web proxy in the environment
+# uu_proxy is set up in the init script
+for f in /etc/environment ~/.wgetrc
+do
+    [ -e $f ] && sed -i "/http_proxy/ d" $f
+    [ -e $f ] && sed -i "/https_proxy/ d" $f
+    cat >> $f <<EOF 
+http_proxy="http://uu_proxy:3128/"
+https_proxy="https://uu_proxy:3128/"
+EOF
+done
+
+# For the tools
+yum -y install tar make bzip2 perl git zlib zlib-devel java-1.8.0-openjdk libstdc++-static gcc gcc-c++
+yum -y install ncurses-devel libcurl-devel gnutls-devel nss-devel openssl-devel perl-Data-Dumper
 
 # Installing texlive....it's looooonng !!
 # yum -y install R bwa samtools
@@ -18,7 +32,7 @@ if ! rpm -q texlive-dummy-2012a > /dev/null ; then
     yum -y install texlive-dummy-2012a-1.el7.noarch.rpm  # --nogpgcheck
 fi
 
-yum -y install R bwa samtools
+yum -y install R bwa
 # It cuts down the dependencies from 300 to 100 packages.
 
 
@@ -60,3 +74,7 @@ chmod 755 /var/spool/slurmd /var/log/slurm
 
 touch /var/log/slurm/slurmd.log
 chown slurm: /var/log/slurm/slurmd.log
+
+rsync -a --no-perms {{ env['VAULT'] }}/mmrc.sh /etc/profile.d/mmrc.sh
+chown root:root /etc/profile.d/mmrc.sh
+chmod 644 /etc/profile.d/mmrc.sh

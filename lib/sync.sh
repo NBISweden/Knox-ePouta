@@ -84,7 +84,7 @@ trap 'cleanup' INT TERM #EXIT #HUP ERR
 # trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
 #export TL_HOME MOSLER_IMAGES
-export CAW_SW CAW_DATA
+export MM_SW MM_DATA
 
 echo "Syncing servers"
 FAIL=0
@@ -111,11 +111,16 @@ do
 	    # [ "$machine" == "thinlinc" ] && [ -d $TL_HOME ] &&
 	    # 	rsync -av -e "ssh -F ${SSH_CONFIG}" $TL_HOME/ ${FLOATING_IPs[$machine]}:${VAULT}/.
 
-	    if [ "$machine" == "storage" ]; then
-		ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} mkdir -p ${VAULT}/sw ${VAULT}/data
-		[ -d $CAW_SW ] && rsync -av -e "ssh -F ${SSH_CONFIG}" $CAW_SW/ ${FLOATING_IPs[$machine]}:${VAULT}/sw/.
-		[ -d $CAW_DATA ] && rsync -av -e "ssh -F ${SSH_CONFIG}" $CAW_DATA/ ${FLOATING_IPs[$machine]}:${VAULT}/data/.
+	    if [[ "$machine" =~ "compute" ]]; then
+		ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} mkdir -p ${VAULT}/sw
+		echo "Copying files from $MM_SW/ to ${FLOATING_IPs[$machine]}:${VAULT}/sw/."
+		[ -d $MM_SW ] && rsync -av -e "ssh -F ${SSH_CONFIG}" $MM_SW/ ${FLOATING_IPs[$machine]}:${VAULT}/sw/.
 		# Don't rsync with -L. We want links to be links (Not follow them).
+	    fi
+
+	    if [ "$machine" == "storage" ]; then
+		ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} mkdir -p ${VAULT}/data
+		[ -d $MM_DATA ] && rsync -av -e "ssh -F ${SSH_CONFIG}" $MM_DATA/ ${FLOATING_IPs[$machine]}:${VAULT}/data/.
 	    fi
 	    
 	    # Phase 2: running some commands

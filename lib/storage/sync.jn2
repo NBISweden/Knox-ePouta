@@ -8,19 +8,3 @@ systemctl enable nfs-server
 # systemctl enable nfs-lock
 # systemctl enable nfs-idmap
 
-yum -y install tar make bzip2 perl git zlib zlib-devel libstdc++-static gcc gcc-c++
-
-# For the tools
-yum -y install ncurses-devel libcurl-devel gnutls-devel nss-devel openssl-devel perl-Data-Dumper
-
-# Setting up the web proxy in the environment
-# uu_proxy is set up in the init script
-for f in /etc/environment ~/.wgetrc
-do
-    [ -e $f ] && sed -i "/http_proxy/ d" $f
-    [ -e $f ] && sed -i "/https_proxy/ d" $f
-    cat >> $f <<EOF 
-http_proxy="http://uu_proxy:3128/"
-https_proxy="https://uu_proxy:3128/"
-EOF
-done

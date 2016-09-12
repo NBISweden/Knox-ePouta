@@ -23,35 +23,24 @@ systemctl restart chronyd.service
 
 #############################################################
 
-SLURM_LOCATION=/mnt/slurm
-CAW_DATA=/mnt/data
-CAW_SW=/mnt/sw
-MM_PROJECTS=/mnt/projects
+mkdir -p {{ env['CAW_DATA'] }} {{ env['MM_PROJECTS'] }}
 
-mkdir -p $SLURM_LOCATION $CAW_SW $CAW_DATA $MM_PROJECTS
-
-if mount | grep -q $CAW_DATA ;then umount $CAW_DATA; fi
-if mount | grep -q $CAW_SW ;then umount $CAW_SW; fi
-if mount | grep -q $SLURM_LOCATION ;then umount $SLURM_LOCATION; fi
-if mount | grep -q $MM_PROJECTS ;then umount $MM_PROJECTS; fi
+if mount | grep -q {{ env['CAW_DATA'] }} ;then umount {{ env['CAW_DATA'] }}; fi
+if mount | grep -q {{ env['MM_PROJECTS'] }} ;then umount {{ env['MM_PROJECTS'] }}; fi
 sleep 5
 
-mount -t nfs storage:/mnt/slurm $SLURM_LOCATION || exit 1
-mount -t nfs storage:/mnt/data $CAW_DATA || exit 1
-mount -t nfs storage:/mnt/sw $CAW_SW || exit 1
-mount -t nfs storage:/mnt/projects $MM_PROJECTS || exit 1
+mount -t nfs storage:/mnt/data {{ env['CAW_DATA'] }} || exit 1
+mount -t nfs storage:/mnt/projects {{ env['MM_PROJECTS'] }} || exit 1
 sed -i -e '/storage:/ d' /etc/fstab
-echo "storage:/mnt/data $CAW_DATA  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
-echo "storage:/mnt/sw $CAW_SW  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
-echo "storage:/mnt/slurm $SLURM_LOCATION  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
-echo "storage:/mnt/projects $MM_PROJECTS  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
+echo "storage:{{ env['NFS_ROOT'] }}/data {{ env['CAW_DATA'] }}  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
+echo "storage:{{ env['NFS_ROOT'] }}/projects {{ env['MM_PROJECTS'] }}  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
 
 #############################################################
 # Munge and SLURM
 for package in -plugins '' -devel -munge -perlapi -sjobexit -sjstat -torque -pam_slurm # -openlava -seff -slurmdbd -slurmdb-direct -sql 
 do
     if ! rpm -q slurm${package} >/dev/null; then
-	rpm -ivh /mnt/slurm/slurm${package}-16.05.4-1.el7.centos.x86_64.rpm
+	rpm -ivh /home/centos/{{ env['VAULT'] }}/slurm/slurm${package}-16.05.4-1.el7.centos.x86_64.rpm
     fi
 done
 
@@ -68,9 +57,70 @@ systemctl restart slurmd.service
 systemctl enable munge.service
 systemctl enable slurmd.service
 
-# [[ "$PATH" =~ "openmpi/bin" ]] || export PATH=/usr/lib64/openmpi/bin:$PATH
-# [[ "$LD_LIBRARY_PATH" =~ "openmpi/lib" ]] || export LD_LIBRARY_PATH=/usr/lib64/openmpi/lib:$PATH
+##############################################################
+# Settings
+MM_BUILD=/home/centos/tools
+mkdir -p $MM_BUILD
 
-# Adding samtools to the PATH, for all users
-sed -i -e '/PATH=\/mnt\/sw\/samtools/ d' /etc/bashrc
-echo 'PATH=/mnt/sw/samtools/1.3.1/bin:$PATH' >> /etc/bashrc
+# uu_proxy was set up in the sync script
+export http_proxy="{{ env['UU_PROXY']}}"
+#export https_proxy="https://uu_proxy:3128/"
+export _JAVA_OPTIONS="{{ env['MM_JAVA_OPTIONS']}}"
+
+git config --global http.proxy ${http_proxy}
+git config --global https.proxy ${http_proxy/http/https}
+
+##############################################################
+# Manta
+# See: https://github.com/Illumina/manta
+if [ ! -x /usr/local/bin/configManta.py ]; then
+    if [ ! -d ${MM_BUILD}/manta/build ]; then
+	rm -rf ${MM_BUILD}/manta
+	git clone https://github.com/Illumina/manta.git ${MM_BUILD}/manta
+	mkdir -p ${MM_BUILD}/manta/build # can't be run from its source directory
+	pushd ${MM_BUILD}/manta/build
+	export CC=/bin/cc
+	export CXX=/bin/c++
+	../configure --jobs=4 --prefix=/usr/local
+	popd
+    fi
+    make -j4 -C ${MM_BUILD}/manta/build install
+fi
+
+##############################################################
+# Strelka
+# See: https://sites.google.com/site/strelkasomaticvariantcaller/home/strelka-workflow-installation
+if [ ! -x /usr/local/strelka_workflow/bin/configureStrelkaWorkflow.pl ]; then
+    rm -rf ${MM_BUILD}/strelka_workflow-{{ env['STRELKA_VERSION'] }}{,.tar.gz}
+    curl -o ${MM_BUILD}/strelka_workflow-{{ env['STRELKA_VERSION'] }}.tar.gz -L "https://sites.google.com/site/strelkasomaticvariantcaller/home/download/strelka_workflow-{{ env['STRELKA_VERSION'] }}.tar.gz?attredirects=0&d=1"
+    tar -xzf ${MM_BUILD}/strelka_workflow-{{ env['STRELKA_VERSION'] }}.tar.gz -C ${MM_BUILD}
+    pushd ${MM_BUILD}/strelka_workflow-{{ env['STRELKA_VERSION'] }}
+    ./configure --prefix=/usr/local/strelka_workflow
+    popd
+    make -j4 -C ${MM_BUILD}/strelka_workflow-{{ env['STRELKA_VERSION'] }}
+    # Run the demo. Require perl-Data-Dumper
+    /usr/local/strelka_workflow/bin/demo/run_demo.bash
+fi
+
+##############################################################
+# Samtools
+if [ ! -x /usr/local/samtools/{{ env['SAMTOOLS_VERSION'] }}/bin/samtools ]; then
+    rm -f ${MM_BUILD}/samtools-{{ env['SAMTOOLS_VERSION'] }}.tar.bz2
+    curl -o ${MM_BUILD}/samtools-{{ env['SAMTOOLS_VERSION'] }}.tar.bz2 -L https://github.com/samtools/samtools/releases/download/{{ env['SAMTOOLS_VERSION'] }}/samtools-{{ env['SAMTOOLS_VERSION'] }}.tar.bz2
+    tar -xjf ${MM_BUILD}/samtools-{{ env['SAMTOOLS_VERSION'] }}.tar.bz2 -C ${MM_BUILD}
+    pushd ${MM_BUILD}/samtools-{{ env['SAMTOOLS_VERSION'] }}
+    ./configure --enable-plugins --enable-libcurl --prefix=/usr/local/samtools/{{ env['SAMTOOLS_VERSION'] }}
+    make all all-htslib
+    make install install-htslib
+    popd
+fi
+
+##############################################################
+# Adding tools to the PATH, for all users
+mkdir -p /mnt
+[ -L /mnt/sw ] && unlink /mnt/sw
+ln -s /home/centos/{{ env['VAULT'] }}/sw /mnt/sw
+
+sed -i -e "/PATH=\/usr\/local/ d" /etc/bashrc
+echo "export PATH=/usr/local/samtools/{{ env['SAMTOOLS_VERSION'] }}/bin:/usr/local/bin:\$PATH" >> /etc/bashrc
+

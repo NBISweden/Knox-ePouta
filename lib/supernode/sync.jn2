@@ -17,7 +17,7 @@ https_proxy="https://uu_proxy:3128/"
 EOF
 done
 
-yum -y install java-1.8.0-openjdk
+yum -y install java-1.8.0-openjdk git
 
 # Munge
 yum -y install munge munge-devel munge-libs 
@@ -61,6 +61,6 @@ do
 done
 
 # To define the function 'module'
-rsync -a --no-perms {{ env['VAULT'] }}/bashrc /root/.bashrc
-chown root:root /root/.bashrc
-chmod 600 /root/.bashrc
+rsync -a --no-perms {{ env['VAULT'] }}/mmrc.sh /etc/profile.d/mmrc.sh
+chown root:root /etc/profile.d/mmrc.sh
+chmod 644 /etc/profile.d/mmrc.sh

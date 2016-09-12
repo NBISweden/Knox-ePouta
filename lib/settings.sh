@@ -35,8 +35,8 @@ export VERBOSE=yes
 [ -n "$MM_HOME" ]       || readonly MM_HOME=$ABOVE
 #[ -n "$TL_HOME" ]       || readonly TL_HOME=/home/jonas/thinlinc
 
-[ -n "$CAW_DATA" ]     || readonly CAW_DATA=/home/fred/CAW/data
-[ -n "$CAW_SW" ]       || readonly CAW_SW=/home/fred/CAW/sw
+[ -n "$MM_DATA" ]     || readonly MM_DATA=/home/fred/CAW/data
+[ -n "$MM_SW" ]       || readonly MM_SW=/home/fred/CAW/sw
 
 [ -n "$MM_TMP" ]      || readonly MM_TMP=${MM_HOME}/tmp/${OS_TENANT_NAME}
 mkdir -p ${MM_TMP}
@@ -120,3 +120,15 @@ export PROVISION=(\
     [storage]=storage \
     [thinlinc]=thinlinc \
 )
+
+
+########################################
+# Settings for the CAW example
+export NFS_ROOT=/mnt
+export CAW_DATA=/mnt/data
+export MM_PROJECTS=/mnt/projects
+export UU_PROXY="http://uu_proxy:3128/"
+export MM_JAVA_OPTIONS='-Dhttp.proxyHost=uu_proxy -Dhttp.proxyPort=3128 -Djava.net.preferIPv4Stack=true'
+#export MANTA_VERSION=1.0.0
+export STRELKA_VERSION=1.0.15
+export SAMTOOLS_VERSION=1.3 # Not 1.3.1

@@ -19,28 +19,17 @@ systemctl restart chronyd.service
 ##############################################################
 # Mount the nfs share as /meles
 
-SLURM_LOCATION=/mnt/slurm
-CAW_DATA=/mnt/data
-CAW_SW=/mnt/sw
-MM_PROJECTS=/mnt/projects
+mkdir -p {{ env['CAW_DATA'] }} {{ env['MM_PROJECTS'] }}
 
-mkdir -p $SLURM_LOCATION $CAW_SW $CAW_DATA $MM_PROJECTS
-
-if mount | grep -q $CAW_DATA ;then umount $CAW_DATA; fi
-if mount | grep -q $CAW_SW ;then umount $CAW_SW; fi
-if mount | grep -q $SLURM_LOCATION ;then umount $SLURM_LOCATION; fi
-if mount | grep -q $MM_PROJECTS ;then umount $MM_PROJECTS; fi
+if mount | grep -q {{ env['CAW_DATA'] }} ;then umount {{ env['CAW_DATA'] }}; fi
+if mount | grep -q {{ env['MM_PROJECTS'] }} ;then umount {{ env['MM_PROJECTS'] }}; fi
 sleep 5
 
-mount -t nfs storage:/mnt/slurm $SLURM_LOCATION || exit 1
-mount -t nfs storage:/mnt/data $CAW_DATA || exit 1
-mount -t nfs storage:/mnt/sw $CAW_SW || exit 1
-mount -t nfs storage:/mnt/projects $MM_PROJECTS || exit 1
+mount -t nfs storage:/mnt/data {{ env['CAW_DATA'] }} || exit 1
+mount -t nfs storage:/mnt/projects {{ env['MM_PROJECTS'] }} || exit 1
 sed -i -e '/storage:/ d' /etc/fstab
-echo "storage:/mnt/data $CAW_DATA  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
-echo "storage:/mnt/sw $CAW_SW  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
-echo "storage:/mnt/slurm $SLURM_LOCATION  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
-echo "storage:/mnt/projects $MM_PROJECTS  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
+echo "storage:{{ env['NFS_ROOT'] }}/data {{ env['CAW_DATA'] }}  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
+echo "storage:{{ env['NFS_ROOT'] }}/projects {{ env['MM_PROJECTS'] }}  nfs   auto,noatime,nolock,bg,nfsvers=4,intr,tcp,actimeo=1800 0 0" >> /etc/fstab
 
 
 ##############################################################
@@ -49,7 +38,7 @@ echo "storage:/mnt/projects $MM_PROJECTS  nfs   auto,noatime,nolock,bg,nfsvers=4
 for package in -plugins '' -devel -munge -perlapi -sjobexit -sjstat -torque -pam_slurm # -openlava -seff -slurmdbd -slurmdb-direct -sql 
 do
     if ! rpm -q slurm${package} >/dev/null; then
-	rpm -ivh /mnt/slurm/slurm${package}-16.05.4-1.el7.centos.x86_64.rpm
+	rpm -ivh /home/centos/{{ env['VAULT'] }}/slurm/slurm${package}-16.05.4-1.el7.centos.x86_64.rpm
     fi
 done
 
@@ -69,42 +58,42 @@ systemctl enable munge.service
 systemctl enable slurmctld.service
 
 ##############################################################
-# pre-processing. Nasty part that requires a lot of CPU and temporary disk space
-# once we have the pre-processed reads, we run the remainder (variant call, finding mutations)
+# mkdir -p /mnt
+# [ -L /mnt/sw ] && unlink /mnt/sw
+# ln -s /home/centos/{{ env['VAULT'] }}/sw /mnt/sw
 
 ##############################################################
 # NextFlow
 # See: https://www.nextflow.io/
-if [ ! -x $CAW_SW/nextflow ]; then
+if [ ! -x /usr/local/bin/nextflow ]; then
     curl -fsSL get.nextflow.io | bash
     # Moving nextflow to /usr/local/bin
-    mv -f nextflow $CAW_SW/.
-    chmod +x $CAW_SW/nextflow
+    mv -f nextflow /usr/local/bin/.
+    chmod +x /usr/local/bin/nextflow
 fi
 
-export MM_PROJECTS
-function wait_for_CAW {
-    local -i t=${1:-30} # default: 30 seconds, well...if you don't count the backoff...
-    local -i backoff=1
-    local -i stride=20
-    while (( t > 0 )) ; do
-	echo -e "Time left: $t"
-	[ -e ${MM_PROJECTS}/ready ] && return 0
-	(( t-=backoff ))
-	sleep $backoff
-        if (( (t % stride) == 0 )); then (( backoff*=2 )); fi
-    done
-    exit 1
-}
-wait_for_CAW 2400 #40min
+##############################################################
+# Git project CAW
+# See: https://github.com/SciLifeLab/CAW/
+export http_proxy="{{ env['UU_PROXY'] }}"
+git config --global http.proxy ${http_proxy}
+git config --global https.proxy ${http_proxy/http/https}
 
-# in /root/.bashrc: function module () { return 0; }
-#rsync -a --no-perms /home/centos/{{ env['VAULT'] }}/mm.config ${MM_PROJECTS}/CAW/config/.
+# pre-processing. Nasty part that requires a lot of CPU and temporary disk space
+# once we have the pre-processed reads, we run the remainder (variant call, finding mutations)
+if [ ! -d {{ env['MM_PROJECTS'] }}/CAW ]; then
+    git clone https://github.com/SciLifeLab/CAW.git {{ env['MM_PROJECTS'] }}/CAW
+fi
+rm -rf {{ env['MM_PROJECTS'] }}/CAW/work
 
-#[[ "$PATH" =~ "$CAW_SW" ]] || export PATH=$CAW_SW:$PATH
+# in /etc/profile.d/mmrc.sh: function module () { return 0; }
 
-# pushd ${MM_PROJECTS}/CAW
+sed -i -e "/PATH=\/usr\/local\/bin/ d" /etc/bashrc
+echo "export PATH=/usr/local/bin:\$PATH" >> /etc/bashrc
+
+# pushd {{ env['MM_PROJECTS'] }}/CAW
 # NXF_DEBUG=1 &&
-#     $CAW_SW/nextflow run MultiFQtoVC.nf -c /home/centos/{{ env['VAULT'] }}/mm.config --sample data/tsv/sample.tsv
+#     nextflow run MultiFQtoVC.nf -c /home/centos/{{ env['VAULT'] }}/mm.config --sample data/tsv/sample.tsv
 # popd
 
+#NXF_DEBUG=1 && nextflow run MultiFQtoVC.nf -c /home/centos/vault/mm.config --sample data/tsv/sample.tsv

@@ -12,3 +12,4 @@ systemctl restart iptables
 sed -i '/server supernode iburst/ d' /etc/chrony.conf
 systemctl stop chronyd.service
 systemctl disable chronyd.service
+
