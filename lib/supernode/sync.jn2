@@ -64,3 +64,20 @@ done
 rsync -a --no-perms {{ env['VAULT'] }}/mmrc.sh /etc/profile.d/mmrc.sh
 chown root:root /etc/profile.d/mmrc.sh
 chmod 644 /etc/profile.d/mmrc.sh
+
+##############################################################
+# mkdir -p /mnt
+# [ -L /mnt/sw ] && unlink /mnt/sw
+# ln -s /home/centos/{{ env['VAULT'] }}/sw /mnt/sw
+
+mkdir -p /usr/local/bin/
+
+##############################################################
+# NextFlow
+# See: https://www.nextflow.io/
+if [ ! -x /usr/local/bin/nextflow ]; then
+    curl -fsSL get.nextflow.io | bash
+    # Moving nextflow to /usr/local/bin
+    mv -f nextflow /usr/local/bin/.
+    chmod +x /usr/local/bin/nextflow
+fi

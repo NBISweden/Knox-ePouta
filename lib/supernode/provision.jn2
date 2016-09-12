@@ -58,21 +58,6 @@ systemctl enable munge.service
 systemctl enable slurmctld.service
 
 ##############################################################
-# mkdir -p /mnt
-# [ -L /mnt/sw ] && unlink /mnt/sw
-# ln -s /home/centos/{{ env['VAULT'] }}/sw /mnt/sw
-
-##############################################################
-# NextFlow
-# See: https://www.nextflow.io/
-if [ ! -x /usr/local/bin/nextflow ]; then
-    curl -fsSL get.nextflow.io | bash
-    # Moving nextflow to /usr/local/bin
-    mv -f nextflow /usr/local/bin/.
-    chmod +x /usr/local/bin/nextflow
-fi
-
-##############################################################
 # Git project CAW
 # See: https://github.com/SciLifeLab/CAW/
 export http_proxy="{{ env['UU_PROXY'] }}"
@@ -85,11 +70,10 @@ if [ ! -d {{ env['MM_PROJECTS'] }}/CAW ]; then
     git clone https://github.com/SciLifeLab/CAW.git {{ env['MM_PROJECTS'] }}/CAW
 fi
 rm -rf {{ env['MM_PROJECTS'] }}/CAW/work
+rm -rf {{ env['MM_PROJECTS'] }}/CAW/work
 
+# PATH already contains /usr/local/bin
 # in /etc/profile.d/mmrc.sh: function module () { return 0; }
-
-sed -i -e "/PATH=\/usr\/local\/bin/ d" /etc/bashrc
-echo "export PATH=/usr/local/bin:\$PATH" >> /etc/bashrc
 
 # pushd {{ env['MM_PROJECTS'] }}/CAW
 # NXF_DEBUG=1 &&
