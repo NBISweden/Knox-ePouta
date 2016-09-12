@@ -23,7 +23,7 @@ yum -y install tar make bzip2 perl git zlib zlib-devel java-1.8.0-openjdk libstd
 yum -y install ncurses-devel libcurl-devel gnutls-devel nss-devel openssl-devel perl-Data-Dumper
 
 # Installing texlive....it's looooonng !!
-# yum -y install R bwa samtools
+# yum -y install R
 # So I install a dummy-texlive package instead. Let's see if that breaks later...
 [ ! -e texlive-dummy-2012a-1.el7.noarch.rpm ] &&
     curl --proxy http://uu_proxy:3128 -OL http://mirrors.ctan.org/support/texlive/texlive-dummy/EnterpriseLinux-7/texlive-dummy-2012a-1.el7.noarch.rpm
@@ -32,7 +32,7 @@ if ! rpm -q texlive-dummy-2012a > /dev/null ; then
     yum -y install texlive-dummy-2012a-1.el7.noarch.rpm  # --nogpgcheck
 fi
 
-yum -y install R bwa
+yum -y install R
 # It cuts down the dependencies from 300 to 100 packages.
 
 

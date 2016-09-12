@@ -129,6 +129,7 @@ export CAW_DATA=/mnt/data
 export MM_PROJECTS=/mnt/projects
 export UU_PROXY="http://uu_proxy:3128/"
 export MM_JAVA_OPTIONS='-Dhttp.proxyHost=uu_proxy -Dhttp.proxyPort=3128 -Djava.net.preferIPv4Stack=true'
-#export MANTA_VERSION=1.0.0
+export MANTA_VERSION=0.27.1
 export STRELKA_VERSION=1.0.15
 export SAMTOOLS_VERSION=1.3 # Not 1.3.1
+export BWA_VERSION=0.7.8

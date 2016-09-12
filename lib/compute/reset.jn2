@@ -9,3 +9,11 @@ systemctl restart iptables
 sed -i '/server supernode iburst/ d' /etc/chrony.conf
 systemctl stop chronyd.service
 systemctl disable chronyd.service
+
+
+rm -f /usr/local/bin/bwa
+rm -rf /usr/local/samtools
+rm -rf /usr/local/strelka_workflow
+rm -f /usr/local/bin/configManta.py
+
+
