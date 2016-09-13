@@ -74,33 +74,8 @@ rm -rf {{ env['MM_PROJECTS'] }}/CAW/work
 #rm -rf ~/.nextflow # Don't clean this one, that's where the dependencies are
 rm -f ~/.nextflow.log {{ env['MM_PROJECTS'] }}/CAW/.nextflow.history {{ env['MM_PROJECTS'] }}/CAW/.nextflow.log
 
-# # That'll be ok for all compute nodes, since CAW/bin is on an NFS share
-# # They are dead links on the supernode though
-# ln -s /usr/local/bwa-{{ env['BWA_VERSION'] }}/bin/* {{ env['MM_PROJECTS'] }}/CAW/bin/.
-# ln -s /usr/local/samtools-{{ env['SAMTOOLS_VERSION'] }}/bin/* {{ env['MM_PROJECTS'] }}/CAW/bin/.
-# ln -s /usr/local/strelka-{{ env['STRELKA_VERSION'] }}/bin/* {{ env['MM_PROJECTS'] }}/CAW/bin/.
-# ln -s /usr/local/manta-{{ env['MANTA_VERSION'] }}/bin/* {{ env['MM_PROJECTS'] }}/CAW/bin/.
+# #NXF_DEBUG=1 &&
+# nextflow run {{ env['MM_PROJECTS'] }}/CAW/MultiFQtoVC.nf -c /home/centos/{{ env['VAULT'] }}/mm.config --sample {{ env['MM_PROJECTS'] }}/CAW/data/tsv/sample.tsv
 
-# PATH already contains /usr/local/bin
-cat > /etc/profile.d/mmrc.sh <<'EOF'
-# micromosler defs
+# nextflow run /mnt/projects/CAW/MultiFQtoVC.nf -c /home/centos/vault/mm.config --sample /mnt/projects/CAW/data/tsv/sample.tsv
 
-alias ls='ls -h'
-alias la='ls -a'
-alias lla='ll -a'
-
-[[ "$PATH" =~ "/usr/local/bin" ]] || export PATH="/usr/local/bin:$PATH"
-
-module () 
-{ 
-    return 0
-}
-export -f module
-EOF
-
-# pushd {{ env['MM_PROJECTS'] }}/CAW
-# NXF_DEBUG=1 &&
-#     nextflow run MultiFQtoVC.nf -c /home/centos/{{ env['VAULT'] }}/mm.config --sample data/tsv/sample.tsv
-# popd
-
-#NXF_DEBUG=1 && nextflow run MultiFQtoVC.nf -c /home/centos/vault/mm.config --sample data/tsv/sample.tsv

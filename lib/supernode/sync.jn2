@@ -75,3 +75,19 @@ if [ ! -x /usr/local/bin/nextflow ]; then
     mv -f nextflow /usr/local/bin/.
     chmod +x /usr/local/bin/nextflow
 fi
+
+cat > /etc/profile.d/mmrc.sh <<'EOF'
+# micromosler defs
+
+alias ls='ls -h'
+alias la='ls -a'
+alias lla='ll -a'
+
+[[ "$PATH" =~ "/usr/local/bin" ]] || export PATH="/usr/local/bin:$PATH"
+
+module () 
+{ 
+    return 0
+}
+export -f module
+EOF
