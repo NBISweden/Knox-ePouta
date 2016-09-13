@@ -70,10 +70,32 @@ if [ ! -d {{ env['MM_PROJECTS'] }}/CAW ]; then
     git clone https://github.com/SciLifeLab/CAW.git {{ env['MM_PROJECTS'] }}/CAW
 fi
 rm -rf {{ env['MM_PROJECTS'] }}/CAW/work
-rm -rf {{ env['MM_PROJECTS'] }}/CAW/work
 
+rm -rf ~/.nextflow ~/.nextflow.log
+rm -rf {{ env['MM_PROJECTS'] }}/CAW/.nextflow.history {{ env['MM_PROJECTS'] }}/CAW/.nextflow.log
+
+# That'll be ok for all compute nodes, since CAW/bin is on an NFS share
+# They are dead links on the supernode though
+ln -s /usr/local/bwa-{{ env['BWA_VERSION'] }}/bin/* {{ env['MM_PROJECTS'] }}/CAW/bin/.
+ln -s /usr/local/samtools-{{ env['SAMTOOLS_VERSION'] }}/bin/* {{ env['MM_PROJECTS'] }}/CAW/bin/.
+ln -s /usr/local/strelka-{{ env['STRELKA_VERSION'] }}/bin/* {{ env['MM_PROJECTS'] }}/CAW/bin/.
+ln -s /usr/local/manta-{{ env['MANTA_VERSION'] }}/bin/* {{ env['MM_PROJECTS'] }}/CAW/bin/.
 # PATH already contains /usr/local/bin
-# in /etc/profile.d/mmrc.sh: function module () { return 0; }
+cat > /etc/profile.d/mmrc.sh <<'EOF'
+# micromosler defs
+
+alias ls='ls -h'
+alias la='ls -a'
+alias lla='ll -a'
+
+[[ "$PATH" =~ "/usr/local/bin" ]] || export PATH="/usr/local/bin:$PATH"; done
+
+module () 
+{ 
+    return 0
+}
+export -f module
+EOF
 
 # pushd {{ env['MM_PROJECTS'] }}/CAW
 # NXF_DEBUG=1 &&

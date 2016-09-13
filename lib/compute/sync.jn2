@@ -108,10 +108,6 @@ chmod 755 /var/spool/slurmd /var/log/slurm
 touch /var/log/slurm/slurmd.log
 chown slurm: /var/log/slurm/slurmd.log
 
-rsync -a --no-perms {{ env['VAULT'] }}/mmrc.sh /etc/profile.d/mmrc.sh
-chown root:root /etc/profile.d/mmrc.sh
-chmod 644 /etc/profile.d/mmrc.sh
-
 ##############################################################
 # Manta
 # See: https://github.com/Illumina/manta
@@ -129,7 +125,6 @@ if [ ! -x /usr/local/manta-{{ env['MANTA_VERSION'] }}/bin/configManta.py ]; then
     fi
     make -j 4 -C ${MM_BUILD}/manta-{{ env['MANTA_VERSION'] }}.release_src/build install
 fi
-echo "export PATH=/usr/local/manta-{{ env['MANTA_VERSION'] }}/bin:\$PATH" > /etc/profile.d/manta.sh
 
 ##############################################################
 # Strelka
@@ -146,7 +141,6 @@ if [ ! -x /usr/local/strelka-{{ env['STRELKA_VERSION'] }}/bin/configureStrelkaWo
     rm -rf ./strelkaDemoAnalysis
     /usr/local/strelka-{{ env['STRELKA_VERSION'] }}/bin/demo/run_demo.bash
 fi
-echo "export PATH=/usr/local/strelka-{{ env['STRELKA_VERSION'] }}/bin:\$PATH" > /etc/profile.d/strelka.sh
 
 ##############################################################
 # Samtools
@@ -160,7 +154,6 @@ if [ ! -x /usr/local/samtools-{{ env['SAMTOOLS_VERSION'] }}/bin/samtools ]; then
     make install install-htslib
     popd
 fi
-echo "export PATH=/usr/local/samtools-{{ env['SAMTOOLS_VERSION'] }}/bin:\$PATH" > /etc/profile.d/samtools.sh
 
 ##############################################################
 # BWA
@@ -175,7 +168,6 @@ if [ ! -x /usr/local/bwa-{{ env['BWA_VERSION'] }}/bin/bwa ]; then
     chmod +x /usr/local/bwa-{{ env['BWA_VERSION'] }}/bin/bwa
     popd
 fi
-echo "export PATH=/usr/local/bwa-{{ env['BWA_VERSION'] }}/bin:\$PATH" > /etc/profile.d/bwa.sh
 
 ##############################################################
 # Adding tools to the PATH, for all users
@@ -183,4 +175,21 @@ mkdir -p /mnt
 [ -L /mnt/sw ] && unlink /mnt/sw
 ln -s /home/centos/{{ env['VAULT'] }}/sw /mnt/sw
 
-#echo "export PATH=/mnt/sw:\$PATH" > /etc/profile.d/extra-caw.sh
+cat > /etc/profile.d/mmrc.sh <<'EOF'
+# micromosler defs
+
+alias ls='ls -h'
+alias la='ls -a'
+alias lla='ll -a'
+
+for p in manta-{{ env['MANTA_VERSION'] }} bwa-{{ env['BWA_VERSION'] }} strelka-{{ env['STRELKA_VERSION'] }} samtools-{{ env['SAMTOOLS_VERSION'] }}
+do [[ "$PATH" =~ "$p" ]] || export PATH="/usr/local/$p/bin:$PATH"; done
+
+#[[ "$PATH" =~ "/mnt/sw" ]] || export PATH=/mnt/sw:$PATH
+
+module () 
+{ 
+    return 0
+}
+export -f module
+EOF

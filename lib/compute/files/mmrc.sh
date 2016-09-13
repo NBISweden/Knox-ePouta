@@ -1,1 +1,0 @@
-../../supernode/files/mmrc.sh

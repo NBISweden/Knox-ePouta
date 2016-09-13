@@ -60,11 +60,6 @@ do
     chown slurm: /var/log/slurm/${f}.log
 done
 
-# To define the function 'module'
-rsync -a --no-perms {{ env['VAULT'] }}/mmrc.sh /etc/profile.d/mmrc.sh
-chown root:root /etc/profile.d/mmrc.sh
-chmod 644 /etc/profile.d/mmrc.sh
-
 ##############################################################
 # mkdir -p /mnt
 # [ -L /mnt/sw ] && unlink /mnt/sw
