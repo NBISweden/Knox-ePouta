@@ -69,13 +69,15 @@ git config --global https.proxy ${http_proxy/http/https}
 if [ ! -d {{ env['MM_PROJECTS'] }}/CAW ]; then
     git clone https://github.com/SciLifeLab/CAW.git {{ env['MM_PROJECTS'] }}/CAW
 fi
-rm -rf {{ env['MM_PROJECTS'] }}/CAW/work
 
 #rm -rf ~/.nextflow # Don't clean this one, that's where the dependencies are
 rm -f ~/.nextflow.log {{ env['MM_PROJECTS'] }}/CAW/.nextflow.history {{ env['MM_PROJECTS'] }}/CAW/.nextflow.log
 
+rm -rf {{ env['MM_PROJECTS'] }}/CAW/work
+# pushd {{ env['MM_PROJECTS'] }}/CAW
 # #NXF_DEBUG=1 &&
-# nextflow run {{ env['MM_PROJECTS'] }}/CAW/MultiFQtoVC.nf -c /home/centos/{{ env['VAULT'] }}/mm.config --sample {{ env['MM_PROJECTS'] }}/CAW/data/tsv/sample.tsv
-
-# nextflow run /mnt/projects/CAW/MultiFQtoVC.nf -c /home/centos/vault/mm.config --sample /mnt/projects/CAW/data/tsv/sample.tsv
-
+# nextflow run MultiFQtoVC.nf -c /home/centos/{{ env['VAULT'] }}/mm.config --sample {{ env['MM_PROJECTS'] }}/CAW/data/tsv/sample.tsv
+# popd
+ 
+cd /mnt/projects/CAW
+nextflow run MultiFQtoVC.nf -c /home/centos/vault/mm.config --sample /mnt/projects/CAW/data/tsv/sample.tsv
