@@ -71,15 +71,16 @@ if [ ! -d {{ env['MM_PROJECTS'] }}/CAW ]; then
 fi
 rm -rf {{ env['MM_PROJECTS'] }}/CAW/work
 
-rm -rf ~/.nextflow ~/.nextflow.log
-rm -rf {{ env['MM_PROJECTS'] }}/CAW/.nextflow.history {{ env['MM_PROJECTS'] }}/CAW/.nextflow.log
+#rm -rf ~/.nextflow # Don't clean this one, that's where the dependencies are
+rm -f ~/.nextflow.log {{ env['MM_PROJECTS'] }}/CAW/.nextflow.history {{ env['MM_PROJECTS'] }}/CAW/.nextflow.log
 
-# That'll be ok for all compute nodes, since CAW/bin is on an NFS share
-# They are dead links on the supernode though
-ln -s /usr/local/bwa-{{ env['BWA_VERSION'] }}/bin/* {{ env['MM_PROJECTS'] }}/CAW/bin/.
-ln -s /usr/local/samtools-{{ env['SAMTOOLS_VERSION'] }}/bin/* {{ env['MM_PROJECTS'] }}/CAW/bin/.
-ln -s /usr/local/strelka-{{ env['STRELKA_VERSION'] }}/bin/* {{ env['MM_PROJECTS'] }}/CAW/bin/.
-ln -s /usr/local/manta-{{ env['MANTA_VERSION'] }}/bin/* {{ env['MM_PROJECTS'] }}/CAW/bin/.
+# # That'll be ok for all compute nodes, since CAW/bin is on an NFS share
+# # They are dead links on the supernode though
+# ln -s /usr/local/bwa-{{ env['BWA_VERSION'] }}/bin/* {{ env['MM_PROJECTS'] }}/CAW/bin/.
+# ln -s /usr/local/samtools-{{ env['SAMTOOLS_VERSION'] }}/bin/* {{ env['MM_PROJECTS'] }}/CAW/bin/.
+# ln -s /usr/local/strelka-{{ env['STRELKA_VERSION'] }}/bin/* {{ env['MM_PROJECTS'] }}/CAW/bin/.
+# ln -s /usr/local/manta-{{ env['MANTA_VERSION'] }}/bin/* {{ env['MM_PROJECTS'] }}/CAW/bin/.
+
 # PATH already contains /usr/local/bin
 cat > /etc/profile.d/mmrc.sh <<'EOF'
 # micromosler defs
@@ -88,7 +89,7 @@ alias ls='ls -h'
 alias la='ls -a'
 alias lla='ll -a'
 
-[[ "$PATH" =~ "/usr/local/bin" ]] || export PATH="/usr/local/bin:$PATH"; done
+[[ "$PATH" =~ "/usr/local/bin" ]] || export PATH="/usr/local/bin:$PATH"
 
 module () 
 { 
