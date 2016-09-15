@@ -79,5 +79,5 @@ rm -rf {{ env['MM_PROJECTS'] }}/CAW/work
 # nextflow run MultiFQtoVC.nf -c /home/centos/{{ env['VAULT'] }}/mm.config --sample {{ env['MM_PROJECTS'] }}/CAW/data/tsv/sample.tsv
 # popd
  
-cd /mnt/projects/CAW
-nextflow run MultiFQtoVC.nf -c /home/centos/vault/mm.config --sample /mnt/projects/CAW/data/tsv/sample.tsv
+# cd /mnt/projects/CAW
+# NXF_DEBUG=1 && nextflow run MultiFQtoVC.nf -c /home/centos/vault/mm.config --sample /mnt/projects/CAW/data/tsv/sample.tsv
