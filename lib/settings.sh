@@ -91,14 +91,14 @@ export EXT_CIDR=172.18.0.0/24
 
 declare -A FLOATING_IPs
 export FLOATING_IPs=(\
-    [supernode]=10.254.0.57 \
-    [compute1]=10.254.0.58 \
-    [compute2]=10.254.0.59 \
-    [compute3]=10.254.0.60 \
-    [storage]=10.254.0.61 \
+    [supernode]=10.101.128.100 \
+    [compute1]=10.101.128.101 \
+    [compute2]=10.101.128.102 \
+    [compute3]=10.101.128.103 \
+    [storage]=10.101.129.104 \
 )
-export FLOATING_GATEWAY=10.254.0.1
-export FLOATING_CIDR=10.254.0.0/24
+export FLOATING_GATEWAY=10.101.128.1
+export FLOATING_CIDR=10.101.0.0/16
 
 
 PHONE_HOME=${FLOATING_GATEWAY}
@@ -124,9 +124,8 @@ export CAW_DATA=/mnt/data
 export MM_PROJECTS=/mnt/projects
 export UU_PROXY="http://uu_proxy:3128/"
 export MM_JAVA_OPTIONS='-Dhttp.proxyHost=uu_proxy -Dhttp.proxyPort=3128 -Djava.net.preferIPv4Stack=true'
-export MANTA_VERSION=0.27.1
+export MANTA_VERSION=1.0.0 # previously 0.27.1
 export STRELKA_VERSION=1.0.15
 export SAMTOOLS_VERSION=1.3 # Not 1.3.1
-#export BWA_VERSION=0.7.8
-export BWA_VERSION=0.7.13
+export BWA_VERSION=0.7.13 # 0.7.8 in the README
 #export GCC_VERSION=4.9.2
