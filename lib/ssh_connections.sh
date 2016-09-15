@@ -11,7 +11,7 @@ echo -e "Checking the connections:"
 reset_progress
 CONNECTION_FAIL=""
 cat > ${SSH_CONFIG} <<ENDSSHCFG
-Host ${FLOATING_CIDR%0/24}*
+Host ${FLOATING_CIDR%0/16}*
 	User centos
 	ControlMaster auto
 	ControlPersist 60s

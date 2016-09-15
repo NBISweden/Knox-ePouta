@@ -95,7 +95,7 @@ export FLOATING_IPs=(\
     [compute1]=10.101.128.101 \
     [compute2]=10.101.128.102 \
     [compute3]=10.101.128.103 \
-    [storage]=10.101.129.104 \
+    [storage]=10.101.128.104 \
 )
 export FLOATING_GATEWAY=10.101.128.1
 export FLOATING_CIDR=10.101.0.0/16
