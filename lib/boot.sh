@@ -73,7 +73,6 @@ if [ $? -ne 0 ] || [ -z "$CHECK" ]; then
 fi
 
 MGMT_NET=$(neutron net-list --tenant_id=${TENANT_ID} | awk '/ '${OS_TENANT_NAME}-mgmt-net' /{print $2}')
-DATA_NET=$(neutron net-list --tenant_id=${TENANT_ID} | awk '/ '${OS_TENANT_NAME}-data-net' /{print $2}')
 
 #######################################################################
 
@@ -98,14 +97,10 @@ do
 	    exec &>${MM_TMP}/$machine/boot/log
 	    set -x -e # Print commands && exit if errors
 
-	    DN=''
-	    if [ ! -z "${DATA_IPs[$machine]}" ]; then
-		DN="--nic net-id=$DATA_NET,v4-fixed-ip=${DATA_IPs[$machine]}"
-	    fi
 	    # Booting a machine
 	    echo -e "Booting $machine from ${PREFIX}-$machine"
 	    nova boot --flavor ${FLAVORS[$machine]} --image ${PREFIX}-$machine --security-group ${OS_TENANT_NAME}-sg \
---nic net-id=${MGMT_NET},v4-fixed-ip=${MACHINE_IPs[$machine]} $DN $machine 2>&1 > /dev/null
+--nic net-id=${MGMT_NET},v4-fixed-ip=${MACHINE_IPs[$machine]} $machine 2>&1 > /dev/null
 	)
 	RET=$?
 	if [ $RET -eq 0 ]; then report_ok $machine; else report_fail $machine; fi

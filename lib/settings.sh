@@ -77,14 +77,16 @@ export MACHINE_IPs=(\
 )
 export MGMT_GATEWAY=10.101.0.1
 export MGMT_CIDR=10.101.0.0/16
+export MGMT_ALLOCATION_START=10.101.128.2
+export MGMT_ALLOCATION_END=10.101.255.254
 
 declare -A FLOATING_IPs
 export FLOATING_IPs=(\
-    [supernode]=10.254.0.100 \
-    [compute1]=10.254.0.101 \
-    [compute2]=10.254.0.102 \
-    [compute3]=10.254.0.103 \
-    [storage]=10.254.0.104 \
+    [supernode]=10.254.0.200 \
+    [compute1]=10.254.0.201 \
+    [compute2]=10.254.0.202 \
+    [compute3]=10.254.0.203 \
+    [storage]=10.254.0.204 \
 )
 export FLOATING_GATEWAY=10.254.0.1
 export FLOATING_CIDR=10.254.0.0/16

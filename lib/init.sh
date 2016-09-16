@@ -98,35 +98,31 @@ fi
 
 if [ ${_NET} = "yes" ]; then
 
-    echo "Creating the public network"
-
-    EXTNET_ID=$(neutron net-list | awk '/ public /{print $2}')
-
-    if [ -n "$EXTNET_ID" ]; then
-	EXTNET_ID=$(neutron net-create --router:external --provider:physical_network public --provider:network_type flat public | awk '/ id /{print $4}')
-	# Public Subnet - For floating IPs
-	neutron subnet-create --name public --allocation-pool start=10.254.0.100,end=10.254.255.254 --enable-dhcp --gateway 10.254.0.1 public 10.254.0.0/16
-	#--dns-nameserver 130.238.7.10 --dns-nameserver 130.238.4.11 --dns-nameserver 130.238.164.6 \
-    fi
-    
-    if [ -z "$EXTNET_ID" ]; then
-        echo -e "ERROR: Could not find, nor create, the public network.\nExiting..." > ${ORG_FD1}
-        exit 1
-    fi
-
     echo "Creating routers and networks"
+
     MGMT_ROUTER_ID=$(neutron router-create ${OS_TENANT_NAME}-mgmt-router | awk '/ id / { print $4 }')
-    
-    if [ -z "$MGMT_ROUTER_ID" ]; then
-    	echo "Router issues, skipping."
-    else
-    	echo -e "Attaching Management router to the External \"public\" network"
-    	neutron router-gateway-set $MGMT_ROUTER_ID $EXTNET_ID >/dev/null
-    fi
+
+    # if [ -z "$MGMT_ROUTER_ID" ]; then
+    # 	echo "Router issues. Exiting..."
+    #   exit 1
+    # fi
+
+    # echo "Creating the public network"
+    # EXTNET_ID=$(neutron net-list | awk '/ public /{print $2}')
+
+    # if [ -z "$EXTNET_ID" ]; then
+    # 	ADMIN_TENANT_ID=$(openstack project list | awk "/ admin / {print \$2}")
+    # 	EXTNET_ID=$(neutron net-create --router:external --provider:physical_network public --provider:network_type flat public --tenant-id $ADMIN_TENANT_ID  | awk '/ id /{print $4}')
+    # 	# Public Subnet - For floating IPs
+    # 	neutron subnet-create --name public --allocation-pool start=10.254.0.100,end=10.254.255.254 --enable-dhcp --gateway 10.254.0.1 public 10.254.0.0/16 >/dev/null
+    # 	#--dns-nameserver 130.238.7.10 --dns-nameserver 130.238.4.11 --dns-nameserver 130.238.164.6
+    #   echo -e "Attaching Management router to the External \"public\" network"
+    #   neutron router-gateway-set $MGMT_ROUTER_ID $EXTNET_ID >/dev/null
+    # fi
     
     # Creating the management and data networks
     neutron net-create --provider:network_type vlan --provider:physical_network vlan --provider:segmentation_id ${MM_VLAN} ${OS_TENANT_NAME}-mgmt-net >/dev/null
-    neutron subnet-create --name ${OS_TENANT_NAME}-mgmt-subnet ${OS_TENANT_NAME}-mgmt-net --gateway ${MGMT_GATEWAY} ${MGMT_CIDR} >/dev/null # --disable-dhcp
+    neutron subnet-create --name ${OS_TENANT_NAME}-mgmt-subnet ${OS_TENANT_NAME}-mgmt-net --allocation-pool start=${MGMT_ALLOCATION_START},end=${MGMT_ALLOCATION_END} --gateway ${MGMT_GATEWAY} ${MGMT_CIDR} >/dev/null # --disable-dhcp
     neutron router-interface-add ${OS_TENANT_NAME}-mgmt-router ${OS_TENANT_NAME}-mgmt-subnet >/dev/null
 
     echo "Creating the floating IPs"
