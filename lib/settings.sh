@@ -53,6 +53,8 @@ export PUBLIC_SSH_KEYS=(\
 #################################################################
 # Declaring the machines
 
+export MM_VLAN=1203
+
 declare -a MACHINES
 export MACHINES=('supernode' 'compute1' 'compute2' 'compute3' 'storage')
 
@@ -67,38 +69,25 @@ export FLAVORS=(\
 
 declare -A MACHINE_IPs
 export MACHINE_IPs=(\
-    [supernode]=172.25.8.6 \
-    [compute1]=172.25.8.7 \
-    [compute2]=172.25.8.8 \
-    [compute3]=172.25.8.9 \
-    [storage]=172.25.8.10 \
-)
-export MGMT_GATEWAY=172.25.8.1
-export MGMT_CIDR=172.25.8.0/22
-
-declare -A DATA_IPs
-export DATA_IPs=(\
-    [compute1]=10.10.10.110 \
-    [compute2]=10.10.10.111 \
-    [compute3]=10.10.10.112 \
-    [storage]=10.10.10.102 \
-)
-export DATA_GATEWAY=10.10.10.1
-export DATA_CIDR=10.10.10.0/24
-
-# For the external network within the 'over'-openstack
-export EXT_CIDR=172.18.0.0/24
-
-declare -A FLOATING_IPs
-export FLOATING_IPs=(\
     [supernode]=10.101.128.100 \
     [compute1]=10.101.128.101 \
     [compute2]=10.101.128.102 \
     [compute3]=10.101.128.103 \
     [storage]=10.101.128.104 \
 )
-export FLOATING_GATEWAY=10.101.128.1
-export FLOATING_CIDR=10.101.0.0/16
+export MGMT_GATEWAY=10.101.0.1
+export MGMT_CIDR=10.101.0.0/16
+
+declare -A FLOATING_IPs
+export FLOATING_IPs=(\
+    [supernode]=10.254.0.100 \
+    [compute1]=10.254.0.101 \
+    [compute2]=10.254.0.102 \
+    [compute3]=10.254.0.103 \
+    [storage]=10.254.0.104 \
+)
+export FLOATING_GATEWAY=10.254.0.1
+export FLOATING_CIDR=10.254.0.0/16
 
 
 PHONE_HOME=${FLOATING_GATEWAY}

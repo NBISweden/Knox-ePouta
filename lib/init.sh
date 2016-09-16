@@ -96,60 +96,54 @@ if [ $? -ne 0 ] || [ -z "$CHECK" ]; then
     exit 1
 fi
 
-EXTNET_ID=$(neutron net-list | awk '/ public /{print $2}')
-if [ -z "$EXTNET_ID" ]; then
-    echo "ERROR: Could not find the external network" > ${ORG_FD1}
-    exit 1
-fi
-
 if [ ${_NET} = "yes" ]; then
 
-    echo "Creating routers and networks"
+    echo "Creating the public network"
 
-    MGMT_ROUTER_ID=$(neutron router-create ${OS_TENANT_NAME}-mgmt-router | awk '/ id / { print $4 }')
-    DATA_ROUTER_ID=$(neutron router-create ${OS_TENANT_NAME}-data-router | awk '/ id / { print $4 }')
+    EXTNET_ID=$(neutron net-list | awk '/ public /{print $2}')
+
+    if [ -n "$EXTNET_ID" ]; then
+	EXTNET_ID=$(neutron net-create --router:external --provider:physical_network public --provider:network_type flat public | awk '/ id /{print $4}')
+	# Public Subnet - For floating IPs
+	neutron subnet-create --name public --allocation-pool start=10.254.0.100,end=10.254.255.254 --enable-dhcp --gateway 10.254.0.1 public 10.254.0.0/16
+	#--dns-nameserver 130.238.7.10 --dns-nameserver 130.238.4.11 --dns-nameserver 130.238.164.6 \
+    fi
     
-    if [ -z "$MGMT_ROUTER_ID" ] || [ -z "$DATA_ROUTER_ID" ]; then
-	echo "Router issues, skipping."
+    if [ -z "$EXTNET_ID" ]; then
+        echo -e "ERROR: Could not find, nor create, the public network.\nExiting..." > ${ORG_FD1}
+        exit 1
+    fi
+
+    echo "Creating routers and networks"
+    MGMT_ROUTER_ID=$(neutron router-create ${OS_TENANT_NAME}-mgmt-router | awk '/ id / { print $4 }')
+    
+    if [ -z "$MGMT_ROUTER_ID" ]; then
+    	echo "Router issues, skipping."
     else
-	echo -e "Attaching Management router to the External \"public\" network"
-	neutron router-gateway-set $MGMT_ROUTER_ID $EXTNET_ID >/dev/null
+    	echo -e "Attaching Management router to the External \"public\" network"
+    	neutron router-gateway-set $MGMT_ROUTER_ID $EXTNET_ID >/dev/null
     fi
     
     # Creating the management and data networks
-    neutron net-create ${OS_TENANT_NAME}-mgmt-net >/dev/null
+    neutron net-create --provider:network_type vlan --provider:physical_network vlan --provider:segmentation_id ${MM_VLAN} ${OS_TENANT_NAME}-mgmt-net >/dev/null
     neutron subnet-create --name ${OS_TENANT_NAME}-mgmt-subnet ${OS_TENANT_NAME}-mgmt-net --gateway ${MGMT_GATEWAY} ${MGMT_CIDR} >/dev/null # --disable-dhcp
     neutron router-interface-add ${OS_TENANT_NAME}-mgmt-router ${OS_TENANT_NAME}-mgmt-subnet >/dev/null
 
-    # Get the DHCP that host the public network and add an interface for the management network
-    neutron dhcp-agent-network-add $(neutron dhcp-agent-list-hosting-net -c id -f value public) ${OS_TENANT_NAME}-mgmt-net >/dev/null
-    # Note: Not sure why Pontus wanted it like that. I'd create the mgmt-subnet with --enable-dhcp and that's it
-
-    # should we have the vlan-transparent flag?
-    neutron net-create --vlan-transparent=True ${OS_TENANT_NAME}-data-net >/dev/null
-    neutron subnet-create --name ${OS_TENANT_NAME}-data-subnet ${OS_TENANT_NAME}-data-net --disable-dhcp --gateway ${DATA_GATEWAY} ${DATA_CIDR} >/dev/null
-    neutron router-interface-add ${OS_TENANT_NAME}-data-router ${OS_TENANT_NAME}-data-subnet >/dev/null
-    
-
     echo "Creating the floating IPs"
     for machine in ${MACHINES[@]}; do
-	neutron floatingip-create --tenant-id ${TENANT_ID} --floating-ip-address ${FLOATING_IPs[$machine]} public >/dev/null
+    	neutron floatingip-create --tenant-id ${TENANT_ID} --floating-ip-address ${FLOATING_IPs[$machine]} public >/dev/null
     done
 
     echo "Creating the Security Group: ${OS_TENANT_NAME}-sg"
     nova secgroup-create ${OS_TENANT_NAME}-sg "Security Group for ${OS_TENANT_NAME}" >/dev/null
     nova secgroup-add-rule ${OS_TENANT_NAME}-sg icmp  -1    -1 ${FLOATING_CIDR}      >/dev/null
     nova secgroup-add-rule ${OS_TENANT_NAME}-sg icmp  -1    -1 ${MGMT_CIDR}          >/dev/null
-    nova secgroup-add-rule ${OS_TENANT_NAME}-sg icmp  -1    -1 ${DATA_CIDR}          >/dev/null
     nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp   22    22 ${FLOATING_CIDR}      >/dev/null
     nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp    1 65535 ${MGMT_CIDR}          >/dev/null
-    nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp    1 65535 ${DATA_CIDR}          >/dev/null
 
     echo "Setting the quotas"
     FACTOR=2
     nova quota-update --instances $((10 * FACTOR)) --ram $((51200 * FACTOR)) ${TENANT_ID} >/dev/null
-
-    #nova quota fixing
 
 fi # End _NET config
 
@@ -162,17 +156,13 @@ if nova image-list | grep "${_IMAGE}" > /dev/null; then : ; else
 fi
 
 MGMT_NET=$(neutron net-list --tenant_id=${TENANT_ID} | awk "/ ${OS_TENANT_NAME}-mgmt-net /{print \$2}")
-DATA_NET=$(neutron net-list --tenant_id=${TENANT_ID} | awk "/ ${OS_TENANT_NAME}-data-net /{print \$2}")
-DATA_SUBNET=$(neutron subnet-list --tenant_id=${TENANT_ID} | awk "/ ${OS_TENANT_NAME}-data-subnet /{print \$2}")
 
 # echo "Management Net: $MGMT_NET"
-# echo "Data Net: $DATA_NET"
-# echo "Data SubNet: $DATA_SUBNET"
 echo "Checking network information"
 
-if [ -z "$MGMT_NET" ] || [ -z "$DATA_NET" ] || [ -z "$DATA_SUBNET" ]; then
-    echo "Error: Could not find the Management or Data network" > ${ORG_FD1}
-    echo -e "\tMaybe you should re-run with the --all flags?" > ${ORG_FD1}
+if [ -z "$MGMT_NET" ]; then
+    echo "Error: Could not find the Management" > ${ORG_FD1}
+    echo -e "\tMaybe you should re-run with the --net flags?" > ${ORG_FD1}
     exit 1
 fi
 
@@ -209,7 +199,6 @@ echo "Disabling SElinux"
 echo "================================================================================"
 echo "Adding the routing tables"
 echo '10 mgmt' >> /etc/iproute2/rt_tables
-echo '11 data' >> /etc/iproute2/rt_tables
 echo '12 ext' >> /etc/iproute2/rt_tables
 echo "================================================================================"
 echo "Creating hosts file"
@@ -220,88 +209,11 @@ ENDCLOUDINIT
 EOF
 chown root:root /etc/hosts
 chmod 0644 /etc/hosts
-
-echo "================================================================================"
-echo "Resetting the network configuration for eth0. Bye-bye DHCP."
-cat > /etc/sysconfig/network-scripts/ifcfg-eth0 <<EOF
-TYPE=Ethernet
-BOOTPROTO=static
-DEFROUTE=no
-NAME=eth0
-DEVICE=eth0
-ONBOOT=yes
-IPADDR=${MACHINE_IPs[$machine]}
-PREFIX=${MGMT_CIDR##*/}
-GATEWAY=${MGMT_GATEWAY}
-MTU=1450
-NOZEROCONF=yes
-EOF
-
-cat > /etc/sysconfig/network-scripts/rule-eth0 <<EOF
-to ${MGMT_CIDR} lookup mgmt
-from ${MGMT_CIDR} lookup mgmt
-EOF
-
-cat > /etc/sysconfig/network-scripts/route-eth0 <<EOF
-#169.254.169.254 via ${MGMT_GATEWAY} dev eth0 proto static
-table mgmt ${MGMT_CIDR} dev eth0 proto kernel scope link src ${MACHINE_IPs[$machine]}
-default via ${MGMT_GATEWAY} dev eth0 proto static
-EOF
-
-for f in ifcfg rule route
-do
-chown root:root /etc/sysconfig/network-scripts/\${f}-eth0
-chmod 0644 /etc/sysconfig/network-scripts/\${f}-eth0
-done
-
 ENDCLOUDINIT
-
-    # If Data IP is not zero-length
-    if [ ! -z "${DATA_IPs[$machine]}" ]; then
-	local DN="--nic net-id=$DATA_NET,v4-fixed-ip=${DATA_IPs[$machine]}"
-	# Note: I think I could add those routes to the DHCP server
-	# Neutron will then configure these settings automatically
-	cat >> ${_VM_INIT} <<ENDCLOUDINIT
-cat > /etc/sysconfig/network-scripts/ifcfg-eth1 <<EOF
-TYPE=Ethernet
-BOOTPROTO=static
-DEFROUTE=no
-NAME=eth1
-DEVICE=eth1
-ONBOOT=yes
-IPADDR=${DATA_IPs[$machine]}
-PREFIX=${DATA_CIDR##*/}
-GATEWAY=${DATA_GATEWAY}
-#MTU=1450
-NOZEROCONF=yes
-EOF
-chown root:root /etc/sysconfig/network-scripts/ifcfg-eth1
-chmod 0644 /etc/sysconfig/network-scripts/ifcfg-eth1
-
-cat > /etc/sysconfig/network-scripts/rule-eth1 <<EOF
-to ${DATA_CIDR} lookup data
-from ${DATA_CIDR} lookup data
-EOF
-chown root:root /etc/sysconfig/network-scripts/rule-eth1
-chmod 0644 /etc/sysconfig/network-scripts/rule-eth1
-
-cat > /etc/sysconfig/network-scripts/route-eth1 <<EOF
-table data ${DATA_CIDR} dev eth1 src ${DATA_IPs[$machine]}
-#table data default via ${DATA_GATEWAY} dev eth1
-table data blackhole default
-EOF
-chown root:root /etc/sysconfig/network-scripts/route-eth1
-chmod 0644 /etc/sysconfig/network-scripts/route-eth1
-
-ENDCLOUDINIT
-    fi
 
     # Final part: Grow partition and phone home
     # sed -i 's/^Defaults.*requiretty/#&/g' /etc/sudoers
     cat >> ${_VM_INIT} <<ENDCLOUDINIT
-echo "================================================================================"
-echo "Restarting network"
-service network restart
 echo "================================================================================"
 echo "Growing partition to disk size"
 curl http://${PHONE_HOME}:$PORT/machine/$machine/growing 2>&1 > /dev/null || true
@@ -311,14 +223,10 @@ echo "Cloudinit phone home"
 curl http://${PHONE_HOME}:$PORT/machine/$machine/ready 2>&1 > /dev/null || true
 ENDCLOUDINIT
 
-#[ "$machine" == "controller" ] && _SWAP="--swap 2048" 
-
 # Booting a machine
 echo -e "\t* $machine"
 nova boot --flavor $flavor --image ${_IMAGE} --security-groups default,${OS_TENANT_NAME}-sg \
---nic net-id=${MGMT_NET},v4-fixed-ip=$ip $DN \
---user-data ${_VM_INIT} \
-${_SWAP} \
+--nic net-id=${MGMT_NET},v4-fixed-ip=$ip --user-data ${_VM_INIT} \
 $machine &>/dev/null
 
 } # End boot_machine function
