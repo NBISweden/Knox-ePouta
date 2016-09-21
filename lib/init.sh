@@ -130,6 +130,8 @@ if [ ${_NET} = "yes" ]; then
     	neutron floatingip-create --tenant-id ${TENANT_ID} --floating-ip-address ${FLOATING_IPs[$machine]} public >/dev/null
     done
 
+    for machine in ${MACHINES[@]}; do neutron floatingip-create --tenant-id ${TENANT_ID} --floating-ip-address ${FLOATING_IPs[$machine]} public >/dev/null; done
+
     echo "Creating the Security Group: ${OS_TENANT_NAME}-sg"
     nova secgroup-create ${OS_TENANT_NAME}-sg "Security Group for ${OS_TENANT_NAME}" >/dev/null
     nova secgroup-add-rule ${OS_TENANT_NAME}-sg icmp  -1    -1 ${FLOATING_CIDR}      >/dev/null
@@ -226,6 +228,11 @@ nova boot --flavor $flavor --image ${_IMAGE} --security-groups default,${OS_TENA
 $machine &>/dev/null
 
 } # End boot_machine function
+
+# # On Epouta
+# nova boot --flavor hpc.small --image "CentOS-7.0" --security-groups default \
+# --nic net-id=af8c6b4c-55b8-41de-a1ec-943e9a06d1e7 --key-name daz-micromosler prepare
+
 
 ########################################################################
 # Aaaaannndddd....cue music!

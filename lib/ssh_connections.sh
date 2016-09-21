@@ -23,6 +23,19 @@ Host ${FLOATING_CIDR%0.0/16}*.*
 #	UseDNS no
 ENDSSHCFG
 
+cat > ${SSH_CONFIG}_epouta <<ENDSSHCFG
+Host ${MGMT_CIDR%0.0/16}*.*
+	User cloud-user
+	ControlMaster auto
+	ControlPersist 60s
+	StrictHostKeyChecking no
+	UserKnownHostsFile ${SSH_KNOWN_HOSTS}
+	ForwardAgent yes
+	GSSAPIAuthentication no
+	GSSAPIDelegateCredentials yes
+#	UseDNS no
+ENDSSHCFG
+
 :> ${SSH_KNOWN_HOSTS}
 for i in ${!MACHINES[@]}; do
     # python -c "import socket; \
