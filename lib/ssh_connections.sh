@@ -1,42 +1,14 @@
 # Must be included after utils.sh
+type report_ok 2>/dev/null || exit 1
 
 #######################################################################
 # Checking if machines are available
 # Filtering them out otherwise
 #######################################################################
-SSH_CONFIG=${MM_TMP}/ssh_config
-SSH_KNOWN_HOSTS=${MM_TMP}/ssh_known_hosts
-
 echo -e "Checking the connections:"
 reset_progress
 CONNECTION_FAIL=""
-[ ! -r ${SSH_CONFIG} ] && cat > ${SSH_CONFIG} <<ENDSSHCFG
-Host ${FLOATING_CIDR%0.0/16}*.*
-	User centos
-	ControlMaster auto
-	ControlPersist 60s
-	StrictHostKeyChecking no
-	UserKnownHostsFile ${SSH_KNOWN_HOSTS}
-	GSSAPIAuthentication no
-	GSSAPIDelegateCredentials yes
-#	UseDNS no
-#	IdentitiesOnly yes
-#	ForwardAgent yes
-ENDSSHCFG
 
-[ ! -r ${SSH_CONFIG}_epouta ] && cat > ${SSH_CONFIG}_epouta <<ENDSSHCFG
-Host ${MGMT_CIDR%0.0/16}*.*
-	User cloud-user
-	StrictHostKeyChecking no
-	UserKnownHostsFile ${SSH_KNOWN_HOSTS}
-#	GSSAPIAuthentication no
-#	GSSAPIDelegateCredentials yes
-#	UseDNS no
-#	IdentitiesOnly yes
-#	ForwardAgent yes
-ENDSSHCFG
-
-:> ${SSH_KNOWN_HOSTS}
 for i in ${!MACHINES[@]}; do
     # python -c "import socket; \
     #            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM); \
@@ -48,9 +20,15 @@ for i in ${!MACHINES[@]}; do
 	    || { CONNECTION_FAIL+=" ${MACHINES[$i]}"; filter_out $i; }
     print_progress
 done
-for machine in ${MACHINES[@]}; do ssh-keyscan -4 -T 1 ${FLOATING_IPs[$machine]} >> ${SSH_KNOWN_HOSTS} 2>/dev/null; done
-#Note: I silence the errors from stderr (2) to /dev/null. Don't send them to &1.
 # The exit status of ssh-keyscan is 0 even when the connection failed: Using nc instead.
+
+:> ${SSH_KNOWN_HOSTS}
+for machine in ${MACHINES[@]}
+do
+    sed -i "/${FLOATING_IPs[$machine]}/ d" ${SSH_KNOWN_HOSTS}
+    ssh-keyscan -4 -T 1 ${FLOATING_IPs[$machine]} >> ${SSH_KNOWN_HOSTS} 2>/dev/null
+done
+#Note: I silence the errors from stderr (2) to /dev/null. Don't send them to &1.
 
 echo "" # new line
 [ -n "$CONNECTION_FAIL" ] && echo "Filtering out:$CONNECTION_FAIL"

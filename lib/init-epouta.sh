@@ -4,19 +4,15 @@
 source $(dirname ${BASH_SOURCE[0]})/settings.sh
 
 # Default values
-_NET=no
-_IMAGE=CentOS7
+EPOUTA_NODES=3
+_IMAGE=CentOS7-extended
 
 function usage {
     echo "Usage: ${MM_CMD:-$0} [options]"
     echo -e "\noptions are"
-    echo -e "\t--net            \tCreates also networks, routers, security groups,..."
-    echo -e "\t--machines <list>,"
-    echo -e "\t        -m <list>\tA comma-separated list of machines"
-    echo -e "\t                 \tDefaults to: \"${MACHINES[@]// /,}\"."
-    echo -e "\t                 \tWe filter out machines that don't appear in the default list."
     echo -e "\t--image <img>,"
     echo -e "\t     -i <img>    \tGlance image to use. Defaults to ${_IMAGE}"
+    echo -e "\t--nodes,-n <int> \tNumber of Epouta nodes to boot. Defaults to ${EPOUTA_NODES}"
     echo -e "\t--quiet,-q       \tRemoves the verbose output"
     echo -e "\t--help,-h        \tOutputs this message and exits"
     echo -e "\t-- ...           \tAny other options appearing after the -- will be ignored"
@@ -25,10 +21,9 @@ function usage {
 # While there are arguments or '--' is reached
 while [ $# -gt 0 ]; do
     case "$1" in
-        --net) _NET=yes;;
         --quiet|-q) VERBOSE=no;;
-        --machines|-m) CUSTOM_MACHINES=$2; shift;;
         --image|-i) _IMAGE=$2; shift;;
+        --nodes|-n) EPOUTA_NODES=$2; shift;;
         --help|-h) usage; exit 0;;
         --) shift; break;;
         *) echo "$0: error - unrecognized option $1" 1>&2; usage; exit 1;;
@@ -38,7 +33,7 @@ done
 
 mkdir -p ${MM_TMP}
 
-[ $VERBOSE == 'no' ] && exec 1>${MM_TMP}/init.log
+[ $VERBOSE == 'no' ] && exec 1>${MM_TMP}/init-epouta.log
 ORG_FD1=$(tty)
 
 # Create the host file first
@@ -51,82 +46,35 @@ ENDHOST
 for name in ${MACHINES[@]}; do echo "${MACHINE_IPs[$name]} $name" >> ${MM_TMP}/hosts; done
 
 #######################################################################
-# Logic to allow the user to specify some machines
-# Otherwise, continue with the ones in settings.sh
+# RESET for Epouta
+#######################################################################
+MACHINES=()
+_SHIFT=40
+for i in $(eval echo {1..${EPOUTA_NODES}}); do
+    MACHINES+=(epouta-$i)
+    MACHINE_IPs[epouta-$i]=${MGMT_CIDR%.0.0/16}.0.$(( _SHIFT + i ))
+done
 
-if [ -n ${CUSTOM_MACHINES:-''} ]; then
-    CUSTOM_MACHINES_TMP=${CUSTOM_MACHINES//,/ } # replace all commas with space
-    CUSTOM_MACHINES="" # Filtering the ones which don't exist in settings.sh
-    for cm in $CUSTOM_MACHINES_TMP; do
-	if [[ "${MACHINES[@]}" =~ "$cm" ]]; then
-	    CUSTOM_MACHINES+="$cm "
-	else
-	    echo "Unknown machine: $cm" > ${ORG_FD1}
-	fi
-    done
-    if [ -n "$CUSTOM_MACHINES" ]; then
-	echo "Using these machines: ${CUSTOM_MACHINES// /,}"
-	MACHINES=($CUSTOM_MACHINES)
-    else
-	echo "Error: all custom machines are unknown" > ${ORG_FD1}
-	echo "Nothing to be done..." > ${ORG_FD1}
-	echo -e 'Exiting!' > ${ORG_FD1}
-	exit 2
-    fi  
-fi
+#######################################################################
+# Adding epouta nodes to /etc/hosts
+for name in ${MACHINES[@]}; do echo "${MACHINE_IPs[$name]} $name" >> ${MM_TMP}/hosts; done
 
 #######################################################################
 # Prepare the tmp folders
 for machine in ${MACHINES[@]}; do mkdir -p ${MM_TMP}/$machine/init; done
 
 #######################################################################
+# Credentials for Epouta. Should reset the ones from settings.sh
+NETNS=$(<${MM_TMP}/netns) # bash only
+[ -z $NETNS ] && echo "Unknown virtual router: mgmt-router" && exit 1
 
-TENANT_ID=$(openstack project list | awk "/${OS_TENANT_NAME}/ {print \$2}")
-if [ -z "$TENANT_ID" ]; then
-    echo "ERROR: Does tenant ${OS_TENANT_NAME} exit?" > ${ORG_FD1}
-    exit 1
-fi
+unset OS_ENDPOINT_TYPE
+unset OS_PROJECT_DOMAIN_ID
+unset OS_USER_DOMAIN_ID
+unset OS_IMAGE_API_VERSION
+source $(dirname ${BASH_SOURCE[0]})/epouta-credentials.sh
 
-# Checking if the user is admin for that tenant
-CHECK=$(openstack role assignment list --user ${OS_USERNAME} --role admin --project ${OS_TENANT_NAME})
-if [ $? -ne 0 ] || [ -z "$CHECK" ]; then
-    echo "ERROR: $CHECK"
-    echo -e "\nThe user ${OS_USERNAME} does not seem to have the 'admin' role for the project ${OS_TENANT_NAME}"
-    echo "Exiting..."
-    exit 1
-fi
-
-if [ ${_NET} = "yes" ]; then
-
-    echo "Creating routers and networks"
-
-    MGMT_ROUTER_ID=$(neutron router-create ${OS_TENANT_NAME}-mgmt-router | awk '/ id / { print $4 }')
-    echo qrouter-$MGMT_ROUTER_ID > ${MM_TMP}/netns
-
-    # if [ -z "$MGMT_ROUTER_ID" ]; then
-    # 	echo "Router issues. Exiting..."
-    #   exit 1
-    # fi
-
-    # Creating the management and data networks
-    neutron net-create --provider:network_type vlan --provider:physical_network vlan --provider:segmentation_id ${MM_VLAN} ${OS_TENANT_NAME}-mgmt-net >/dev/null
-    neutron subnet-create --name ${OS_TENANT_NAME}-mgmt-subnet ${OS_TENANT_NAME}-mgmt-net --allocation-pool start=${MGMT_ALLOCATION_START},end=${MGMT_ALLOCATION_END} --gateway ${MGMT_GATEWAY} ${MGMT_CIDR} >/dev/null # --disable-dhcp
-    neutron router-interface-add ${OS_TENANT_NAME}-mgmt-router ${OS_TENANT_NAME}-mgmt-subnet >/dev/null
-
-    echo "Creating the Security Group: ${OS_TENANT_NAME}-sg"
-    nova secgroup-create ${OS_TENANT_NAME}-sg "Security Group for ${OS_TENANT_NAME}" >/dev/null
-    nova secgroup-add-rule ${OS_TENANT_NAME}-sg icmp  -1    -1 ${FLOATING_CIDR}      >/dev/null
-    nova secgroup-add-rule ${OS_TENANT_NAME}-sg icmp  -1    -1 ${MGMT_CIDR}          >/dev/null
-    nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp   22    22 ${FLOATING_CIDR}      >/dev/null
-    nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp    1 65535 ${MGMT_CIDR}          >/dev/null
-
-    echo "Setting the quotas"
-    FACTOR=2
-    nova quota-update --instances $((10 * FACTOR)) --ram $((51200 * FACTOR)) ${TENANT_ID} >/dev/null
-
-fi # End _NET config
-
-
+#######################################################################
 # Testing if the image exists
 if nova image-list | grep "${_IMAGE}" > /dev/null; then : ; else
     echo "Error: Could not find the image '${_IMAGE}' to boot from."
@@ -134,23 +82,15 @@ if nova image-list | grep "${_IMAGE}" > /dev/null; then : ; else
     exit 1
 fi
 
-MGMT_NET=$(neutron net-list --tenant_id=${TENANT_ID} | awk "/ ${OS_TENANT_NAME}-mgmt-net /{print \$2}")
-
-# echo "Management Net: $MGMT_NET"
-echo "Checking network information"
-
-if [ -z "$MGMT_NET" ]; then
-    echo "Error: Could not find the Management" > ${ORG_FD1}
-    echo -e "\tMaybe you should re-run with the --net flags?" > ${ORG_FD1}
+EPOUTA_NET=$(neutron net-list | awk '/ UU-MOSLER-network / {print $2}')
+if [ -z "$EPOUTA_NET" ]; then
+    echo "Error: Could not find the epouta net... Exiting." > ${ORG_FD1}
     exit 1
 fi
 
-NETNS=$(<${MM_TMP}/netns) # bash only
-[ -z $NETNS ] && echo "Unknown virtual router: ${OS_TENANT_NAME}-mgmt-router" && exit 1
-
 ########################################################################
 # Start the local REST server, to follow the progress of the machines
-########################################################################
+#######################################################################
 echo "Starting the REST phone home server"
 sudo -E ip netns exec $NETNS fuser -k ${PORT}/tcp || true
 trap "sudo -E ip netns exec $NETNS fuser -k ${PORT}/tcp &>/dev/null || true; exit 1" SIGINT SIGTERM EXIT
@@ -158,10 +98,10 @@ sudo -E ip netns exec $NETNS python ${MM_HOME}/lib/boot_progress.py $PORT "${MAC
 REST_PID=$!
 sleep 2
 
+#######################################################################
 function boot_machine {
     local machine=$1
     local ip=${MACHINE_IPs[$machine]}
-    local flavor=${FLAVORS[$machine]}
 
     _VM_INIT=${MM_TMP}/$machine/init/vm.sh
     echo '#!/usr/bin/env bash' > ${_VM_INIT}
@@ -210,15 +150,14 @@ ENDCLOUDINIT
 
 # Booting a machine
 echo -e "\t* $machine"
-nova boot --flavor $flavor --image ${_IMAGE} --security-groups default,${OS_TENANT_NAME}-sg \
---nic net-id=${MGMT_NET},v4-fixed-ip=$ip --user-data ${_VM_INIT} \
+# nova boot --flavor hpc.small --image ${_IMAGE} \
+# --nic net-id=${EPOUTA_NET},v4-fixed-ip=$ip --user-data ${_VM_INIT} \
+# $machine &>/dev/null
+nova boot --flavor hpc.small --image ${_IMAGE} \
+--nic net-id=${EPOUTA_NET} --user-data ${_VM_INIT} \
 $machine &>/dev/null
 
 } # End boot_machine function
-
-# # On Epouta
-# nova boot --flavor hpc.small --image "CentOS7-extended" --security-groups default \
-# --nic net-id=af8c6b4c-55b8-41de-a1ec-943e9a06d1e7 epouta-name
 
 
 ########################################################################
