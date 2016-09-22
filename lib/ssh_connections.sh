@@ -10,30 +10,30 @@ SSH_KNOWN_HOSTS=${MM_TMP}/ssh_known_hosts
 echo -e "Checking the connections:"
 reset_progress
 CONNECTION_FAIL=""
-cat > ${SSH_CONFIG} <<ENDSSHCFG
+[ ! -r ${SSH_CONFIG} ] && cat > ${SSH_CONFIG} <<ENDSSHCFG
 Host ${FLOATING_CIDR%0.0/16}*.*
 	User centos
 	ControlMaster auto
 	ControlPersist 60s
 	StrictHostKeyChecking no
 	UserKnownHostsFile ${SSH_KNOWN_HOSTS}
-	ForwardAgent yes
 	GSSAPIAuthentication no
 	GSSAPIDelegateCredentials yes
 #	UseDNS no
+#	IdentitiesOnly yes
+#	ForwardAgent yes
 ENDSSHCFG
 
-cat > ${SSH_CONFIG}_epouta <<ENDSSHCFG
+[ ! -r ${SSH_CONFIG}_epouta ] && cat > ${SSH_CONFIG}_epouta <<ENDSSHCFG
 Host ${MGMT_CIDR%0.0/16}*.*
 	User cloud-user
-	ControlMaster auto
-	ControlPersist 60s
 	StrictHostKeyChecking no
 	UserKnownHostsFile ${SSH_KNOWN_HOSTS}
-	ForwardAgent yes
-	GSSAPIAuthentication no
-	GSSAPIDelegateCredentials yes
+#	GSSAPIAuthentication no
+#	GSSAPIDelegateCredentials yes
 #	UseDNS no
+#	IdentitiesOnly yes
+#	ForwardAgent yes
 ENDSSHCFG
 
 :> ${SSH_KNOWN_HOSTS}

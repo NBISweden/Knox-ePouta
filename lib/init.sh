@@ -230,8 +230,8 @@ $machine &>/dev/null
 } # End boot_machine function
 
 # # On Epouta
-# nova boot --flavor hpc.small --image "CentOS-7.0" --security-groups default \
-# --nic net-id=af8c6b4c-55b8-41de-a1ec-943e9a06d1e7 --key-name daz-micromosler prepare
+# nova boot --flavor hpc.small --image "CentOS7-extended" --security-groups default \
+# --nic net-id=af8c6b4c-55b8-41de-a1ec-943e9a06d1e7 epouta-name
 
 
 ########################################################################

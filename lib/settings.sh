@@ -80,13 +80,6 @@ export MGMT_CIDR=10.101.0.0/16
 export MGMT_ALLOCATION_START=10.101.128.2
 export MGMT_ALLOCATION_END=10.101.255.254
 
-declare -A EPOUTA_IPs
-export EPOUTA_IPs=(\
-    [epouta13]=10.101.0.13 \
-    [epouta14]=10.101.0.14 \
-    [epouta15]=10.101.0.15 \
-)
-
 declare -A FLOATING_IPs
 export FLOATING_IPs=(\
     [supernode]=10.254.0.200 \
