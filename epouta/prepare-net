@@ -1,0 +1,48 @@
+# -*-sh-*-
+
+
+#########################################################
+# IPTABLES rules for NATing 130.238.55.41 to 10.101.0.10
+#########################################################
+
+iptables -t nat -N micromosler-OUTPUT
+iptables -t nat -A OUTPUT -j micromosler-OUTPUT
+iptables -t nat -A micromosler-OUTPUT -d 130.238.55.41/32 -j DNAT --to-destination 10.101.0.10
+
+iptables -t nat -N micromosler-PREROUTING
+iptables -t nat -A PREROUTING -j micromosler-PREROUTING
+iptables -t nat -A micromosler-PREROUTING -d 130.238.55.41/32 -j DNAT --to-destination 10.101.0.10
+
+iptables -t nat -N micromosler-POSTROUTING
+iptables -t nat -I POSTROUTING 3 -j micromosler-POSTROUTING
+iptables -t nat -A micromosler-POSTROUTING -s 10.101.0.10/32 -j SNAT --to-source 130.238.55.41
+
+
+#########################################################
+# ROUTING
+#########################################################
+ip rule add to 130.238.55.0/24 table openstack
+for i in {1..9}; do
+    ip route add 130.238.55.4$i dev vem2 table openstack
+done
+# But not .40 !
+
+# Delete the local route
+ip r del local 130.238.55.41 dev vem2  proto kernel  scope host  src 130.238.55.41 table local
+
+#########################################################
+# KERNEL SETTINGS
+#########################################################
+# I want em4 and vem2 to answer with their respective MAC address.
+
+sysctl -w net.ipv4.conf.vem2.rp_filter=0 #2
+
+sysctl -w net.ipv4.conf.em4.arp_filter=1
+
+sysctl -w net.ipv4.conf.em4.arp_ignore=1
+sysctl -w net.ipv4.conf.em4.arp_announce=2
+
+sysctl -w net.ipv4.conf.vem2.arp_ignore=1
+sysctl -w net.ipv4.conf.vem2.arp_announce=2
+
+

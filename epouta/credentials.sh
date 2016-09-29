@@ -6,6 +6,12 @@ if [ -z $OS_USERNAME_EPOUTA ]; then
     exit 1;
 fi
 
+
+unset OS_ENDPOINT_TYPE
+unset OS_PROJECT_DOMAIN_ID
+unset OS_USER_DOMAIN_ID
+unset OS_IMAGE_API_VERSION
+
 # To use an Openstack cloud you need to authenticate against keystone, which
 # returns a **Token** and **Service Catalog**.  The catalog contains the
 # endpoint for all services the user/tenant has access to - including nova,

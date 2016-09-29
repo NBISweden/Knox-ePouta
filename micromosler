@@ -28,7 +28,7 @@ function usage {
 _ALL=no
 
 case "$1" in
-    init|clean|sync|provision|prepare|ping|snapshot|boot|reset|init-epouta)
+    init|clean|sync|provision|prepare|ping|snapshot|boot|reset)
 	TASK=$1
 	export TASK
 	shift # Remove the command name from $@

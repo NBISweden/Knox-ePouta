@@ -48,11 +48,11 @@ for name in ${MACHINES[@]}; do echo "${MACHINE_IPs[$name]} $name" >> ${MM_TMP}/h
 #######################################################################
 # RESET for Epouta
 #######################################################################
-MACHINES=()
-_SHIFT=40
+MACHINES=('leif')
+MACHINE_IPs[leif]=${MGMT_CIDR%.0.0/16}.0.10
 for i in $(eval echo {1..${EPOUTA_NODES}}); do
     MACHINES+=(epouta-$i)
-    MACHINE_IPs[epouta-$i]=${MGMT_CIDR%.0.0/16}.0.$(( _SHIFT + i ))
+    MACHINE_IPs[epouta-$i]=${MGMT_CIDR%.0.0/16}.0.$(( 20 + i ))
 done
 
 #######################################################################
@@ -68,10 +68,6 @@ for machine in ${MACHINES[@]}; do mkdir -p ${MM_TMP}/$machine/init; done
 NETNS=$(<${MM_TMP}/netns) # bash only
 [ -z $NETNS ] && echo "Unknown virtual router: mgmt-router" && exit 1
 
-unset OS_ENDPOINT_TYPE
-unset OS_PROJECT_DOMAIN_ID
-unset OS_USER_DOMAIN_ID
-unset OS_IMAGE_API_VERSION
 source $(dirname ${BASH_SOURCE[0]})/epouta-credentials.sh
 
 #######################################################################
@@ -88,6 +84,13 @@ if [ -z "$EPOUTA_NET" ]; then
     exit 1
 fi
 
+# Create the port
+for machine in ${MACHINES[@]}; do
+    if ! neutron port-show port-$machine >/dev/null; then
+	neutron port-create --name port-$machine --fixed-ip subnet_id=UU-MOSLER-subnet,ip_address=${MACHINE_IPs[$machine]} UU-MOSLER-network
+    fi
+done
+
 ########################################################################
 # Start the local REST server, to follow the progress of the machines
 #######################################################################
@@ -102,6 +105,9 @@ sleep 2
 function boot_machine {
     local machine=$1
     local ip=${MACHINE_IPs[$machine]}
+
+    local _port=$(neutron port-list 2>/dev/null | awk "/ port-$machine / {print \$2}")
+    [ -z "$_port" ] && echo "Could not find the neutron port for $machine. Skipping..." && return 1
 
     _VM_INIT=${MM_TMP}/$machine/init/vm.sh
     echo '#!/usr/bin/env bash' > ${_VM_INIT}
@@ -153,9 +159,12 @@ echo -e "\t* $machine"
 # nova boot --flavor hpc.small --image ${_IMAGE} \
 # --nic net-id=${EPOUTA_NET},v4-fixed-ip=$ip --user-data ${_VM_INIT} \
 # $machine &>/dev/null
+
+
 nova boot --flavor hpc.small --image ${_IMAGE} \
---nic net-id=${EPOUTA_NET} --user-data ${_VM_INIT} \
-$machine &>/dev/null
+--nic port-id=$_port --user-data ${_VM_INIT} \
+$machine #&>/dev/null
+##--nic net-id=${EPOUTA_NET} --user-data ${_VM_INIT} \
 
 } # End boot_machine function
 
@@ -196,3 +205,5 @@ done
     done
 
 echo -e "\nInitialization phase complete."
+
+
