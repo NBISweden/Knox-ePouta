@@ -120,7 +120,7 @@ if [ ! -x /usr/local/manta-{{ env['MANTA_VERSION'] }}/bin/configManta.py ]; then
 	pushd ${MM_BUILD}/manta-{{ env['MANTA_VERSION'] }}.release_src/build
 	export CC=/bin/cc
 	export CXX=/bin/c++
-	../src/configure --jobs=4 --prefix=/usr/local/manta-{{ env['MANTA_VERSION'] }}
+	../configure --jobs=4 --prefix=/usr/local/manta-{{ env['MANTA_VERSION'] }}
 	popd
     fi
     make -j 4 -C ${MM_BUILD}/manta-{{ env['MANTA_VERSION'] }}.release_src/build install

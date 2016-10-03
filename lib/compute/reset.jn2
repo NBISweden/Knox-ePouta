@@ -1,7 +1,6 @@
 # -*-sh-*-
 
 sed -i "/^-A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT/ d" /etc/sysconfig/iptables
-sed -i "/^-A INPUT -m state --state NEW -s {{ env['DATA_CIDR']|replace('/','\/') }} -j ACCEPT/ d" /etc/sysconfig/iptables
 systemctl restart iptables
 
 #############################################################

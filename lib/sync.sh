@@ -2,7 +2,6 @@
 
 # Get credentials and machines settings
 source $(dirname ${BASH_SOURCE[0]})/settings.sh
-
 export VAULT=vault
 CONNECTION_TIMEOUT=1 #seconds
 WITH_KEY=yes
@@ -60,17 +59,17 @@ if [ -n ${CUSTOM_MACHINES:-''} ]; then
 
 fi
 
+if [ ${#MACHINES[@]} -eq 0 ]; then
+    echo "Nothing to be done. Exiting..." >${ORG_FD1}
+    exit 2 # or 0?
+fi
+
 #######################################################################
 export LIB=${MM_HOME}/lib
 source $LIB/utils.sh
 
 #######################################################################
-source $LIB/ssh_connections.sh
-
-if [ ${#MACHINES[@]} -eq 0 ]; then
-    echo "Nothing to be done. Exiting..." >${ORG_FD1}
-    exit 2 # or 0?
-fi
+#source $LIB/ssh_connections.sh
 
 #######################################################################
 
@@ -102,34 +101,36 @@ do
 	    set -x -e # Print commands && exit if errors
 
 	    # Preparing the drop folder
-	    ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} mkdir -p ${VAULT}
+	    $MM_CONNECT ssh -F ${SSH_CONFIG} ${MACHINE_IPs[$machine]} mkdir -p ${VAULT}
 	    
 	    # Copying all files to the VAULT on that machine
 	    [ -d ${FOLDER}/files ] &&
-		rsync -avL -e "ssh -F ${SSH_CONFIG}" ${FOLDER}/files/ ${FLOATING_IPs[$machine]}:${VAULT}/.
+		$MM_CONNECT rsync -avL -e "ssh -F ${SSH_CONFIG}" ${FOLDER}/files/ ${MACHINE_IPs[$machine]}:${VAULT}/.
 	    
-	    if [[ "$machine" =~ "compute" ]]; then
-		ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} mkdir -p ${VAULT}/sw
-		echo "Copying files from $MM_SW/ to ${FLOATING_IPs[$machine]}:${VAULT}/sw/."
-		[ -d $MM_SW ] && rsync -av -e "ssh -F ${SSH_CONFIG}" $MM_SW/ ${FLOATING_IPs[$machine]}:${VAULT}/sw/.
+	    # For the compute nodes
+	    if [[ "${PROVISION[$machine]}" = "compute" ]]; then
+		$MM_CONNECT ssh -F ${SSH_CONFIG} ${MACHINE_IPs[$machine]} mkdir -p ${VAULT}/sw
+		echo "Copying files from $MM_SW/ to ${MACHINE_IPs[$machine]}:${VAULT}/sw/."
+		[ -d $MM_SW ] && $MM_CONNECT rsync -av -e "ssh -F ${SSH_CONFIG}" $MM_SW/ ${MACHINE_IPs[$machine]}:${VAULT}/sw/.
 		# Don't rsync with -L. We want links to be links (Not follow them).
 	    fi
 
 	    if [ "$machine" == "storage" ]; then
-		ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} mkdir -p ${VAULT}/data
-		[ -d $MM_DATA ] && rsync -av -e "ssh -F ${SSH_CONFIG}" $MM_DATA/ ${FLOATING_IPs[$machine]}:${VAULT}/data/.
+		$MM_CONNECT ssh -F ${SSH_CONFIG} ${MACHINE_IPs[$machine]} mkdir -p ${VAULT}/data
+		[ -d $MM_DATA ] && $MM_CONNECT rsync -av -e "ssh -F ${SSH_CONFIG}" $MM_DATA/ ${MACHINE_IPs[$machine]}:${VAULT}/data/.
 	    fi
 	    
 	    # Phase 2: running some commands
 	    _SCRIPT=${MM_TMP}/$machine/sync/run.sh
 	    # Render the template
-	    python -c "import os, sys, jinja2; \
+	    $MM_CONNECT python -c "import os, sys, jinja2; \
                        sys.stdout.write(jinja2.Environment( loader=jinja2.FileSystemLoader(os.environ.get('LIB')) ) \
                                  .from_string(sys.stdin.read()) \
                                  .render(env=os.environ))" \
 		   <${FOLDER}/sync.jn2 \
 		   >${_SCRIPT}
-	    ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x 2>&1' <${_SCRIPT}
+
+	    $MM_CONNECT ssh -F ${SSH_CONFIG} ${MACHINE_IPs[$machine]} 'sudo bash -e -x 2>&1' <${_SCRIPT}
 	)
 	RET=$?
 	if [ $RET -eq 0 ]; then report_ok $machine; else report_fail $machine; fi
@@ -150,13 +151,13 @@ if [ $WITH_KEY = yes ]; then
 	ssh-keygen -q -t rsa -N "" -f ${MM_TMP}/ssh_key -C supernode
     fi
     cat > ${MM_TMP}/ssh_key.config <<EOF
-Host ${MACHINES[@]// /,} tos1
+Host ${MACHINES[@]// /,}
         User root
         StrictHostKeyChecking no
         UserKnownHostsFile /dev/null
 EOF
-    scp -q -F ${SSH_CONFIG} ${MM_TMP}/ssh_key* ${FLOATING_IPs[supernode]}:${VAULT}/.
-    ssh -F ${SSH_CONFIG} ${FLOATING_IPs[supernode]} 'sudo bash -e -x 2>&1' <<EOF &>/dev/null
+    $MM_CONNECT scp -q -F ${SSH_CONFIG} ${MM_TMP}/ssh_key* ${MACHINE_IPs[supernode]}:${VAULT}/.
+    $MM_CONNECT ssh -F ${SSH_CONFIG} ${MACHINE_IPs[supernode]} 'sudo bash -e -x 2>&1' <<EOF &>/dev/null
 mv ${VAULT}/ssh_key /root/.ssh/id_rsa
 mv ${VAULT}/ssh_key.pub /root/.ssh/id_rsa.pub
 mv ${VAULT}/ssh_key.config /root/.ssh/config
@@ -167,8 +168,8 @@ EOF
     for machine in ${MACHINES[@]}
     do
 	[ "$machine" == "supernode" ] && continue
-	scp -q -F ${SSH_CONFIG} ${MM_TMP}/ssh_key.pub ${FLOATING_IPs[$machine]}:${VAULT}/id_rsa.pub
-	ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x 2>&1' <<EOF &>/dev/null
+	$MM_CONNECT scp -q -F ${SSH_CONFIG} ${MM_TMP}/ssh_key.pub ${MACHINE_IPs[$machine]}:${VAULT}/id_rsa.pub
+	$MM_CONNECT ssh -F ${SSH_CONFIG} ${MACHINE_IPs[$machine]} 'sudo bash -e -x 2>&1' <<EOF &>/dev/null
 sudo sed -i -e '/supernode/d' /root/.ssh/authorized_keys
 cat ${VAULT}/id_rsa.pub >> /root/.ssh/authorized_keys
 rm ${VAULT}/id_rsa.pub

@@ -75,6 +75,9 @@ if [ -n ${CUSTOM_MACHINES:-''} ]; then
     fi  
 fi
 
+# Removing the Epouta machines
+for machine in ${MACHINES[@]}; do [[ $machine == 'epouta'* ]] && unset unset MACHINES[$machine]; done
+
 #######################################################################
 # Prepare the tmp folders
 for machine in ${MACHINES[@]}; do mkdir -p ${MM_TMP}/$machine/init; done
@@ -115,9 +118,7 @@ if [ ${_NET} = "yes" ]; then
 
     echo "Creating the Security Group: ${OS_TENANT_NAME}-sg"
     nova secgroup-create ${OS_TENANT_NAME}-sg "Security Group for ${OS_TENANT_NAME}" >/dev/null
-    #nova secgroup-add-rule ${OS_TENANT_NAME}-sg icmp  -1    -1 ${FLOATING_CIDR}      >/dev/null
     nova secgroup-add-rule ${OS_TENANT_NAME}-sg icmp  -1    -1 ${MGMT_CIDR}          >/dev/null
-    #nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp   22    22 ${FLOATING_CIDR}      >/dev/null
     nova secgroup-add-rule ${OS_TENANT_NAME}-sg tcp    1 65535 ${MGMT_CIDR}          >/dev/null
     
     echo "Setting the quotas"
@@ -148,13 +149,15 @@ fi
 NETNS=$(<${MM_TMP}/netns) # bash only
 [ -z $NETNS ] && echo "Unknown virtual router: ${OS_TENANT_NAME}-mgmt-router" && exit 1
 
+MM_CONNECT="sudo -E ip netns exec $NETNS"
+
 ########################################################################
 # Start the local REST server, to follow the progress of the machines
 ########################################################################
 echo "Starting the REST phone home server"
-sudo -E ip netns exec $NETNS fuser -k ${PORT}/tcp || true
+$MM_CONNECT fuser -k ${PORT}/tcp || true
 trap "sudo -E ip netns exec $NETNS fuser -k ${PORT}/tcp &>/dev/null || true; exit 1" SIGINT SIGTERM EXIT
-sudo -E ip netns exec $NETNS python ${MM_HOME}/lib/boot_progress.py $PORT "${MACHINES[@]}" 2>&1 &
+$MM_CONNECT python ${MM_HOME}/lib/boot_progress.py $MM_PORT "${MACHINES[@]}" 2>&1 &
 REST_PID=$!
 sleep 2
 
@@ -201,11 +204,11 @@ ENDCLOUDINIT
     cat >> ${_VM_INIT} <<ENDCLOUDINIT
 echo "================================================================================"
 echo "Growing partition to disk size"
-curl http://${MGMT_GATEWAY}:$PORT/machine/$machine/growing 2>&1 > /dev/null || true
+curl http://${MGMT_GATEWAY}:$MM_PORT/machine/$machine/growing 2>&1 > /dev/null || true
 growpart /dev/vda 1
 echo "================================================================================"
 echo "Cloudinit phone home"
-curl http://${MGMT_GATEWAY}:$PORT/machine/$machine/ready 2>&1 > /dev/null || true
+curl http://${MGMT_GATEWAY}:$MM_PORT/machine/$machine/ready 2>&1 > /dev/null || true
 ENDCLOUDINIT
 
 # Booting a machine

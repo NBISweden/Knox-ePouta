@@ -1,29 +1,46 @@
 # -*-sh-*-
 
+ip -4 link add mm type veth peer name gw
+#ip -4 link set dev gw promisc on
+#ip -4 link set dev micromosler promisc on
+ip -4 link set dev gw up
+ip -4 link set dev mm up
+ip -4 link set gw netns qrouter-2b34b042-afaa-485c-86ae-9afa6e7d494f
 
-#########################################################
+sysctl -w net.ipv4.conf.brq8060ed02-cb.arp_ignore=1
+sysctl -w net.ipv4.conf.brq8060ed02-cb.arp_announce=2
+
+#ip -4 addr add 130.238.55.41 dev micromosler
+
+ip netns exec qrouter-2b34b042-afaa-485c-86ae-9afa6e7d494f bash
+# ------------------------
+ip addr add 10.5.0.2/24 dev gw
+# Route added: 10.5.0.0/24 dev gw  proto kernel  scope link  src 10.5.0.2 
+
+# Adding routes
+#10.254.0.1 via 10.5.0.1 dev gw 
+#130.238.55.0/24 dev gw  scope link 
+
+# Adding the proxy
+130.238.7.178 via 10.5.0.1 dev gw 
+
+# Source NATing for internet access, but not for Leif
+iptables -t nat -I POSTROUTING ! -s 10.101.0.10/32 -o gw -j SNAT --to-source 10.5.0.2
+
 # IPTABLES rules for NATing 130.238.55.41 to 10.101.0.10
-#########################################################
+iptables -t nat -A PREROUTING -d 130.238.55.41/32 -j DNAT --to-destination 10.101.0.10
+iptables -t nat -A POSTROUTING -s 10.101.0.10/32 -j DNAT --to-source 130.238.55.41
 
-iptables -t nat -N micromosler-OUTPUT
-iptables -t nat -A OUTPUT -j micromosler-OUTPUT
-iptables -t nat -A micromosler-OUTPUT -d 130.238.55.41/32 -j DNAT --to-destination 10.101.0.10
+# iptables -t nat -A <chain> -j LOG --log-prefix "iptables:nat:<chain>: " --log-level 4
 
-iptables -t nat -N micromosler-PREROUTING
-iptables -t nat -A PREROUTING -j micromosler-PREROUTING
-iptables -t nat -A micromosler-PREROUTING -d 130.238.55.41/32 -j DNAT --to-destination 10.101.0.10
+# ------------------------
 
-iptables -t nat -N micromosler-POSTROUTING
-iptables -t nat -I POSTROUTING 3 -j micromosler-POSTROUTING
-iptables -t nat -A micromosler-POSTROUTING -s 10.101.0.10/32 -j SNAT --to-source 130.238.55.41
+###### Back on the root namespace (knox1)
 
-
-#########################################################
 # ROUTING
-#########################################################
 ip rule add to 130.238.55.0/24 table openstack
 for i in {1..9}; do
-    ip route add 130.238.55.4$i dev vem2 table openstack
+    ip route add 130.238.55.4$i via 10.5.0.1 table openstack
 done
 # But not .40 !
 
@@ -44,5 +61,12 @@ sysctl -w net.ipv4.conf.em4.arp_announce=2
 
 sysctl -w net.ipv4.conf.vem2.arp_ignore=1
 sysctl -w net.ipv4.conf.vem2.arp_announce=2
+
+
+
+sysctl -w net.ipv4.conf.em4.arp_ignore=1
+sysctl -w net.ipv4.conf.em4.arp_announce=2
+sysctl -w net.ipv4.conf.brq8060ed02-cb.arp_ignore=1
+sysctl -w net.ipv4.conf.brq8060ed02-cb.arp_announce=2
 
 

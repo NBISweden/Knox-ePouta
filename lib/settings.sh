@@ -55,13 +55,13 @@ SSH_KNOWN_HOSTS=${MM_TMP}/ssh_known_hosts
 #################################################################
 # Declaring the machines
 
-export MM_VLAN=1203
+MM_VLAN=1203
 
 declare -a MACHINES
-export MACHINES=('supernode' 'compute1' 'compute2' 'compute3' 'storage')
+MACHINES=('supernode' 'compute1' 'compute2' 'compute3' 'storage' 'epouta1' 'epouta2' 'epouta3')
 
 declare -A FLAVORS
-export FLAVORS=(\
+FLAVORS=(\
     [supernode]=m1.small \
     [compute1]=m1.large \
     [compute2]=m1.large \
@@ -70,45 +70,35 @@ export FLAVORS=(\
 )
 
 declare -A MACHINE_IPs
-export MACHINE_IPs=(\
+MACHINE_IPs=(\
     [supernode]=10.101.128.100 \
     [compute1]=10.101.128.101 \
     [compute2]=10.101.128.102 \
     [compute3]=10.101.128.103 \
     [storage]=10.101.128.104 \
+    [epouta1]=10.101.0.21 \
+    [epouta2]=10.101.0.22 \
+    [epouta3]=10.101.0.23 \
 )
 export MGMT_GATEWAY=10.101.0.1
 export MGMT_CIDR=10.101.0.0/16
-export MGMT_ALLOCATION_START=10.101.128.2
-export MGMT_ALLOCATION_END=10.101.255.254
-
-declare -A FLOATING_IPs
-export FLOATING_IPs=(\
-    [supernode]=10.254.0.200 \
-    [compute1]=10.254.0.201 \
-    [compute2]=10.254.0.202 \
-    [compute3]=10.254.0.203 \
-    [storage]=10.254.0.204 \
-)
-export FLOATING_GATEWAY=10.254.0.1
-export FLOATING_CIDR=10.254.0.0/16
-
-
-PHONE_HOME=${FLOATING_GATEWAY}
-PORT=12345
-
-########################################
-# Scripts for provisioning
+MGMT_ALLOCATION_START=10.101.128.2
+MGMT_ALLOCATION_END=10.101.255.254
 
 declare -A PROVISION
-export PROVISION=(\
+PROVISION=(\
     [supernode]=supernode \
+    [storage]=storage \
     [compute1]=compute \
     [compute2]=compute \
     [compute3]=compute \
-    [storage]=storage \
+    [epouta1]=compute \
+    [epouta2]=compute \
+    [epouta3]=compute \
 )
 
+########################################
+MM_PORT=12345
 
 ########################################
 # Settings for the CAW example

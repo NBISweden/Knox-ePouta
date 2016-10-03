@@ -65,7 +65,7 @@ export LIB=${MM_HOME}/lib
 source $LIB/utils.sh
 
 #######################################################################
-source $LIB/ssh_connections.sh
+#source $LIB/ssh_connections.sh
 
 if [ ${#MACHINES[@]} -eq 0 ]; then
     echo "Nothing to be done. Exiting..." >${ORG_FD1}
@@ -117,7 +117,7 @@ do
 	       >>${_SCRIPT}
 
 	{ # Scoping, in that current shell
-	    ssh -F ${SSH_CONFIG} ${FLOATING_IPs[$machine]} 'sudo bash -e -x 2>&1' <${_SCRIPT} &>${_LOG}
+	    $MM_CONNECT ssh -F ${SSH_CONFIG} ${MACHINE_IPs[$machine]} 'sudo bash -e -x 2>&1' <${_SCRIPT} &>${_LOG}
 	    RET=$?
 	    if [ $RET -eq 0 ]; then report_ok $machine; else report_fail $machine; fi
 	    print_progress

@@ -53,3 +53,8 @@ function filter_out_machine {
     done
     return 1 # not found
 }
+
+############################################
+NETNS=$(<${MM_TMP}/${OS_TENANT_NAME}-mgmt-router) # bash only
+[ -z $NETNS ] && echo "Unknown virtual router: ${OS_TENANT_NAME}-mgmt-router" && exit 1
+MM_CONNECT="sudo -E ip netns exec $NETNS"
