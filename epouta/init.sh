@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
 
-# Get credentials and machines settings
-source $(dirname ${BASH_SOURCE[0]})/settings.sh
-
+#######################################################################
 # Default values
-EPOUTA_NODES=3
 _IMAGE=CentOS7-extended
 
 function usage {
@@ -12,7 +9,6 @@ function usage {
     echo -e "\noptions are"
     echo -e "\t--image <img>,"
     echo -e "\t     -i <img>    \tGlance image to use. Defaults to ${_IMAGE}"
-    echo -e "\t--nodes,-n <int> \tNumber of Epouta nodes to boot. Defaults to ${EPOUTA_NODES}"
     echo -e "\t--quiet,-q       \tRemoves the verbose output"
     echo -e "\t--help,-h        \tOutputs this message and exits"
     echo -e "\t-- ...           \tAny other options appearing after the -- will be ignored"
@@ -23,7 +19,6 @@ while [ $# -gt 0 ]; do
     case "$1" in
         --quiet|-q) VERBOSE=no;;
         --image|-i) _IMAGE=$2; shift;;
-        --nodes|-n) EPOUTA_NODES=$2; shift;;
         --help|-h) usage; exit 0;;
         --) shift; break;;
         *) echo "$0: error - unrecognized option $1" 1>&2; usage; exit 1;;
@@ -31,85 +26,55 @@ while [ $# -gt 0 ]; do
     shift
 done
 
+#######################################################################
+# Credentials for Epouta. Should reset the ones from settings.sh
+source $(dirname ${BASH_SOURCE[0]})/../lib/settings.sh
+source $(dirname ${BASH_SOURCE[0]})/credentials.sh
+
+
 mkdir -p ${MM_TMP}
 
 [ $VERBOSE == 'no' ] && exec 1>${MM_TMP}/init-epouta.log
 ORG_FD1=$(tty)
 
-# Create the host file first
-cat > ${MM_TMP}/hosts <<ENDHOST
-127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
-::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
-
-130.238.7.178 uu_proxy
-ENDHOST
-for name in ${MACHINES[@]}; do echo "${MACHINE_IPs[$name]} $name" >> ${MM_TMP}/hosts; done
-
 #######################################################################
-# RESET for Epouta
-#######################################################################
-MACHINES=('leif')
-MACHINE_IPs[leif]=${MGMT_CIDR%.0.0/16}.0.10
-for i in $(eval echo {1..${EPOUTA_NODES}}); do
-    MACHINES+=(epouta-$i)
-    MACHINE_IPs[epouta-$i]=${MGMT_CIDR%.0.0/16}.0.$(( 20 + i ))
+# Filter out the non-Epouta machines
+for m in ${!MACHINES[@]}; do
+    [[ ${MACHINES[$m]} == 'epouta'* ]] || unset MACHINES[$m]
 done
 
-#######################################################################
-# Adding epouta nodes to /etc/hosts
-for name in ${MACHINES[@]}; do echo "${MACHINE_IPs[$name]} $name" >> ${MM_TMP}/hosts; done
-
-#######################################################################
-# Prepare the tmp folders
-for machine in ${MACHINES[@]}; do mkdir -p ${MM_TMP}/$machine/init; done
-
-#######################################################################
-# Credentials for Epouta. Should reset the ones from settings.sh
-NETNS=$(<${MM_TMP}/netns) # bash only
-[ -z $NETNS ] && echo "Unknown virtual router: mgmt-router" && exit 1
-
-source $(dirname ${BASH_SOURCE[0]})/epouta-credentials.sh
-
-#######################################################################
-# Testing if the image exists
-if nova image-list | grep "${_IMAGE}" > /dev/null; then : ; else
-    echo "Error: Could not find the image '${_IMAGE}' to boot from."
-    echo "Exiting..."
-    exit 1
+if [ ${#MACHINES[@]} -eq 0 ]; then
+    echo "Nothing to be done. Exiting..." >${ORG_FD1}
+    exit 2 # or 0?
 fi
 
-EPOUTA_NET=$(neutron net-list | awk '/ UU-MOSLER-network / {print $2}')
+#######################################################################
+
+EPOUTA_NET=$(neutron net-list 2>/dev/null | awk '/ UU-MOSLER-network / {print $2}')
 if [ -z "$EPOUTA_NET" ]; then
     echo "Error: Could not find the epouta net... Exiting." > ${ORG_FD1}
     exit 1
 fi
 
-# Create the port
-for machine in ${MACHINES[@]}; do
-    if ! neutron port-show port-$machine >/dev/null; then
-	neutron port-create --name port-$machine --fixed-ip subnet_id=UU-MOSLER-subnet,ip_address=${MACHINE_IPs[$machine]} UU-MOSLER-network
-    fi
-done
+NETNS=$(<${MM_TMP}/${OS_TENANT_NAME}-mgmt-router) # bash only
+[ -z $NETNS ] && echo "Unknown virtual router: ${OS_TENANT_NAME}-mgmt-router" && exit 1
+MM_CONNECT="sudo -E ip netns exec $NETNS"
 
 ########################################################################
 # Start the local REST server, to follow the progress of the machines
 #######################################################################
 echo "Starting the REST phone home server"
-sudo -E ip netns exec $NETNS fuser -k ${PORT}/tcp || true
+$MM_CONNECT fuser -k ${MM_PORT}/tcp || true
 trap "sudo -E ip netns exec $NETNS fuser -k ${PORT}/tcp &>/dev/null || true; exit 1" SIGINT SIGTERM EXIT
-sudo -E ip netns exec $NETNS python ${MM_HOME}/lib/boot_progress.py $PORT "${MACHINES[@]}" 2>&1 &
+$MM_CONNECT python ${MM_HOME}/lib/boot_progress.py $MM_PORT "${MACHINES[@]}" 2>&1 &
 REST_PID=$!
 sleep 2
 
 #######################################################################
-function boot_machine {
+function prepare_machine {
     local machine=$1
-    local ip=${MACHINE_IPs[$machine]}
+    local _VM_INIT=$2
 
-    local _port=$(neutron port-list 2>/dev/null | awk "/ port-$machine / {print \$2}")
-    [ -z "$_port" ] && echo "Could not find the neutron port for $machine. Skipping..." && return 1
-
-    _VM_INIT=${MM_TMP}/$machine/init/vm.sh
     echo '#!/usr/bin/env bash' > ${_VM_INIT}
     for user in ${!PUBLIC_SSH_KEYS[@]}; do echo "echo '${PUBLIC_SSH_KEYS[$user]}' >> /home/centos/.ssh/authorized_keys" >> ${_VM_INIT}; done
     cat >> ${_VM_INIT} <<ENDCLOUDINIT
@@ -147,25 +112,34 @@ ENDCLOUDINIT
     cat >> ${_VM_INIT} <<ENDCLOUDINIT
 echo "================================================================================"
 echo "Growing partition to disk size"
-curl http://${MGMT_GATEWAY}:$PORT/machine/$machine/growing 2>&1 > /dev/null || true
+curl http://${MGMT_GATEWAY}:$MM_PORT/machine/$machine/growing 2>&1 > /dev/null || true
 growpart /dev/vda 1
 echo "================================================================================"
 echo "Cloudinit phone home"
-curl http://${MGMT_GATEWAY}:$PORT/machine/$machine/ready 2>&1 > /dev/null || true
+curl http://${MGMT_GATEWAY}:$MM_PORT/machine/$machine/ready 2>&1 > /dev/null || true
 ENDCLOUDINIT
 
-# Booting a machine
-echo -e "\t* $machine"
-# nova boot --flavor hpc.small --image ${_IMAGE} \
-# --nic net-id=${EPOUTA_NET},v4-fixed-ip=$ip --user-data ${_VM_INIT} \
-# $machine &>/dev/null
+}
 
+function boot_machine {
+    local machine=$1
 
-nova boot --flavor hpc.small --image ${_IMAGE} \
---nic port-id=$_port --user-data ${_VM_INIT} \
-$machine #&>/dev/null
-##--nic net-id=${EPOUTA_NET} --user-data ${_VM_INIT} \
+    # Silencing epouta's stderr (about the InsecurePlatformWarning from urllib3)
+    exec 2>/dev/null
 
+    echo -ne "\t* $machine: port "
+    local _port=$(neutron port-create --name port-$machine --fixed-ip subnet_id=UU-MOSLER-subnet,ip_address=${MACHINE_IPs[$machine]} UU-MOSLER-network | awk '/ id / {print $4}')
+    [ -z "$_port" ] && echo $'\e[31m\xE2\x9C\x97\e[0m' " Skipping..." && return 1
+
+    echo -ne $'\e[32m\xE2\x9C\x93\e[0m | preparing '
+    _VM_INIT=${MM_TMP}/$machine/init/vm.sh
+    prepare_machine $machine ${_VM_INIT}
+
+    echo -e $'\e[32m\xE2\x9C\x93\e[0m | booting '
+    nova boot --flavor hpc.small --image ${_IMAGE} --nic port-id=$_port --user-data ${_VM_INIT} $machine 1>/dev/null
+     && echo -e $'\e[32m\xE2\x9C\x93\e[0m'
+    || echo -e $'\e[31m\xE2\x9C\x97\e[0m'
+    
 } # End boot_machine function
 
 

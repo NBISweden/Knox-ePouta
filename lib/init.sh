@@ -125,6 +125,11 @@ if [ ${_NET} = "yes" ]; then
     FACTOR=2
     nova quota-update --instances $((10 * FACTOR)) --ram $((51200 * FACTOR)) ${TENANT_ID} >/dev/null
 
+    # echo "Adding flavors"
+    # nova flavor-create --is-public false mm.compute   10 7200 80 4
+    # nova flavor-create --is-public false mm.storage   11 2048 160 1
+    # nova flavor-create --is-public false mm.supernode 12 2048 20 1
+
 fi # End _NET config
 
 

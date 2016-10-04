@@ -66,7 +66,10 @@ FLAVORS=(\
     [compute1]=m1.large \
     [compute2]=m1.large \
     [compute3]=m1.large \
-    [storage]=m1.storage \
+    [storage]=mm.storage \
+    [epouta1]=hpc.small \
+    [epouta2]=hpc.small \
+    [epouta3]=hpc.small \
 )
 
 declare -A MACHINE_IPs

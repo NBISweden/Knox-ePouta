@@ -78,6 +78,9 @@ rm -rf {{ env['MM_PROJECTS'] }}/CAW/work
 # #NXF_DEBUG=1 &&
 # nextflow run MultiFQtoVC.nf -c /home/centos/{{ env['VAULT'] }}/mm.config --sample {{ env['MM_PROJECTS'] }}/CAW/data/tsv/sample.tsv
 # popd
+
+perl -i -pe's/cpus 8/cpus 4/g' {{ env['MM_PROJECTS'] }}/CAW/MultiFQtoVC.nf
+perl -i -pe's/memory { 16.GB \* task.attempt }/memory { 4.GB \* task.attempt }/g' {{ env['MM_PROJECTS'] }}/CAW/MultiFQtoVC.nf
  
 # cd /mnt/projects/CAW
 # NXF_DEBUG=1 && nextflow run MultiFQtoVC.nf -c /home/centos/vault/mm.config --sample /mnt/projects/CAW/data/tsv/sample.tsv
