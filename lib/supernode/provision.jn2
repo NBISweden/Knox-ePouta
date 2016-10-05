@@ -81,6 +81,91 @@ rm -rf {{ env['MM_PROJECTS'] }}/CAW/work
 
 perl -i -pe's/cpus 8/cpus 4/g' {{ env['MM_PROJECTS'] }}/CAW/MultiFQtoVC.nf
 perl -i -pe's/memory { 16.GB \* task.attempt }/memory { 4.GB \* task.attempt }/g' {{ env['MM_PROJECTS'] }}/CAW/MultiFQtoVC.nf
- 
-# cd /mnt/projects/CAW
-# NXF_DEBUG=1 && nextflow run MultiFQtoVC.nf -c /home/centos/vault/mm.config --sample /mnt/projects/CAW/data/tsv/sample.tsv
+
+###################################################
+PARTITIONS=(\
+    ['mm']='compute1,compute2,compute3' \
+    ['epouta']='epouta1,epouta2,epouta3' \
+    ['mm2-epouta1']='compute1,compute2,epouta1' \
+    ['epouta2-mm1']='epouta2,epouta3,compute3' \
+    ['mm1-epouta2']='compute3,epouta2,epouta3' \
+    ['epouta1-mm2']='epouta1,compute1,compute2' \
+)
+
+
+for partition in ${!PARTITIONS[@]}; do
+    cat > {{ env['MM_PROJECTS'] }}/CAW/config/${partition}.config <<EOF
+/* -------------------------------------------------
+ * Nextflow config file for CAW project
+ * Set up with test data
+ * -------------------------------------------------
+ * Should be saved either with Nextflow installation
+ * or as file ~/.nextflow/config
+ */
+
+process {
+  executor = 'slurm'
+  cpus = 1
+  memory = '2 GB'
+  time = '1h'
+  queue = '${partition}'
+  clusterOptions = {
+    '-t 60:00 --export=NONE --get-user-env -c 4 --mem 4096'
+  }
+}
+
+/* This option particularly important for jobs that are submitted on
+one cluster and execute on a different cluster (e.g. with different
+paths). By default all environment variables are propagated. If the
+argument is NONE or specific environment variable names, then the
+--get-user-env */
+
+// By default we are turning on trace and timeline tracking
+trace {
+	enabled = true
+	fields = 'process,task_id,name,attempt,status,exit,realtime,%cpu,rss,submit,start,complete,duration,realtime,rchar,wchar'
+}
+
+timeline {
+	enabled = true
+}
+
+params {
+  sample       = '{{ env['MM_PROJECTS'] }}/CAW/data/tsv/tiny.tsv'
+  gender       = 'XY'
+  genome       = '{{ env['CAW_DATA'] }}/human_g1k_v37_decoy.fasta'
+  genomeIndex  = '{{ env['CAW_DATA'] }}/human_g1k_v37_decoy.fasta.fai'
+  mantaRef     = '{{ env['CAW_DATA'] }}/jesper-human_g1k_v37_decoy.fasta'
+  mantaIndex   = '{{ env['CAW_DATA'] }}/jesper-human_g1k_v37_decoy.fasta.fai'
+  genomeDict   = '{{ env['CAW_DATA'] }}/human_g1k_v37_decoy.dict'
+  cosmic41     = '{{ env['CAW_DATA'] }}/b37_cosmic_v74.noCHR.sort.4.1.vcf'
+  cosmicIndex41= '{{ env['CAW_DATA'] }}/b37_cosmic_v74.noCHR.sort.4.1.vcf.idx'
+  cosmic       = '{{ env['CAW_DATA'] }}/b37_cosmic_v74.vcf'
+  cosmicIndex  = '{{ env['CAW_DATA'] }}/b37_cosmic_v74.vcf.idx'
+  dbsnp        = '{{ env['CAW_DATA'] }}/dbsnp_138.b37.vcf'
+  dbsnpIndex   = '{{ env['CAW_DATA'] }}/dbsnp_138.b37.vcf.idx'
+  kgIndels     = '{{ env['CAW_DATA'] }}/1000G_phase1.indels.b37.vcf'
+  kgIndex      = '{{ env['CAW_DATA'] }}/1000G_phase1.indels.b37.vcf.idx'
+  millsIndels  = '{{ env['CAW_DATA'] }}/Mills_and_1000G_gold_standard.indels.b37.vcf'
+  millsIndex   = '{{ env['CAW_DATA'] }}/Mills_and_1000G_gold_standard.indels.b37.vcf.idx'
+  mutect1Home  = '/mnt/sw/mutect1'
+  snpeffHome   = '/mnt/sw/snpEff'
+  snpeffDb     = 'GRCh37.75'
+  picardHome   = '/mnt/sw/picard'
+  gatkHome     = '/mnt/sw/GATK-3.3.0'
+  vardictHome  = '/mnt/sw/VarDictJava'
+  mutect2Home  = '/mnt/sw/GATK-3.6'
+  strelkaHome  = '/usr/local/strelka-1.0.15'
+  strelkaCFG   = '{{ env['MM_PROJECTS'] }}/CAW/vc/strelka/strelka_config.ini'
+  SNIC_tmp_dir = '/tmp'
+  intervals    = '{{ env['MM_PROJECTS'] }}/CAW/repeats/centromeres.list'
+  acLoci       = '{{ env['CAW_DATA'] }}/1000G_phase3_20130502_SNP_maf0.3.loci'
+}
+EOF
+done
+
+export NXF_WORK=/mnt/projects/CAW/work 
+for partition in ${!PARTITIONS[@]}; do
+    NXF_DEBUG=1 && nextflow run /mnt/projects/CAW/MultiFQtoVC.nf -c /mnt/projects/CAW/config/${partition}.config --sample /mnt/projects/CAW/data/tsv/sample.tsv > ~/${partition}.log
+done
+
