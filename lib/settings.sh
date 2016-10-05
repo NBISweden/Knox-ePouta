@@ -110,8 +110,22 @@ export CAW_DATA=/mnt/data
 export MM_PROJECTS=/mnt/projects
 export UU_PROXY="http://uu_proxy:3128/"
 export MM_JAVA_OPTIONS='-Dhttp.proxyHost=uu_proxy -Dhttp.proxyPort=3128 -Djava.net.preferIPv4Stack=true'
-export MANTA_VERSION=1.0.0 # previously 0.27.1
-export STRELKA_VERSION=1.0.15
-export SAMTOOLS_VERSION=1.3 # Not 1.3.1
-export BWA_VERSION=0.7.13 # 0.7.8 in the README
+
+# String with space-separated versions
+export MANTA_VERSIONS="1.0.0" # previously 0.27.1
+export STRELKA_VERSIONS="1.0.15"
+export SAMTOOLS_VERSIONS="1.3 0.1.19" # Not 1.3.1
+export BWA_VERSIONS="0.7.13" # 0.7.8 in the README
+
+export SNPEFF_VERSIONS="4.2"
+export VCFTOOLS_VERSIONS="0.1.14"
+export VEP_VERSIONS="84"
+
+ # fermikit = 'fermikit/r178'
+ # vcftools = "vcftools/0.1.14"
+ # tabix = "tabix/0.2.6"
+ # bedtools = "BEDTools/2.25.0"
+ # vep = "vep/84"
+ # vt = "vt/0.5772"
+
 #export GCC_VERSION=4.9.2
