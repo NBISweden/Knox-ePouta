@@ -108,7 +108,7 @@ do
 		$MM_CONNECT rsync -avL -e "ssh -F ${SSH_CONFIG}" ${FOLDER}/files/ ${MACHINE_IPs[$machine]}:${VAULT}/.
 	    
 	    # For the compute nodes
-	    if [[ "${PROVISION[$machine]}" = "compute" ]]; then
+	    if [ "${PROVISION[$machine]}" == "compute" ]; then
 		$MM_CONNECT ssh -F ${SSH_CONFIG} ${MACHINE_IPs[$machine]} mkdir -p ${VAULT}/sw
 		echo "Copying files from $MM_SW/ to ${MACHINE_IPs[$machine]}:${VAULT}/sw/."
 		[ -d $MM_SW ] && $MM_CONNECT rsync -av -e "ssh -F ${SSH_CONFIG}" $MM_SW/ ${MACHINE_IPs[$machine]}:${VAULT}/sw/.

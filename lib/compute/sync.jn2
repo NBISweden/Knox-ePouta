@@ -149,10 +149,11 @@ done
 ##############################################################
 # Samtools
 # DL: curl -OJL https://github.com/samtools/samtools/releases/download/{{ env['SAMTOOLS_VERSION'] }}/samtools-{{ env['SAMTOOLS_VERSION'] }}.tar.bz2
+#               https://github.com/samtools/samtools/archive/{{ env['SAMTOOLS_VERSION'] }}.tar.gz
 for v in {{ env['SAMTOOLS_VERSIONS'] }}; do
     if [ ! -x /usr/local/samtools-${v}/bin/samtools ]; then
-	rm -rf ${MM_BUILD}/samtools-${v}.tar.bz2
-	tar -xjf {{ env['VAULT'] }}/sw/samtools-${v}.tar.bz2 -C ${MM_BUILD}
+	rm -rf ${MM_BUILD}/samtools-${v}
+	tar -xzf {{ env['VAULT'] }}/sw/samtools-${v}.tar.gz -C ${MM_BUILD}
 	pushd ${MM_BUILD}/samtools-${v}
 	./configure --enable-plugins --enable-libcurl --prefix=/usr/local/samtools-${v}
 	make all all-htslib
@@ -177,41 +178,52 @@ for v in {{ env['BWA_VERSIONS'] }}; do
     fi
 done
 
-##############################################################
-# VCFtools
-# curl -OJL https://github.com/vcftools/vcftools/archive/v{{ env['VCFTOOL_VERSION'] }}.tar.gz
-for v in {{ env['VCFTOOLS_VERSIONS'] }}; do
-    if [ ! -x /usr/local/vcftools-${v}/bin/vcftools ]; then
-	rm -rf ${MM_BUILD}/vcftools-${v}
-	tar -xzf {{ env['VAULT'] }}/sw/vcftools-${v}.tar.gz -C ${MM_BUILD}
-	pushd ${MM_BUILD}/vcftools-${v}
-	./autogen.sh
-	./configure --prefix=/usr/local/vcftools-${v}
-	make
-	make install
-	popd
-    fi
-done
+# ##############################################################
+# # VCFtools
+# # curl -OJL https://github.com/vcftools/vcftools/archive/v{{ env['VCFTOOL_VERSION'] }}.tar.gz
+# for v in {{ env['VCFTOOLS_VERSIONS'] }}; do
+#     if [ ! -x /usr/local/vcftools-${v}/bin/vcftools ]; then
+# 	rm -rf ${MM_BUILD}/vcftools-${v}
+# 	tar -xzf {{ env['VAULT'] }}/sw/vcftools-${v}.tar.gz -C ${MM_BUILD}
+# 	pushd ${MM_BUILD}/vcftools-${v}
+# 	./autogen.sh
+# 	./configure --prefix=/usr/local/vcftools-${v}
+# 	make
+# 	make install
+# 	popd
+#     fi
+# done
 
-##############################################################
-# VEP
-# curl -OJL https://github.com/Ensembl/ensembl-tools/archive/release/{{ env['VEP_VERSION'] }}.zip
-yum -y install perl-File-Copy-Recursive perl-Archive-Extract perl-Module-Build
-for v in {{ env['VEP_VERSIONS'] }}; do
-    if [ ! -x /usr/local/vep-${v}/bin/vep ]; then
-	rm -rf ${MM_BUILD}/ensembl-tools-release-${v}
-	unzip {{ env['VAULT'] }}/sw/ensembl-tools-release-${v}.zip -d ${MM_BUILD}
-	pushd ${MM_BUILD}/ensembl-tools-release-${v}/scripts/variant_effect_predictor/
-	#perl INSTALL.pl	-d /usr/local/vep-${v} #--NO_HTSLIB
-	popd
-    fi
-done
+# ##############################################################
+# # VEP
+# # curl -OJL https://github.com/Ensembl/ensembl-tools/archive/release/{{ env['VEP_VERSION'] }}.zip
+# yum -y install perl-File-Copy-Recursive perl-Archive-Extract perl-Module-Build
+# for v in {{ env['VEP_VERSIONS'] }}; do
+#     if [ ! -x /usr/local/vep-${v}/bin/vep ]; then
+# 	rm -rf ${MM_BUILD}/ensembl-tools-release-${v}
+# 	unzip {{ env['VAULT'] }}/sw/ensembl-tools-release-${v}.zip -d ${MM_BUILD}
+# 	pushd ${MM_BUILD}/ensembl-tools-release-${v}/scripts/variant_effect_predictor/
+# 	#perl INSTALL.pl	-d /usr/local/vep-${v} #--NO_HTSLIB
+# 	popd
+#     fi
+# done
 
 # fermikit = 'fermikit/r178'
 # snpeff = "snpEff/4.2"
 # vt = "vt/0.5772"
 # tabix = "tabix/0.2.6"
 # bedtools = "BEDTools/2.25.0"
+
+
+##############################################################
+# SOB
+if [ ! -d {{ env['MM_PROJECTS'] }}/SOB ]; then
+    mkdir -p {{ env['MM_PROJECTS'] }}/SOB
+    pushd {{ env['MM_PROJECTS'] }}/SOB
+    gcc -o sob /home/centos/{{ env['VAULT'] }}/sw/sob/sob.c
+    mv sob /usr/local/bin/sob
+    popd
+fi
 
 
 ##############################################################
@@ -227,19 +239,17 @@ alias ls='ls -h'
 alias la='ls -a'
 alias lla='ll -a'
 
-for p in manta-{{{ env['MANTA_VERSIONS']|replace(' ',',')}} } \
-         bwa-{{{ env['BWA_VERSIONS']|replace(' ',',')}} } \
-         strelka-{{{ env['STRELKA_VERSIONS']|replace(' ',',')}} } \
-         samtools-{{{ env['SAMTOOLS_VERSIONS']|replace(' ',',')}} } \
-         vcftools-{{{ env['VCFTOOLS_VERSIONS']|replace(' ',',')}} } \
-         vep-{{{ env['VEP_VERSIONS']|replace(' ',',')}} }
-do [[ "$PATH" =~ "$p" ]] || export PATH="/usr/local/$p/bin:$PATH"; done
-
-#[[ "$PATH" =~ "/mnt/sw" ]] || export PATH=/mnt/sw:$PATH
-
 module () 
 { 
     return 0
 }
 export -f module
+
+{% for tool in ['MANTA', 'BWA', 'STRELKA', 'SAMTOOLS'] -%}
+{% for v in env[tool ~ '_VERSIONS'].split(' ') %}
+[[ "$PATH" =~ "{{tool|lower}}-{{ v }}" ]] || export PATH="/usr/local/{{tool|lower}}-{{ v }}/bin:$PATH"
+{% endfor %}
+{%- endfor %}
 EOF
+
+

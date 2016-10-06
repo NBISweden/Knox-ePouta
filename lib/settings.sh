@@ -34,8 +34,8 @@ export VERBOSE=yes
 
 [ -n "$MM_HOME" ]       || readonly MM_HOME=$ABOVE
 
-[ -n "$MM_DATA" ]     || readonly MM_DATA=/home/fred/CAW/data
-[ -n "$MM_SW" ]       || readonly MM_SW=/home/fred/CAW/sw
+[ -n "$MM_DATA" ]     || readonly MM_DATA=/home/fred/BioInfo/data
+[ -n "$MM_SW" ]       || readonly MM_SW=/home/fred/BioInfo/sw
 
 [ -n "$MM_TMP" ]      || readonly MM_TMP=${MM_HOME}/tmp/${OS_TENANT_NAME}
 mkdir -p ${MM_TMP}
@@ -104,17 +104,18 @@ PROVISION=(\
 MM_PORT=12345
 
 ########################################
-# Settings for the CAW example
 export NFS_ROOT=/mnt
-export CAW_DATA=/mnt/data
-export MM_PROJECTS=/mnt/projects
 export UU_PROXY="http://uu_proxy:3128/"
 export MM_JAVA_OPTIONS='-Dhttp.proxyHost=uu_proxy -Dhttp.proxyPort=3128 -Djava.net.preferIPv4Stack=true'
 
-# String with space-separated versions
+# Settings for the CAW example
+export CAW_DATA=/mnt/data
+export MM_PROJECTS=/mnt/projects
+
 export MANTA_VERSIONS="1.0.0" # previously 0.27.1
 export STRELKA_VERSIONS="1.0.15"
-export SAMTOOLS_VERSIONS="1.3 0.1.19" # Not 1.3.1
+#export SAMTOOLS_VERSIONS="1.3 0.1.19" # Not 1.3.1
+export SAMTOOLS_VERSIONS="1.3"
 export BWA_VERSIONS="0.7.13" # 0.7.8 in the README
 
 export SNPEFF_VERSIONS="4.2"
