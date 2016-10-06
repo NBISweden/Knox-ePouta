@@ -74,3 +74,6 @@ You can append the `-h` flag to see the command options.
 	./micromosler.sh sync      # Wait again a bit, still probably rebooting
 	./micromosler.sh reset     # Cleanup inside the VMs
 	./micromosler.sh provision # Shoot again...
+
+
+[![Stories in Ready](https://badge.waffle.io/NBISweden/mosler-micro-mosler.png?label=ready&title=Ready)](https://waffle.io/NBISweden/mosler-micro-mosler)
