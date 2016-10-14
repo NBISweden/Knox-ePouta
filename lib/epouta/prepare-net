@@ -70,3 +70,7 @@ sysctl -w net.ipv4.conf.brq8060ed02-cb.arp_ignore=1
 sysctl -w net.ipv4.conf.brq8060ed02-cb.arp_announce=2
 
 
+#########################################################
+# Updating the subnet, they had put the wrong DNS nameserver
+neutron subnet-update UU-MOSLER-subnet --dns-nameservers action=clear
+neutron subnet-update UU-MOSLER-subnet --dns-nameservers list=true 10.101.128.2
