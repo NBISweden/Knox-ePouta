@@ -74,7 +74,7 @@ if [ ! -x /usr/local/bin/nextflow ]; then
     curl -fsSL get.nextflow.io | bash
     # Moving nextflow to /usr/local/bin
     mv -f nextflow /usr/local/bin/.
-    chmod +x /usr/local/bin/nextflow
+    chmod +rx /usr/local/bin/nextflow
 fi
 
 cat > /etc/profile.d/mmrc.sh <<'EOF'

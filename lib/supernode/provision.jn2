@@ -170,7 +170,7 @@ done
 cat > /usr/local/bin/run-CAW.sh <<EOF
 cd {{ env['MM_PROJECTS'] }}/CAW
 for partition in ${!PARTITIONS[@]}; do
-    NXF_DEBUG=1 && nextflow run -with-dag ~/${partition}.dot /mnt/projects/CAW/MultiFQtoVC.nf -c /mnt/projects/CAW/config/${partition}.config --sample /mnt/projects/CAW/data/tsv/sample.tsv > ~/${partition}.log
+    NXF_DEBUG=1 && nextflow run -with-dag ~/${partition}.dot {{ env['MM_PROJECTS'] }}/CAW/MultiFQtoVC.nf -c {{ env['MM_PROJECTS'] }}/CAW/config/${partition}.config --sample {{ env['MM_PROJECTS'] }}/CAW/data/tsv/sample.tsv > ~/${partition}.log
 done
 EOF
 chmod +x /usr/local/bin/run-CAW.sh
@@ -183,24 +183,22 @@ chmod +x /usr/local/bin/run-CAW.sh
 if [ ! -d {{ env['MM_PROJECTS'] }}/WGS ]; then
     git clone https://github.com/NBISweden/wgs-structvar {{ env['MM_PROJECTS'] }}/WGS
 fi
+chmod 757 {{ env['MM_PROJECTS'] }}/WGS
 
 #rm -rf ~/.nextflow # Don't clean this one, that's where the dependencies are
 rm -f {{ env['MM_PROJECTS'] }}/WGS/.nextflow.history {{ env['MM_PROJECTS'] }}/WGS/.nextflow.log*
 rm -rf {{ env['MM_PROJECTS'] }}/WGS/work
 
-# export NXF_WORK={{ env['MM_PROJECTS'] }}/WGS/work
-
-# TODO: Update nextflow.config
-# --bam BioInfo/data/CEUTrio.HiSeq.WGS.b37.NA12878.bam --steps manta
-# slurm partitions too
-
-cat > /usr/local/bin/run-WGS.sh <<EOF
-cd {{ env['MM_PROJECTS'] }}/WGS
-for partition in ${!PARTITIONS[@]}; do
-    NXF_DEBUG=1 && nextflow run -with-dag ~/${partition}.dot main.nf > ~/${partition}.log
-done
-EOF
+echo "cd {{ env['MM_PROJECTS'] }}/WGS" > /usr/local/bin/run-WGS.sh
 chmod +x /usr/local/bin/run-WGS.sh
+
+echo "export NXF_WORK={{ env['MM_PROJECTS'] }}/WGS/work" >> /usr/local/bin/run-WGS.sh
+echo "export NXF_DEBUG=1" >> /usr/local/bin/run-WGS.sh
+
+# Adjusting the wgs.config
+for partition in ${!PARTITIONS[@]}; do
+    echo "nextflow run -with-dag ~/${partition}.dot /home/centos/{{ env['VAULT'] }}/WGS.nf -c /home/centos/{{ env['VAULT'] }}/WGS.config --partition ${partition} > ~/${partition}.log" >> /usr/local/bin/run-WGS.sh
+done
 
 ###################################################
 # SOB stress test

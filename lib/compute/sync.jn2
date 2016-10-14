@@ -162,6 +162,21 @@ for v in {{ env['SAMTOOLS_VERSIONS'] }}; do
     fi
 done
 
+# Ugly hack: Kinda hard-coding
+for v in {{ env['SAMTOOLS_VERSIONS_EXTRA'] }}; do
+    if [ ! -x /usr/local/samtools-${v}/bin/samtools ]; then
+	rm -rf ${MM_BUILD}/samtools-${v}
+	tar -xzf {{ env['VAULT'] }}/sw/samtools-${v}.tar.gz -C ${MM_BUILD}
+	pushd ${MM_BUILD}/samtools-${v}
+	make
+	mkdir -p /usr/local/samtools-${v}/bin/{misc,bcftools}
+	for f in *; do [ -f $f ] && [ -x $f ] && cp $f /usr/local/samtools-${v}/bin/$f; done
+	for f in misc/*; do [ -f $f ] && [ -x $f ] && cp $f /usr/local/samtools-${v}/bin/$f; done
+	for f in bcftools/*; do [ -f $f ] && [ -x $f ] && cp $f /usr/local/samtools-${v}/bin/$f; done
+	popd
+    fi
+done
+
 ##############################################################
 # BWA
 # DL: curl -OJL https://github.com/lh3/bwa/archive/v{{ env['BWA_VERSION'] }}.zip
@@ -208,6 +223,21 @@ done
 #     fi
 # done
 
+##############################################################
+# BED TOOLS
+for v in {{ env['BEDTOOLS_VERSIONS'] }}; do
+    if [ ! -x /usr/local/bedtools-${v}/bin/bedtools ]; then
+	rm -rf ${MM_BUILD}/bedtools-${v}
+	tar -xzf {{ env['VAULT'] }}/sw/bedtools-${v}.tar.gz -C ${MM_BUILD}
+	mv ${MM_BUILD}/bedtools2 ${MM_BUILD}/bedtools-${v} # renaming
+	pushd ${MM_BUILD}/bedtools-${v}
+	make
+	mkdir -p /usr/local/bedtools-${v}/bin
+	for f in bin/*; do [ -f $f ] && [ -x $f ] && cp $f /usr/local/bedtools-${v}/$f; done
+	popd
+    fi
+done
+
 # fermikit = 'fermikit/r178'
 # snpeff = "snpEff/4.2"
 # vt = "vt/0.5772"
@@ -240,16 +270,20 @@ alias la='ls -a'
 alias lla='ll -a'
 
 module () 
-{ 
+{
+    if [ $1 == 'load' ]; then
+	local tool=${2/\//-} #
+	if [ -d /usr/local/$tool/bin ]; then
+		[[ "$PATH" =~ "$tool" ]] || export PATH="/usr/local/$tool/bin:$PATH"
+		return 0
+	# else
+	# 	return 1
+	fi
+    fi
+    # Otherwise, succeed anyway
     return 0
 }
 export -f module
-
-{% for tool in ['MANTA', 'BWA', 'STRELKA', 'SAMTOOLS'] -%}
-{% for v in env[tool ~ '_VERSIONS'].split(' ') %}
-[[ "$PATH" =~ "{{tool|lower}}-{{ v }}" ]] || export PATH="/usr/local/{{tool|lower}}-{{ v }}/bin:$PATH"
-{% endfor %}
-{%- endfor %}
 EOF
 
 

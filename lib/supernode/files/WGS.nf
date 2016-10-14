@@ -55,7 +55,7 @@ if (!bamindex) {
 
         script:
         """
-        samtools index bamfile
+	samtools index bamfile
         """
     }
 }
@@ -122,7 +122,7 @@ if (!params.fastq) {
 
         script:
         """
-        samtools bam2fq bamfile | gzip - > fastq.fq.gz
+	samtools bam2fq bamfile | gzip - > fastq.fq.gz
         """
     }
 }
@@ -170,8 +170,8 @@ process fermikit {
 vcfs = manta_vcf.mix( fermi_vcf )
 
 mask_files = [
-    "$baseDir/data/ceph18.b37.lumpy.exclude.2014-01-15.bed",
-    "$baseDir/data/LCR-hs37d5.bed.gz"
+    "$params.datadir/ceph18.b37.lumpy.exclude.2014-01-15.bed",
+    "$params.datadir/LCR-hs37d5.bed.gz"
 ]
 
 masks = mask_files.collect { file(it) }.channel()
@@ -385,6 +385,7 @@ def startup_message() {
     log.info "======================"
     log.info "Bamfile    : $params.bam"
     log.info "Scriptdir  : $baseDir"
+    log.info "Datadir    : $params.datadir"
     log.info "Revision   : $revision"
     log.info "Work dir   : $workDir"
     log.info "Output dir : $params.outdir"

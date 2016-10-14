@@ -116,16 +116,17 @@ export MANTA_VERSIONS="1.0.0" # previously 0.27.1
 export STRELKA_VERSIONS="1.0.15"
 #export SAMTOOLS_VERSIONS="1.3 0.1.19" # Not 1.3.1
 export SAMTOOLS_VERSIONS="1.3"
+export SAMTOOLS_VERSIONS_EXTRA="0.1.19"
 export BWA_VERSIONS="0.7.13" # 0.7.8 in the README
 
 export SNPEFF_VERSIONS="4.2"
 export VCFTOOLS_VERSIONS="0.1.14"
 export VEP_VERSIONS="84"
+export BEDTOOLS_VERSIONS="2.26.0"
 
  # fermikit = 'fermikit/r178'
  # vcftools = "vcftools/0.1.14"
  # tabix = "tabix/0.2.6"
- # bedtools = "BEDTools/2.25.0"
  # vep = "vep/84"
  # vt = "vt/0.5772"
 
