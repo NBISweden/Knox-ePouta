@@ -5,10 +5,10 @@ the Knox-Epouta connection, how we tested the limitations of a system,
 in case some of the compute nodes are distributed accross the nordic
 countries.
 
-We sat up a test project that runs on Knox, and uses Epouta's virtual
-machines (VMs) to extend the list of compute nodes. The main
-limitation is the disk accesses, i.e. the network file system (NFS)
-(cf. the last test).
+We sat up a test project that runs on Knox (in Sweden), and uses
+Epouta's virtual machines (VMs in Finland) to extend the list of
+compute nodes. The main limitation is the disk accesses, i.e. the
+network file system (NFS) (cf. the last test).
 
 # Cancer Analysis Workflow
 
@@ -31,7 +31,9 @@ we distributed the compute nodes in slurm partitions as follows:
 
 Moreover, when a task from the workflow only requires one node, we
 were interested in finding out if the first node on the slurm
-partition matters. Finally, we ran a comparision with the same workflow running on `milou` with 3 compute nodes (similar to the ones in Knox and Epouta). So we added extra partitions:
+partition matters. Finally, we ran a comparision with the same
+workflow running on `milou` with 3 compute nodes (similar to the ones
+in Knox and Epouta). So we added extra partitions:
 
 5. 1 node from Knox (first), 2 nodes from Epouta.
 6. 1 node from Epouta (first), 2 nodes from Knox.
