@@ -29,3 +29,7 @@ And on the compute node:
 * Iptables rules for FORWARD (from em4 into the others)
 * Security rules
 * allowed MAC/IP or filtering by iptables on the bridges of the compute nodes
+
+# Things that did byte us in the...
+
+MAC/IP filtering on the bridges.
