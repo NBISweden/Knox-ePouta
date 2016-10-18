@@ -84,96 +84,23 @@ rm -f ~/.nextflow.log
 if [ ! -d {{ env['MM_PROJECTS'] }}/CAW ]; then
     git clone https://github.com/SciLifeLab/CAW.git {{ env['MM_PROJECTS'] }}/CAW
 fi
+chmod 757 {{ env['MM_PROJECTS'] }}/CAW
 
 rm -f {{ env['MM_PROJECTS'] }}/CAW/.nextflow.history {{ env['MM_PROJECTS'] }}/CAW/.nextflow.log*
 rm -rf {{ env['MM_PROJECTS'] }}/CAW/{work,Preprocessing}
 
-perl -i -pe's/cpus 8/cpus 4/g' {{ env['MM_PROJECTS'] }}/CAW/MultiFQtoVC.nf
-perl -i -pe's/memory { 16.GB \* task.attempt }/memory { 4.GB \* task.attempt }/g' {{ env['MM_PROJECTS'] }}/CAW/MultiFQtoVC.nf
-
-
-for partition in ${!PARTITIONS[@]}; do
-    cat > {{ env['MM_PROJECTS'] }}/CAW/config/${partition}.config <<EOF
-/* -------------------------------------------------
- * Nextflow config file for CAW project
- * Set up with test data
- * -------------------------------------------------
- * Should be saved either with Nextflow installation
- * or as file ~/.nextflow/config
- */
-
-process {
-  executor = 'slurm'
-  cpus = 1
-  memory = '2 GB'
-  time = '1h'
-  queue = '${partition}'
-  clusterOptions = {
-    '-t 60:00 --export=NONE --get-user-env -c 4 --mem 4096'
-  }
-}
-
-/* This option particularly important for jobs that are submitted on
-one cluster and execute on a different cluster (e.g. with different
-paths). By default all environment variables are propagated. If the
-argument is NONE or specific environment variable names, then the
---get-user-env */
-
-// By default we are turning on trace and timeline tracking
-trace {
-	enabled = true
-	fields = 'process,task_id,name,attempt,status,exit,realtime,%cpu,rss,submit,start,complete,duration,realtime,rchar,wchar'
-        file = '~/${partition}.trace'
-}
-
-timeline {
-	enabled = true
-        file = '~/${partition}.timeline.html'
-}
-
-params {
-  sample       = '{{ env['MM_PROJECTS'] }}/CAW/data/tsv/tiny.tsv'
-  gender       = 'XY'
-  genome       = '{{ env['CAW_DATA'] }}/human_g1k_v37_decoy.fasta'
-  genomeIndex  = '{{ env['CAW_DATA'] }}/human_g1k_v37_decoy.fasta.fai'
-  mantaRef     = '{{ env['CAW_DATA'] }}/jesper-human_g1k_v37_decoy.fasta'
-  mantaIndex   = '{{ env['CAW_DATA'] }}/jesper-human_g1k_v37_decoy.fasta.fai'
-  genomeDict   = '{{ env['CAW_DATA'] }}/human_g1k_v37_decoy.dict'
-  cosmic41     = '{{ env['CAW_DATA'] }}/b37_cosmic_v74.noCHR.sort.4.1.vcf'
-  cosmicIndex41= '{{ env['CAW_DATA'] }}/b37_cosmic_v74.noCHR.sort.4.1.vcf.idx'
-  cosmic       = '{{ env['CAW_DATA'] }}/b37_cosmic_v74.vcf'
-  cosmicIndex  = '{{ env['CAW_DATA'] }}/b37_cosmic_v74.vcf.idx'
-  dbsnp        = '{{ env['CAW_DATA'] }}/dbsnp_138.b37.vcf'
-  dbsnpIndex   = '{{ env['CAW_DATA'] }}/dbsnp_138.b37.vcf.idx'
-  kgIndels     = '{{ env['CAW_DATA'] }}/1000G_phase1.indels.b37.vcf'
-  kgIndex      = '{{ env['CAW_DATA'] }}/1000G_phase1.indels.b37.vcf.idx'
-  millsIndels  = '{{ env['CAW_DATA'] }}/Mills_and_1000G_gold_standard.indels.b37.vcf'
-  millsIndex   = '{{ env['CAW_DATA'] }}/Mills_and_1000G_gold_standard.indels.b37.vcf.idx'
-  mutect1Home  = '/mnt/sw/mutect1'
-  snpeffHome   = '/mnt/sw/snpEff'
-  snpeffDb     = 'GRCh37.75'
-  picardHome   = '/mnt/sw/picard'
-  gatkHome     = '/mnt/sw/GATK-3.3.0'
-  vardictHome  = '/mnt/sw/VarDictJava'
-  mutect2Home  = '/mnt/sw/GATK-3.6'
-  strelkaHome  = '/usr/local/strelka-1.0.15'
-  strelkaCFG   = '{{ env['MM_PROJECTS'] }}/CAW/vc/strelka/strelka_config.ini'
-  SNIC_tmp_dir = '/tmp'
-  intervals    = '{{ env['MM_PROJECTS'] }}/CAW/repeats/centromeres.list'
-  acLoci       = '{{ env['CAW_DATA'] }}/1000G_phase3_20130502_SNP_maf0.3.loci'
-}
-EOF
-done
-
-# export NXF_WORK={{ env['MM_PROJECTS'] }}/CAW/work
-
 cat > /usr/local/bin/run-CAW.sh <<EOF
-cd {{ env['MM_PROJECTS'] }}/CAW
-for partition in ${!PARTITIONS[@]}; do
-    NXF_DEBUG=1 && nextflow run -with-dag ~/${partition}.dot {{ env['MM_PROJECTS'] }}/CAW/MultiFQtoVC.nf -c {{ env['MM_PROJECTS'] }}/CAW/config/${partition}.config --sample {{ env['MM_PROJECTS'] }}/CAW/data/tsv/sample.tsv > ~/${partition}.log
-done
+#cd {{ env['MM_PROJECTS'] }}/CAW
+export NXF_WORK={{ env['MM_PROJECTS'] }}/CAW/work
+export NXF_DEBUG=1
+rm -rf ~/results/CAW
+mkdir -p ~/results/CAW
 EOF
 chmod +x /usr/local/bin/run-CAW.sh
+
+for partition in ${!PARTITIONS[@]}; do
+    echo "nextflow run /home/centos/{{ env['VAULT'] }}/CAW.nf -c /home/centos/{{ env['VAULT'] }}/CAW.config --partition ${partition} --sample {{ env['MM_PROJECTS'] }}/CAW/data/tsv/sample.tsv -with-timeline ~/results/CAW/${partition}.timeline.html > ~/results/CAW/${partition}.log" >> /usr/local/bin/run-CAW.sh
+done
 
 
 ###################################################
@@ -189,15 +116,18 @@ chmod 757 {{ env['MM_PROJECTS'] }}/WGS
 rm -f {{ env['MM_PROJECTS'] }}/WGS/.nextflow.history {{ env['MM_PROJECTS'] }}/WGS/.nextflow.log*
 rm -rf {{ env['MM_PROJECTS'] }}/WGS/work
 
-echo "cd {{ env['MM_PROJECTS'] }}/WGS" > /usr/local/bin/run-WGS.sh
+cat > /usr/local/bin/run-WGS.sh <<EOF
+#cd {{ env['MM_PROJECTS'] }}/WGS
+export NXF_WORK={{ env['MM_PROJECTS'] }}/WGS/work
+export NXF_DEBUG=1
+rm -rf ~/results/WGS
+mkdir -p ~/results/WGS
+EOF
 chmod +x /usr/local/bin/run-WGS.sh
-
-echo "export NXF_WORK={{ env['MM_PROJECTS'] }}/WGS/work" >> /usr/local/bin/run-WGS.sh
-echo "export NXF_DEBUG=1" >> /usr/local/bin/run-WGS.sh
 
 # Adjusting the wgs.config
 for partition in ${!PARTITIONS[@]}; do
-    echo "nextflow run -with-dag ~/${partition}.dot /home/centos/{{ env['VAULT'] }}/WGS.nf -c /home/centos/{{ env['VAULT'] }}/WGS.config --partition ${partition} > ~/${partition}.log" >> /usr/local/bin/run-WGS.sh
+    echo "nextflow run /home/centos/{{ env['VAULT'] }}/WGS.nf -c /home/centos/{{ env['VAULT'] }}/WGS.config --partition ${partition} --datadir {{ env['MM_PROJECTS'] }}/WGS/data -with-timeline ~/results/WGS/${partition}.timeline.html > ~/results/WGS/${partition}.log" >> /usr/local/bin/run-WGS.sh
 done
 
 ###################################################
@@ -211,8 +141,10 @@ declare -a SOB_TESTS=(\
 'sob -w -R 5000 -n 50 -s 128m -b 64k' \
 )
 
-rm -rf {{ env['MM_PROJECTS'] }}/SOB/{work,run}
-mkdir -p {{ env['MM_PROJECTS'] }}/SOB/{work,run}
+rm -rf {{ env['MM_PROJECTS'] }}/SOB/{work,results,run}
+mkdir -p {{ env['MM_PROJECTS'] }}/SOB/{work,results,run}
+:> /usr/local/bin/run-SOB.sh
+chmod +x /usr/local/bin/run-SOB.sh
 
 for partition in ${!PARTITIONS[@]}; do
     for i in ${!SOB_TESTS[@]}; do
@@ -223,18 +155,11 @@ for partition in ${!PARTITIONS[@]}; do
 #SBATCH -c 4        
 #SBATCH -t 00:20:00  
 #SBATCH -J sob-${i}-${partition}
-#SBATCH -o {{ env['MM_PROJECTS'] }}/SOB/run/sob-${i}-${partition}.log
+#SBATCH -o {{ env['MM_PROJECTS'] }}/SOB/results/sob-${i}-${partition}.log
 #SBATCH -L {{ env['MM_PROJECTS'] }}/SOB/work
 
 srun ${SOB_TESTS[$i]}
 EOF
+	echo "sbatch {{ env['MM_PROJECTS'] }}/SOB/run/sbatch-${i}-${partition}.sh" >> /usr/local/bin/run-SOB.sh
     done
 done     
-
-cat > /usr/local/bin/run-SOB.sh <<EOF
-for f in {{ env['MM_PROJECTS'] }}/SOB/run/*.sh
-do
-	sbatch $f
-done
-EOF
-chmod +x /usr/local/bin/run-SOB.sh

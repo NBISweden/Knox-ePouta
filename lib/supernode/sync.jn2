@@ -71,7 +71,7 @@ done
 # See: https://www.nextflow.io/
 mkdir -p /usr/local/bin/
 if [ ! -x /usr/local/bin/nextflow ]; then
-    curl -fsSL get.nextflow.io | bash
+    curl --proxy http://uu_proxy:3128 -fsSL get.nextflow.io | bash
     # Moving nextflow to /usr/local/bin
     mv -f nextflow /usr/local/bin/.
     chmod +rx /usr/local/bin/nextflow
