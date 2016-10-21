@@ -8,3 +8,5 @@ systemctl enable nfs-server
 # systemctl enable nfs-lock
 # systemctl enable nfs-idmap
 
+# free pagecache, dentries and inodes
+echo 3 > /proc/sys/vm/drop_caches

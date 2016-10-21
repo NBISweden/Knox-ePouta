@@ -64,13 +64,14 @@ git config --global https.proxy ${http_proxy/http/https}
 
 declare -A PARTITIONS
 PARTITIONS=(\
-    ['mm']='compute1,compute2,compute3' \
-    ['epouta']='epouta1,epouta2,epouta3' \
-    ['mm2-epouta1']='compute1,compute2,epouta1' \
-    ['epouta2-mm1']='epouta2,epouta3,compute3' \
-    ['mm1-epouta2']='compute3,epouta2,epouta3' \
-    ['epouta1-mm2']='epouta1,compute1,compute2' \
+    ['mm']='compute1 compute2 compute3' \
+    ['mm2-epouta1']='compute1 compute2 epouta1' \
+    ['mm1-epouta2']='compute3 epouta2 epouta3' \
+    ['epouta']='epouta1 epouta2 epouta3' \
+    ['epouta1-mm2']='epouta1 compute1 compute2' \
+    ['epouta2-mm1']='epouta2 epouta3 compute3' \
 )
+declare -a _NODES
 
 rm -f ~/.nextflow.log
 #rm -rf ~/.nextflow # Don't clean this one, that's where the dependencies are
@@ -86,20 +87,39 @@ if [ ! -d {{ env['MM_PROJECTS'] }}/CAW ]; then
 fi
 chmod 757 {{ env['MM_PROJECTS'] }}/CAW
 
-rm -f {{ env['MM_PROJECTS'] }}/CAW/.nextflow.history {{ env['MM_PROJECTS'] }}/CAW/.nextflow.log*
-rm -rf {{ env['MM_PROJECTS'] }}/CAW/{work,Preprocessing}
+# rm -f {{ env['MM_PROJECTS'] }}/CAW/.nextflow.history {{ env['MM_PROJECTS'] }}/CAW/.nextflow.log*
+# rm -rf {{ env['MM_PROJECTS'] }}/CAW/{work,Preprocessing}
 
 cat > /usr/local/bin/run-CAW.sh <<EOF
-#cd {{ env['MM_PROJECTS'] }}/CAW
+set -x -e
+for n in compute{1..3} epouta{1..3}; do sudo scontrol update NodeName=\$n Weight=1; done
+cd {{ env['MM_PROJECTS'] }}/CAW
 export NXF_WORK={{ env['MM_PROJECTS'] }}/CAW/work
 export NXF_DEBUG=1
 rm -rf ~/results/CAW
-mkdir -p ~/results/CAW
+mkdir -p ~/results/CAW/timeline
 EOF
 chmod +x /usr/local/bin/run-CAW.sh
 
 for partition in ${!PARTITIONS[@]}; do
-    echo "nextflow run /home/centos/{{ env['VAULT'] }}/CAW.nf -c /home/centos/{{ env['VAULT'] }}/CAW.config --partition ${partition} --sample {{ env['MM_PROJECTS'] }}/CAW/data/tsv/sample.tsv -with-timeline ~/results/CAW/${partition}.timeline.html > ~/results/CAW/${partition}.log" >> /usr/local/bin/run-CAW.sh
+    _NODES=(${PARTITIONS[$partition]})
+    cat >> /usr/local/bin/run-CAW.sh <<EOF
+rm -rf {{ env['MM_PROJECTS'] }}/CAW/{work,Preprocessing}
+sync
+# cd
+# sudo umount {{ env['CAW_DATA'] }}
+# sudo mount -t nfs storage:/mnt/data {{ env['CAW_DATA'] }} || exit 1
+# sudo umount {{ env['MM_PROJECTS'] }}
+# sudo mount -t nfs storage:/mnt/projects {{ env['MM_PROJECTS'] }} || exit 1
+# cd {{ env['MM_PROJECTS'] }}/CAW
+sudo scontrol update NodeName=${_NODES[0]} Weight=1
+sudo scontrol update NodeName=${_NODES[1]} Weight=2
+sudo scontrol update NodeName=${_NODES[2]} Weight=3
+nextflow run /home/centos/{{ env['VAULT'] }}/CAW.nf -c /home/centos/{{ env['VAULT'] }}/CAW.config --partition ${partition} --sample {{ env['MM_PROJECTS'] }}/CAW/data/tsv/sample.tsv -with-timeline ~/results/CAW/timeline/${partition}.html > ~/results/CAW/${partition}.log
+sudo scontrol update NodeName=${_NODES[0]} Weight=1
+sudo scontrol update NodeName=${_NODES[1]} Weight=1
+sudo scontrol update NodeName=${_NODES[2]} Weight=1
+EOF
 done
 
 
@@ -113,21 +133,33 @@ fi
 chmod 757 {{ env['MM_PROJECTS'] }}/WGS
 
 #rm -rf ~/.nextflow # Don't clean this one, that's where the dependencies are
-rm -f {{ env['MM_PROJECTS'] }}/WGS/.nextflow.history {{ env['MM_PROJECTS'] }}/WGS/.nextflow.log*
-rm -rf {{ env['MM_PROJECTS'] }}/WGS/work
+# rm -f {{ env['MM_PROJECTS'] }}/WGS/.nextflow.history {{ env['MM_PROJECTS'] }}/WGS/.nextflow.log*
+# rm -rf {{ env['MM_PROJECTS'] }}/WGS/work
 
 cat > /usr/local/bin/run-WGS.sh <<EOF
-#cd {{ env['MM_PROJECTS'] }}/WGS
+set -x -e
+for n in compute{1..3} epouta{1..3}; do sudo scontrol update NodeName=\$n Weight=1; done
 export NXF_WORK={{ env['MM_PROJECTS'] }}/WGS/work
 export NXF_DEBUG=1
 rm -rf ~/results/WGS
-mkdir -p ~/results/WGS
+mkdir -p ~/results/WGS/timeline
 EOF
 chmod +x /usr/local/bin/run-WGS.sh
 
 # Adjusting the wgs.config
 for partition in ${!PARTITIONS[@]}; do
-    echo "nextflow run /home/centos/{{ env['VAULT'] }}/WGS.nf -c /home/centos/{{ env['VAULT'] }}/WGS.config --partition ${partition} --datadir {{ env['MM_PROJECTS'] }}/WGS/data -with-timeline ~/results/WGS/${partition}.timeline.html > ~/results/WGS/${partition}.log" >> /usr/local/bin/run-WGS.sh
+    _NODES=(${PARTITIONS[$partition]})
+    cat > /usr/local/bin/run-WGS.sh <<EOF
+rm -rf {{ env['MM_PROJECTS'] }}/WGS/work
+sync
+sudo scontrol update NodeName=${_NODES[0]} Weight=1
+sudo scontrol update NodeName=${_NODES[1]} Weight=2
+sudo scontrol update NodeName=${_NODES[2]} Weight=3
+nextflow run /home/centos/{{ env['VAULT'] }}/WGS.nf -c /home/centos/{{ env['VAULT'] }}/WGS.config --partition ${partition} --datadir {{ env['MM_PROJECTS'] }}/WGS/data -with-timeline ~/results/WGS/timeline/${partition}.html > ~/results/WGS/${partition}.log
+sudo scontrol update NodeName=${_NODES[0]} Weight=1
+sudo scontrol update NodeName=${_NODES[1]} Weight=1
+sudo scontrol update NodeName=${_NODES[2]} Weight=1
+EOF
 done
 
 ###################################################
@@ -141,14 +173,17 @@ declare -a SOB_TESTS=(\
 'sob -w -R 5000 -n 50 -s 128m -b 64k' \
 )
 
-rm -rf {{ env['MM_PROJECTS'] }}/SOB/{work,results,run}
-mkdir -p {{ env['MM_PROJECTS'] }}/SOB/{work,results,run}
+rm -rf ~/SOB/run
+mkdir -p ~/SOB/run
+
+# rm -rf {{ env['MM_PROJECTS'] }}/SOB/{work,results}
+mkdir -p {{ env['MM_PROJECTS'] }}/SOB/{work,results}
 :> /usr/local/bin/run-SOB.sh
 chmod +x /usr/local/bin/run-SOB.sh
 
 for partition in ${!PARTITIONS[@]}; do
     for i in ${!SOB_TESTS[@]}; do
-	cat > {{ env['MM_PROJECTS'] }}/SOB/run/sbatch-${i}-${partition}.sh <<EOF
+	cat > ~/SOB/run/sbatch-${i}-${partition}.sh <<EOF
 #!/bin/bash -l
 
 #SBATCH -p ${partition}
@@ -160,6 +195,6 @@ for partition in ${!PARTITIONS[@]}; do
 
 srun ${SOB_TESTS[$i]}
 EOF
-	echo "sbatch {{ env['MM_PROJECTS'] }}/SOB/run/sbatch-${i}-${partition}.sh" >> /usr/local/bin/run-SOB.sh
+	echo "sbatch ~/SOB/run/sbatch-${i}-${partition}.sh" >> /usr/local/bin/run-SOB.sh
     done
 done     

@@ -286,4 +286,5 @@ module ()
 export -f module
 EOF
 
-
+# free pagecache, dentries and inodes
+echo 3 > /proc/sys/vm/drop_caches
