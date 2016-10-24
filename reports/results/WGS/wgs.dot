@@ -1,0 +1,114 @@
+digraph epouta {
+p0 [shape=point,label="",fixedsize=true,width=0.1];
+p1 [label="index_bamfile"];
+p0 -> p1 [label="bamfile"];
+
+p1 [label="index_bamfile"];
+p3 [label="manta"];
+p1 -> p3 [label="bamfile_index"];
+
+p2 [shape=point,label="",fixedsize=true,width=0.1];
+p3 [label="manta"];
+p2 -> p3 [label="bamfile"];
+
+p3 [label="manta"];
+p7 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+p3 -> p7 [label="manta_vcf"];
+
+p4 [shape=point,label="",fixedsize=true,width=0.1];
+p5 [label="create_fastq"];
+p4 -> p5 [label="bamfile"];
+
+p5 [label="create_fastq"];
+p6 [label="fermikit"];
+p5 -> p6 [label="fastq"];
+
+p6 [label="fermikit"];
+p7 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+p6 -> p7 [label="fermi_vcf"];
+
+p7 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+p9 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="tap"];
+p7 -> p9;
+
+p8 [shape=point,label="",fixedsize=true,width=0.1,xlabel="channel"];
+p11 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="buffer"];
+p8 -> p11 [label="masks"];
+
+p9 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="tap"];
+p12 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="spread"];
+p9 -> p12;
+
+p9 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="tap"];
+p10 [shape=point];
+p9 -> p10 [label="vcfs"];
+
+p11 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="buffer"];
+p12 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="spread"];
+p11 -> p12;
+
+p12 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="spread"];
+p13 [label="mask_beds"];
+p12 -> p13 [label="mask_input"];
+
+p13 [label="mask_beds"];
+p14 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="tap"];
+p13 -> p14;
+
+p14 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="tap"];
+p15 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="filter"];
+p14 -> p15;
+
+p14 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="tap"];
+p20 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="tap"];
+p14 -> p20;
+
+p15 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="filter"];
+p16 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="toList"];
+p15 -> p16;
+
+p16 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="toList"];
+p17 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+p16 -> p17;
+
+p17 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+p18 [label="intersect_files"];
+p17 -> p18 [label="intersect_input"];
+
+p18 [label="intersect_files"];
+p19 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="flatten"];
+p18 -> p19 [label="intersections"];
+
+p19 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="flatten"];
+p22 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+p19 -> p22;
+
+p20 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="tap"];
+p22 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+p20 -> p22;
+
+p20 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="tap"];
+p21 [shape=point];
+p20 -> p21 [label="masked_vcfs"];
+
+p22 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+p23 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="tap"];
+p22 -> p23;
+
+p23 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="tap"];
+p24 [label="variant_effect_predictor"];
+p23 -> p24;
+
+p23 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="tap"];
+p25 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="tap"];
+p23 -> p25;
+
+p25 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="tap"];
+p27 [label="snpEff"];
+p25 -> p27;
+
+p25 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="tap"];
+p26 [shape=point];
+p25 -> p26 [label="annotate_files"];
+
+}

@@ -1,0 +1,199 @@
+<!doctype html>
+<!--
+  ~ Copyright (c) 2013-2016, Centre for Genomic Regulation (CRG).
+  ~ Copyright (c) 2013-2016, Paolo Di Tommaso and the respective authors.
+  ~
+  ~   This file is part of 'Nextflow'.
+  ~
+  ~   Nextflow is free software: you can redistribute it and/or modify
+  ~   it under the terms of the GNU General Public License as published by
+  ~   the Free Software Foundation, either version 3 of the License, or
+  ~   (at your option) any later version.
+  ~
+  ~   Nextflow is distributed in the hope that it will be useful,
+  ~   but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~   GNU General Public License for more details.
+  ~
+  ~   You should have received a copy of the GNU General Public License
+  ~   along with Nextflow.  If not, see <http://www.gnu.org/licenses/>.
+  -->
+
+<html>
+<head>
+<script type="text/javascript">
+var prot = (("https:" == document.location.protocol) ? "https://" : "http://");
+document.write(unescape("%3Cscript src='" + prot + "code.jquery.com/jquery-latest.min.js' type='text/javascript' %3E%3C/script%3E"));
+document.write(unescape("%3Cscript src='" + prot + "d3js.org/d3.v3.min.js' charset='utf-8' type='text/javascript' %3E%3C/script%3E"));
+document.write(unescape("%3Cscript src='" + prot + "cdn.rawgit.com/nextflow-io/d3-timeline/82622c4cc35bac7283b3a317826b0709ac1ae476/src/d3-timeline.js' type='text/javascript' %3E%3C/script%3E"));
+document.write(unescape("%3Clink href='" + prot + "fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css' %3E%3C/link%3E"));
+</script>
+<style type="text/css">
+* {
+  font-family: 'Lato', 'Helvetica Neue', Arial, Helvetica, sans-serif;
+}
+
+.axis path,
+.axis line {
+fill: none;
+  stroke: black;
+  shape-rendering: crispEdges;
+}
+
+.axis text {
+  font-size: 10px;
+}
+
+div#timeline g text {
+  font-size: 13px;
+}
+
+text.timeline-label {
+  font-size: 13px;
+}
+
+#timeline2 .axis {
+  transform: translate(0px,30px);
+  -ms-transform: translate(0px,30px); /* IE 9 */
+  -webkit-transform: translate(0px,30px); /* Safari and Chrome */
+  -o-transform: translate(0px,30px); /* Opera */
+  -moz-transform: translate(0px,30px); /* Firefox */
+}
+
+.coloredDiv {
+  height:20px; width:20px; float:left;
+}
+
+#footer {
+  padding-top: 3em; color: #bfbfbf; font-size: 13px;
+}
+
+#footer a:visited {
+  color: #bfbfbf;
+  text-decoration: underline;
+}
+</style>
+<script type="text/javascript">
+var handler=null;
+// see https://github.com/mbostock/d3/wiki/Ordinal-Scales#category20c
+var colors = d3.scale.category20c().domain(d3.range(0,20)).range()
+
+function c1(index) { return "#bdbdbd"; }
+function c2(index) { return colors[index % 16]; } // <-- note: uses only the first 16 colors
+
+var elapsed="18m 24s"
+var beginningMillis=1476949370770;
+var endingMillis=1476950474586;
+var data=[
+{"label": "Mapping (1)", "times": [{"starting_time": 1476949376315, "ending_time": 1476949377244, "color":c1(0)}, {"starting_time": 1476949377244, "ending_time": 1476949500079, "color":c2(0), "label": "2m 33s \/ 5.7 GB"}, {"starting_time": 1476949500079, "ending_time": 1476949529292, "color":c1(0)}]},
+{"label": "Mapping (2)", "times": [{"starting_time": 1476949377231, "ending_time": 1476949380007, "color":c1(0)}, {"starting_time": 1476949380007, "ending_time": 1476949458975, "color":c2(0), "label": "1m 35s \/ 5.7 GB"}, {"starting_time": 1476949458975, "ending_time": 1476949472515, "color":c1(0)}]},
+{"label": "Mapping (3)", "times": [{"starting_time": 1476949377918, "ending_time": 1476949380109, "color":c1(0)}, {"starting_time": 1476949380109, "ending_time": 1476949493320, "color":c2(0), "label": "2m 3s \/ 5.7 GB"}, {"starting_time": 1476949493320, "ending_time": 1476949501282, "color":c1(0)}]},
+{"label": "RenameSingleBam (1)", "times": [{"starting_time": 1476949529746, "ending_time": 1476949560302, "color":c1(1)}, {"starting_time": 1476949560302, "ending_time": 1476949560402, "color":c2(1), "label": "30.6s \/ 110.5 MB"}]},
+{"label": "MergeBam (1)", "times": [{"starting_time": 1476949530220, "ending_time": 1476949560413, "color":c1(2)}, {"starting_time": 1476949560413, "ending_time": 1476949562324, "color":c2(2), "label": "30.2s \/ 130.2 MB"}]},
+{"label": "MarkDuplicates (1)", "times": [{"starting_time": 1476949560971, "ending_time": 1476949561311, "color":c1(3)}, {"starting_time": 1476949561311, "ending_time": 1476949572970, "color":c2(3), "label": "32.3s \/ 4.5 GB"}, {"starting_time": 1476949572970, "ending_time": 1476949593311, "color":c1(3)}]},
+{"label": "MarkDuplicates (2)", "times": [{"starting_time": 1476949561455, "ending_time": 1476949591309, "color":c1(3)}, {"starting_time": 1476949591309, "ending_time": 1476949601300, "color":c2(3), "label": "29.9s \/ 4.5 GB"}]},
+{"label": "CreateIntervals (1)", "times": [{"starting_time": 1476949593910, "ending_time": 1476949595308, "color":c1(4)}, {"starting_time": 1476949595308, "ending_time": 1476949969961, "color":c2(4), "label": "6m 32s \/ 7 GB"}, {"starting_time": 1476949969961, "ending_time": 1476949985412, "color":c1(4)}]},
+{"label": "Realign (1)", "times": [{"starting_time": 1476949985974, "ending_time": 1476949986404, "color":c1(5)}, {"starting_time": 1476949986404, "ending_time": 1476950006542, "color":c2(5), "label": "32.4s \/ 6.6 GB"}, {"starting_time": 1476950006542, "ending_time": 1476950018414, "color":c1(5)}]},
+{"label": "CreateRecalibrationTable (1)", "times": [{"starting_time": 1476950019652, "ending_time": 1476950020410, "color":c1(6)}, {"starting_time": 1476950020410, "ending_time": 1476950214145, "color":c2(6), "label": "4m 2s \/ 7 GB"}, {"starting_time": 1476950214145, "ending_time": 1476950261492, "color":c1(6)}]},
+{"label": "CreateRecalibrationTable (2)", "times": [{"starting_time": 1476950019942, "ending_time": 1476950020411, "color":c1(6)}, {"starting_time": 1476950020411, "ending_time": 1476950382551, "color":c2(6), "label": "7m 2s \/ 7 GB"}, {"starting_time": 1476950382551, "ending_time": 1476950441482, "color":c1(6)}]},
+{"label": "RecalibrateBam (1)", "times": [{"starting_time": 1476950262328, "ending_time": 1476950263458, "color":c1(7)}, {"starting_time": 1476950263458, "ending_time": 1476950270459, "color":c2(7), "label": "33.1s \/ 7 GB"}, {"starting_time": 1476950270459, "ending_time": 1476950295452, "color":c1(7)}]},
+{"label": "RecalibrateBam (2)", "times": [{"starting_time": 1476950441995, "ending_time": 1476950442472, "color":c1(7)}, {"starting_time": 1476950442472, "ending_time": 1476950449755, "color":c2(7), "label": "32.5s \/ 7 GB"}, {"starting_time": 1476950449755, "ending_time": 1476950474483, "color":c1(7)}]}
+]
+
+
+function getTickFormat() {
+  var MIN = 1000 * 60
+  var HOUR = MIN * 60
+  var DAY = HOUR * 24
+  var delta = (endingMillis - beginningMillis)
+
+  if( delta < 2 * MIN ) {
+    return {
+      format: d3.time.format("%S"),
+      tickTime: d3.time.seconds,
+      tickInterval: 5,
+      tickSize: 6
+    }
+  }
+
+  if( delta < 2 * HOUR ) {
+    return {
+      format: d3.time.format("%M"),
+      tickTime: d3.time.minutes,
+      tickInterval: 5,
+      tickSize: 6
+    }
+  }
+
+  if( delta < 2 * DAY ) {
+    return {
+      format: d3.time.format("%H:%M"),
+      tickTime: d3.time.hours,
+      tickInterval: 1,
+      tickSize: 6
+    }
+  }
+
+  return {
+    format: d3.time.format("%b %e %H:%M"),
+    tickTime: d3.time.hours,
+    tickInterval: 6,
+    tickSize: 6
+  }
+}
+
+function getLabelMargin(scale) {
+    $('<span class="labelSpan" style="display: none"></span>').appendTo('body');
+
+    var labelMargin = 0
+    $.each(data, function (key, value) {
+      labelMargin = Math.max(labelMargin, $('.labelSpan').html(value.label).width());
+    });
+
+    $('.labelSpan').remove();
+
+    return (labelMargin * scale);
+}
+
+function render() {
+  handler=null;
+  $("#timeline").empty()
+  $('#label_elapsed').text(elapsed)
+  $('#label_launch').text( d3.time.format('%d %b %Y %H:%M')(new Date(beginningMillis)) )
+
+  var width = $(window).width();
+  var chart = d3.timeline()
+    .stack() // toggles graph stacking
+    .margin({left:getLabelMargin(0.85), right:100, top:0, bottom:0})
+    .tickFormat( getTickFormat() )
+    .rowSeperators('#f5f5f5')
+    .showTimeAxisTick()
+    ;
+  var svg = d3.select("#timeline").append("svg").attr("width", width).datum(data).call(chart);
+}
+
+function hrz() {
+if( handler != null ) clearTimeout(handler)
+  handler = setTimeout(render, 150);
+}
+
+$(document).ready(render)
+$(window).resize(hrz); // resize the applet on window resize
+</script>
+</head>
+
+<body>
+<div>
+  <h3>Processes execution timeline</h3>
+  <p>
+    Launch time: <span id='label_launch'> </span><br>
+    Elapsed time: <span id='label_elapsed'> </span>
+  </p>
+  <div id="timeline"></div>
+</div>
+
+<div id='footer'>
+  Created with Nextflow -- <a href='http://www.nextflow.io' target='_blank'>http://nextflow.io</a>
+</div>
+</body>
+</html>

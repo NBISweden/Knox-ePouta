@@ -7,13 +7,14 @@ countries.
 
 We sat up a test project that runs on Knox (in Sweden), and uses
 Epouta's virtual machines (VMs in Finland) to extend the list of
-compute nodes. The main limitation is the disk accesses, i.e. the
+compute nodes. The main limitation is the disk access, i.e. the
 network file system (NFS) (cf. the last test).
 
-The two workflows we tested already run on `milou` at Uppmax, and therefore use
-`slurm`. We instantiated 3 compute nodes on Knox and 3 in
-Epouta. After we installed all the dependencies for those workflows on the compute nodes,
-we distributed the compute nodes in slurm partitions as follows.
+The two workflows we tested already run on `milou` at Uppmax, and
+therefore use `slurm`. We instantiated 3 compute nodes on Knox and 3
+in Epouta. After we installed all the dependencies for those workflows
+on the compute nodes, we distributed the compute nodes in slurm
+partitions as follows.
 
 Moreover, when a task from the workflow only requires one node, we
 were interested in finding out if the first node on the slurm
@@ -47,21 +48,19 @@ sensitive data, as in Mosler.
 The workflow runs using nextflow. We ran it on a small non-sensitive
 data sample, and recorded the elapsed time, for each partition.
 
-`nextflow run MultiFQtoVC.nf -c <slurm_partition>.config --sample /mnt/projects/CAW/data/tsv/sample.tsv`
+`nextflow run MultiFQtoVC.nf -c <slurm_partition>.config --sample <sample.tsv>`
 
 The results are as follows:
 
 | Partition     | Elapsed Time   |
-| ------------- | --------------:|
-| mm            | |
-| mm2-epouta1   | |
-| mm1-epouta2   | |
-| epouta        | |
-| epouta1-mm2   | |
-| epouta2-mm1   | |
-| milou         | |
-
-> Conclusion: The first compute node on the slurm partition matters.
+| ------------- |:-------------- |
+| mm            | [](results/CAW/timeline/mm.html)                 |
+| mm2-epouta1   | [23m 1s](results/CAW/timeline/mm2-epouta1.html)  |
+| mm1-epouta2   | [22m 53s](results/CAW/timeline/mm1-epouta2.html) |
+| epouta        | [15m 28s](results/CAW/timeline/epouta.html) &#9754;     |
+| epouta1-mm2   | [23m 32s](results/CAW/timeline/epouta1-mm2.html) |
+| epouta2-mm1   | [22m 24s](results/CAW/timeline/epouta2-mm1.html)        |
+| milou         | [](results/CAW/timeline/milou.html)              |
 
 # Whole Genome Sequencing Structural Variation Pipeline
 
@@ -75,14 +74,14 @@ same partitions, we ran the
 The results are as follows:
 
 | Partition     | Elapsed Time   |
-| ------------- | --------------:|
-| mm            | |
-| mm2-epouta1   | |
-| mm1-epouta2   | |
-| epouta        | |
-| epouta1-mm2   | |
-| epouta2-mm1   | |
-| milou         | |
+| ------------- |:-------------- |
+| mm            | [9m 42s](results/CAW/timeline/mm.html)          |
+| mm2-epouta1   | [9m 11s](results/CAW/timeline/mm2-epouta1.html) |
+| mm1-epouta2   | [9m 41s](results/CAW/timeline/mm1-epouta2.html) |
+| epouta        | [11m 12s](results/CAW/timeline/epouta.html) &#9754; |
+| epouta1-mm2   | [9m 40s](results/CAW/timeline/epouta1-mm2.html) |
+| epouta2-mm1   | [9m 11s](results/CAW/timeline/epouta2-mm1.html) |
+| milou         | [](results/CAW/timeline/milou.html)             |
 
 # NFS stress test
 
@@ -91,7 +90,10 @@ files from the compute nodes onto an NFS-shared location, using
 [sob](https://www.pdc.kth.se/~pek/sob).
 
 
-> Conclusion: NFS is a real bottleneck and should be avoided.
+# Conclusions
+
+* The first compute node on the slurm partition matters.
+* NFS is a real bottleneck and should be avoided.
 
 # Suggestions for Future Work
 

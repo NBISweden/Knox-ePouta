@@ -1,0 +1,55 @@
+N E X T F L O W  ~  version 0.22.3
+Launching `/home/centos/vault/CAW.nf` [backstabbing_mcnulty] - revision: d17ea5cf0a
+FASTQ files and IDs to process:  -- [tcga.cl, tcga.cl.normal__0, tcga.cl.normal_1, /mnt/projects/CAW/data/tcga.cl.normal_L001_R1.fastq.gz, /mnt/projects/CAW/data/tcga.cl.normal_L001_R2.fastq.gz]
+FASTQ files and IDs to process:  -- [tcga.cl, tcga.cl.tumor__1, tcga.cl.tumor_1, /mnt/projects/CAW/data/tcga.cl.tumor_L001_R1.fastq.gz, /mnt/projects/CAW/data/tcga.cl.tumor_L001_R2.fastq.gz]
+FASTQ files and IDs to process:  -- [tcga.cl, tcga.cl.tumor__1, tcga.cl.tumor_2, /mnt/projects/CAW/data/tcga.cl.tumor_L002_R1.fastq.gz, /mnt/projects/CAW/data/tcga.cl.tumor_L002_R2.fastq.gz]
+[warm up] executor > slurm
+WARN: Duplicate output channel name: 'tcga.cl' in the script context -- it's worth to rename it to avoid possible conflicts
+[3e/1ff791] Submitted process > Mapping (1)
+[07/1e5542] Submitted process > Mapping (2)
+[98/63ff22] Submitted process > Mapping (3)
+BAM files before sorting into group or single: -- [tcga.cl, tcga.cl.tumor__1, tcga.cl.tumor_1, /mnt/projects/CAW/work/07/1e5542146ffd3f2f80cb61823774c5/tcga.cl.tumor_1.bam]
+BAM files before sorting into group or single: -- [tcga.cl, tcga.cl.tumor__1, tcga.cl.tumor_2, /mnt/projects/CAW/work/98/63ff222e03de47c1dba8f28d121fe8/tcga.cl.tumor_2.bam]
+BAM files before sorting into group or single: -- [tcga.cl, tcga.cl.normal__0, tcga.cl.normal_1, /mnt/projects/CAW/work/3e/1ff7912c3014d4ad5482fcfea2bd72/tcga.cl.normal_1.bam]
+Grouped BAMs before merge: -- [[tcga.cl, tcga.cl], tcga.cl.tumor__1, [tcga.cl.tumor_1, tcga.cl.tumor_2], [/mnt/projects/CAW/work/07/1e5542146ffd3f2f80cb61823774c5/tcga.cl.tumor_1.bam, /mnt/projects/CAW/work/98/63ff222e03de47c1dba8f28d121fe8/tcga.cl.tumor_2.bam]]
+Single BAMs before merge: -- [[tcga.cl], tcga.cl.normal__0, [tcga.cl.normal_1], [/mnt/projects/CAW/work/3e/1ff7912c3014d4ad5482fcfea2bd72/tcga.cl.normal_1.bam]]
+[70/fbd899] Submitted process > RenameSingleBam (1)
+[b8/7f993a] Submitted process > MergeBam (1)
+SINGLES:  -- [[tcga.cl], tcga.cl.normal__0, tcga.cl.normal_1, /mnt/projects/CAW/work/70/fbd899ab9923eaf25a474b9854a47a/tcga.cl.normal__0.bam]
+BAM list for MarkDuplicates:  -- [tcga.cl, tcga.cl.normal__0, /mnt/projects/CAW/work/70/fbd899ab9923eaf25a474b9854a47a/tcga.cl.normal__0.bam]
+GROUPED:  -- [[tcga.cl, tcga.cl], tcga.cl.tumor__1, tcga.cl.tumor_1:tcga.cl.tumor_2, /mnt/projects/CAW/work/b8/7f993a94b2a640d96ab6796ab04ccc/tcga.cl.tumor__1.bam]
+BAM list for MarkDuplicates:  -- [tcga.cl, tcga.cl.tumor__1, /mnt/projects/CAW/work/b8/7f993a94b2a640d96ab6796ab04ccc/tcga.cl.tumor__1.bam]
+[dd/817d4b] Submitted process > MarkDuplicates (1)
+[42/c3278d] Submitted process > MarkDuplicates (2)
+BAMs for IndelRealigner before groupTuple:  -- [tcga.cl, tcga.cl.tumor__1, /mnt/projects/CAW/work/42/c3278d5233ec7acd865438d94cf287/tcga.cl.tumor__1.md.bam, /mnt/projects/CAW/work/42/c3278d5233ec7acd865438d94cf287/tcga.cl.tumor__1.md.bai]
+BAMs for IndelRealigner before groupTuple:  -- [tcga.cl, tcga.cl.tumor__1, /mnt/projects/CAW/work/42/c3278d5233ec7acd865438d94cf287/tcga.cl.tumor__1.md.bam, /mnt/projects/CAW/work/42/c3278d5233ec7acd865438d94cf287/tcga.cl.tumor__1.md.bai]
+BAMs for IndelRealigner before groupTuple:  -- [tcga.cl, tcga.cl.normal__0, /mnt/projects/CAW/work/dd/817d4b40e942e753a32add22cfd244/tcga.cl.normal__0.md.bam, /mnt/projects/CAW/work/dd/817d4b40e942e753a32add22cfd244/tcga.cl.normal__0.md.bai]
+BAMs for IndelRealigner before groupTuple:  -- [tcga.cl, tcga.cl.normal__0, /mnt/projects/CAW/work/dd/817d4b40e942e753a32add22cfd244/tcga.cl.normal__0.md.bam, /mnt/projects/CAW/work/dd/817d4b40e942e753a32add22cfd244/tcga.cl.normal__0.md.bai]
+BAMs for RealignerTargetCreator grouped by overall subject/patient ID:  -- [tcga.cl, [tcga.cl.tumor__1, tcga.cl.normal__0], [/mnt/projects/CAW/work/42/c3278d5233ec7acd865438d94cf287/tcga.cl.tumor__1.md.bam, /mnt/projects/CAW/work/dd/817d4b40e942e753a32add22cfd244/tcga.cl.normal__0.md.bam], [/mnt/projects/CAW/work/42/c3278d5233ec7acd865438d94cf287/tcga.cl.tumor__1.md.bai, /mnt/projects/CAW/work/dd/817d4b40e942e753a32add22cfd244/tcga.cl.normal__0.md.bai]]
+BAMs for IndelRealigner grouped by overall subject/patient ID:  -- [tcga.cl, [tcga.cl.tumor__1, tcga.cl.normal__0], [/mnt/projects/CAW/work/42/c3278d5233ec7acd865438d94cf287/tcga.cl.tumor__1.md.bam, /mnt/projects/CAW/work/dd/817d4b40e942e753a32add22cfd244/tcga.cl.normal__0.md.bam], [/mnt/projects/CAW/work/42/c3278d5233ec7acd865438d94cf287/tcga.cl.tumor__1.md.bai, /mnt/projects/CAW/work/dd/817d4b40e942e753a32add22cfd244/tcga.cl.normal__0.md.bai]]
+[1b/60eb1c] Submitted process > CreateIntervals (1)
+Intervals passed to Realign:  -- /mnt/projects/CAW/work/1b/60eb1c6b74523dd056414d5bb8fe19/tcga.cl.intervals
+[22/e289b8] Submitted process > Realign (1)
+realignedBam to BaseRecalibrator:  -- [tcga.cl, tcga.cl.normal__0, /mnt/projects/CAW/work/22/e289b804e58f2bca3c3fc5cbbe3ded/tcga.cl.normal__0.md.real.bam, /mnt/projects/CAW/work/22/e289b804e58f2bca3c3fc5cbbe3ded/tcga.cl.normal__0.md.real.bai]
+realignedBam to BaseRecalibrator:  -- [tcga.cl, tcga.cl.tumor__1, /mnt/projects/CAW/work/22/e289b804e58f2bca3c3fc5cbbe3ded/tcga.cl.tumor__1.md.real.bam, /mnt/projects/CAW/work/22/e289b804e58f2bca3c3fc5cbbe3ded/tcga.cl.tumor__1.md.real.bai]
+[85/36e807] Submitted process > CreateRecalibrationTable (1)
+[fe/d61daf] Submitted process > CreateRecalibrationTable (2)
+Base recalibrated table for recalibration:  -- [tcga.cl, tcga.cl.tumor__1, /mnt/projects/CAW/work/85/36e807bff7e8073e7b4835238bffa2/tcga.cl.tumor__1.md.real.bam, /mnt/projects/CAW/work/85/36e807bff7e8073e7b4835238bffa2/tcga.cl.tumor__1.md.real.bai, /mnt/projects/CAW/work/85/36e807bff7e8073e7b4835238bffa2/tcga.cl.tumor__1.recal.table]
+[11/798a00] Submitted process > RecalibrateBam (1)
+Recalibrated Bam for variant Calling:  -- [tcga.cl, tcga.cl.tumor__1, /mnt/projects/CAW/work/11/798a003ff65fdd105d776ca271a851/tcga.cl.tumor__1.recal.bam, /mnt/projects/CAW/work/11/798a003ff65fdd105d776ca271a851/tcga.cl.tumor__1.recal.bai]
+Tumor Bam for variant Calling:  -- [tcga.cl, tcga.cl.tumor__1, /mnt/projects/CAW/work/11/798a003ff65fdd105d776ca271a851/tcga.cl.tumor__1.recal.bam, /mnt/projects/CAW/work/11/798a003ff65fdd105d776ca271a851/tcga.cl.tumor__1.recal.bai]
+Base recalibrated table for recalibration:  -- [tcga.cl, tcga.cl.normal__0, /mnt/projects/CAW/work/fe/d61daf0b7cf494a95a6fc37d92afe4/tcga.cl.normal__0.md.real.bam, /mnt/projects/CAW/work/fe/d61daf0b7cf494a95a6fc37d92afe4/tcga.cl.normal__0.md.real.bai, /mnt/projects/CAW/work/fe/d61daf0b7cf494a95a6fc37d92afe4/tcga.cl.normal__0.recal.table]
+[d1/c4a6a1] Submitted process > RecalibrateBam (2)
+Recalibrated Bam for variant Calling:  -- [tcga.cl, tcga.cl.normal__0, /mnt/projects/CAW/work/d1/c4a6a15fd317c6032d64f638b643c3/tcga.cl.normal__0.recal.bam, /mnt/projects/CAW/work/d1/c4a6a15fd317c6032d64f638b643c3/tcga.cl.normal__0.recal.bai]
+Normal Bam for variant Calling:  -- [tcga.cl, tcga.cl.normal__0, /mnt/projects/CAW/work/d1/c4a6a15fd317c6032d64f638b643c3/tcga.cl.normal__0.recal.bam, /mnt/projects/CAW/work/d1/c4a6a15fd317c6032d64f638b643c3/tcga.cl.normal__0.recal.bai]
+Bams for HaplotypeCaller:  -- [tcga.cl, tcga.cl.normal__0, /mnt/projects/CAW/work/d1/c4a6a15fd317c6032d64f638b643c3/tcga.cl.normal__0.recal.bam, /mnt/projects/CAW/work/d1/c4a6a15fd317c6032d64f638b643c3/tcga.cl.normal__0.recal.bai]
+Mapped Recalibrated Bam for variant Calling:  -- [tcga.cl, tcga.cl.normal__0, /mnt/projects/CAW/work/d1/c4a6a15fd317c6032d64f638b643c3/tcga.cl.normal__0.recal.bam, /mnt/projects/CAW/work/d1/c4a6a15fd317c6032d64f638b643c3/tcga.cl.normal__0.recal.bai, tcga.cl.tumor__1, /mnt/projects/CAW/work/11/798a003ff65fdd105d776ca271a851/tcga.cl.tumor__1.recal.bam, /mnt/projects/CAW/work/11/798a003ff65fdd105d776ca271a851/tcga.cl.tumor__1.recal.bai]
+CANCER ANALYSIS WORKFLOW
+Version     : 0.8
+Command line: nextflow run /home/centos/vault/CAW.nf -c /home/centos/vault/CAW.config --partition epouta1-mm2 --sample /mnt/projects/CAW/data/tsv/sample.tsv -with-timeline /home/centos/results/CAW/timeline/epouta1-mm2.html
+Completed at: Thu Oct 20 10:01:14 CEST 2016
+Duration    : 18m 24s
+Success     : true
+workDir     : /mnt/projects/CAW/work
+Exit status : 0
+Error report: -
