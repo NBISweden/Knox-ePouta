@@ -170,3 +170,9 @@ done
 mkdir -p {{ env['MM_PROJECTS'] }}/SOB
 chmod 757 {{ env['MM_PROJECTS'] }}/SOB
 chmod +x {{ env['VAULT'] }}/run-SOB.sh
+
+# # For all partitions
+# for partition in ${!PARTITIONS[@]}; do
+#     _NODES=(${PARTITIONS[$partition]})
+#     {{ env['VAULT'] }}/run-SOB.sh -n ${_NODES// /,} > ~/results/SOB/${partition}.log
+# done

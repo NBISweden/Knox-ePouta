@@ -1,0 +1,53 @@
+[centos@supernode ~]$ vault/run-SOB.sh -n compute3,compute2,epouta1
+Selected Compute Nodes: compute3 compute2 epouta1
+Selected Tests in [vault/sob-tests]
+
+##################
+Running SOB test: 'sob -rw -b 8m -s 10g'
+| compute3 ✓ | compute2 ✓ | epouta1 ✓ |
+Result: success
+* On compute3:
+Wrote 10240.000 MB in 317.376 s for 32.265 MB/s, 1 files
+Read 10240.000 MB in 227.051 s for 45.100 MB/s, 1 files
+* On compute2:
+Wrote 10240.000 MB in 300.535 s for 34.073 MB/s, 1 files
+Read 10240.000 MB in 235.773 s for 43.432 MB/s, 1 files
+* On epouta1:
+Wrote 10240.000 MB in 695.359 s for 14.726 MB/s, 1 files
+Read 10240.000 MB in 104.480 s for 98.009 MB/s, 1 files
+
+##################
+Running SOB test: 'sob -w -b 64k -s 1m -n 500 -o 50'
+| compute3 ✓ | compute2 ✓ | epouta1 ✓ |
+Result: success
+* On compute3:
+Wrote 500.000 MB in 61.725 s for 8.100 MB/s, 500 files
+* On compute2:
+Wrote 500.000 MB in 61.767 s for 8.095 MB/s, 500 files
+* On epouta1:
+Wrote 500.000 MB in 81.102 s for 6.165 MB/s, 500 files
+
+##################
+Running SOB test: 'sob -w -R 5000 -n 50 -s 128m -b 64k'
+| compute3 ✓ | compute2 ✓ | epouta1 ✓ |
+Result: success
+* On compute3:
+Wrote 6400.000 MB in 241.432 s for 26.509 MB/s, 50 files
+* On compute2:
+Wrote 6400.000 MB in 244.519 s for 26.174 MB/s, 50 files
+* On epouta1:
+Wrote 6400.000 MB in 316.702 s for 20.208 MB/s, 50 files
+
+##################
+Running SOB test: 'sob -rw -b 128k -s 1g'
+| compute3 ✓ | compute2 ✓ | epouta1 ✓ |
+Result: success
+* On compute3:
+Wrote 1024.000 MB in 28.820 s for 35.531 MB/s, 1 files
+Read 1024.000 MB in 0.273 s for 3752.689 MB/s, 1 files
+* On compute2:
+Wrote 1024.000 MB in 30.239 s for 33.863 MB/s, 1 files
+Read 1024.000 MB in 0.306 s for 3347.075 MB/s, 1 files
+* On epouta1:
+Wrote 1024.000 MB in 41.938 s for 24.417 MB/s, 1 files
+Read 1024.000 MB in 0.304 s for 3372.855 MB/s, 1 files

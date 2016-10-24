@@ -186,4 +186,7 @@ EOF
 
     fi
 
+    # Cleaning up the working folder for that test.
+    rm -rf $WORK/test-${i}
+
 done
