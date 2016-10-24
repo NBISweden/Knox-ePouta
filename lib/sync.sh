@@ -150,29 +150,51 @@ if [ $WITH_KEY = yes ]; then
 	rm -f ${MM_TMP}/ssh_key ${MM_TMP}/ssh_key.pub
 	ssh-keygen -q -t rsa -N "" -f ${MM_TMP}/ssh_key -C supernode
     fi
+    if [ ! -e ${MM_TMP}/ssh_key.user ] || [ -e ${MM_TMP}/ssh_key.user.pub ]; then
+	rm -f ${MM_TMP}/ssh_key.user ${MM_TMP}/ssh_key.user.pub
+	ssh-keygen -q -t rsa -N "" -f ${MM_TMP}/ssh_key.user -C supernode
+    fi
     cat > ${MM_TMP}/ssh_key.config <<EOF
 Host ${MACHINES[@]// /,}
         User root
         StrictHostKeyChecking no
         UserKnownHostsFile /dev/null
 EOF
+    cat > ${MM_TMP}/ssh_key.user.config <<EOF
+Host ${MACHINES[@]// /,}
+        User centos
+        StrictHostKeyChecking no
+        UserKnownHostsFile /dev/null
+EOF
     $MM_CONNECT scp -q -F ${SSH_CONFIG} ${MM_TMP}/ssh_key* ${MACHINE_IPs[supernode]}:${VAULT}/.
     $MM_CONNECT ssh -F ${SSH_CONFIG} ${MACHINE_IPs[supernode]} 'sudo bash -e -x 2>&1' <<EOF &>/dev/null
+# Root User
 mv ${VAULT}/ssh_key /root/.ssh/id_rsa
 mv ${VAULT}/ssh_key.pub /root/.ssh/id_rsa.pub
 mv ${VAULT}/ssh_key.config /root/.ssh/config
 chown root:root /root/.ssh/config /root/.ssh/id_rsa /root/.ssh/id_rsa.pub
 chmod 600 /root/.ssh/id_rsa /root/.ssh/config
 chmod 644 /root/.ssh/id_rsa.pub
+# Centos User
+mv ${VAULT}/ssh_key.user /home/centos/.ssh/id_rsa
+mv ${VAULT}/ssh_key.user.pub /home/centos/.ssh/id_rsa.pub
+mv ${VAULT}/ssh_key.user.config /home/centos/.ssh/config
+chown centos:centos /home/centos/.ssh/id_rsa /home/centos/.ssh/id_rsa.pub
+chmod 600 /home/centos/.ssh/id_rsa /home/centos/.ssh/config
+chmod 644 /home/centos/.ssh/id_rsa.pub
 EOF
     for machine in ${MACHINES[@]}
     do
 	[ "$machine" == "supernode" ] && continue
-	$MM_CONNECT scp -q -F ${SSH_CONFIG} ${MM_TMP}/ssh_key.pub ${MACHINE_IPs[$machine]}:${VAULT}/id_rsa.pub
+	$MM_CONNECT scp -q -F ${SSH_CONFIG} ${MM_TMP}/ssh_key.pub ${MM_TMP}/ssh_key.user.pub ${MACHINE_IPs[$machine]}:${VAULT}/.
 	$MM_CONNECT ssh -F ${SSH_CONFIG} ${MACHINE_IPs[$machine]} 'sudo bash -e -x 2>&1' <<EOF &>/dev/null
 sudo sed -i -e '/supernode/d' /root/.ssh/authorized_keys
-cat ${VAULT}/id_rsa.pub >> /root/.ssh/authorized_keys
-rm ${VAULT}/id_rsa.pub
+cat ${VAULT}/ssh_key.pub >> /root/.ssh/authorized_keys
+rm ${VAULT}/ssh_key.pub
+chown centos:centos /home/centos/.ssh/authorized_keys
+sudo sed -i -e '/supernode/d' /home/centos/.ssh/authorized_keys
+cat ${VAULT}/ssh_key.user.pub >> /home/centos/.ssh/authorized_keys
+rm ${VAULT}/ssh_key.user.pub
 EOF
     done
 fi
