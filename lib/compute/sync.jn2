@@ -247,11 +247,11 @@ done
 
 ##############################################################
 # SOB
-if [ ! -d {{ env['MM_PROJECTS'] }}/SOB ]; then
+if [ ! -x /usr/local/bin/sob ]; then
     mkdir -p {{ env['MM_PROJECTS'] }}/SOB
     pushd {{ env['MM_PROJECTS'] }}/SOB
-    gcc -o sob /home/centos/{{ env['VAULT'] }}/sw/sob/sob.c
-    mv sob /usr/local/bin/sob
+    gcc -o /usr/local/bin/sob /home/centos/{{ env['VAULT'] }}/sw/sob/sob.c
+    chmod +x /usr/local/bin/sob
     popd
 fi
 

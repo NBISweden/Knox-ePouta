@@ -166,35 +166,7 @@ done
 # SOB stress test
 # See: https://www.pdc.kth.se/~pek/sob/README
 
-declare -a SOB_TESTS=(\
-'sob -w -b 8m -s 24g' \
-'sob -w -b 64k -s 64k -n 500000 -o 5000' \
-'sob -rw -b 128k -s 16g -n 100' \
-'sob -w -R 5000 -n 50 -s 128m -b 64k' \
-)
-
-rm -rf ~/SOB/run
-mkdir -p ~/SOB/run
-
-# rm -rf {{ env['MM_PROJECTS'] }}/SOB/{work,results}
-mkdir -p {{ env['MM_PROJECTS'] }}/SOB/{work,results}
-:> /usr/local/bin/run-SOB.sh
-chmod +x /usr/local/bin/run-SOB.sh
-
-for partition in ${!PARTITIONS[@]}; do
-    for i in ${!SOB_TESTS[@]}; do
-	cat > ~/SOB/run/sbatch-${i}-${partition}.sh <<EOF
-#!/bin/bash -l
-
-#SBATCH -p ${partition}
-#SBATCH -c 4        
-#SBATCH -t 00:20:00  
-#SBATCH -J sob-${i}-${partition}
-#SBATCH -o {{ env['MM_PROJECTS'] }}/SOB/results/sob-${i}-${partition}.log
-#SBATCH -L {{ env['MM_PROJECTS'] }}/SOB/work
-
-srun ${SOB_TESTS[$i]}
-EOF
-	echo "sbatch ~/SOB/run/sbatch-${i}-${partition}.sh" >> /usr/local/bin/run-SOB.sh
-    done
-done     
+# rm -rf {{ env['MM_PROJECTS'] }}/SOB/work
+mkdir -p {{ env['MM_PROJECTS'] }}/SOB
+chmod 757 {{ env['MM_PROJECTS'] }}/SOB
+chmod +x {{ env['VAULT'] }}/run-SOB.sh
