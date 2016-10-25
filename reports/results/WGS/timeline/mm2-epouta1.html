@@ -81,13 +81,13 @@ var colors = d3.scale.category20c().domain(d3.range(0,20)).range()
 function c1(index) { return "#bdbdbd"; }
 function c2(index) { return colors[index % 16]; } // <-- note: uses only the first 16 colors
 
-var elapsed="9m 11s"
-var beginningMillis=1476796349062;
-var endingMillis=1476796899788;
+var elapsed="9m 43s"
+var beginningMillis=1477355363258;
+var endingMillis=1477355946049;
 var data=[
-{"label": "index_bamfile (1)", "times": [{"starting_time": 1476796352345, "ending_time": 1476796353642, "color":c1(0)}, {"starting_time": 1476796353642, "ending_time": 1476796394227, "color":c2(0), "label": "1m 31s \/ 128.9 MB"}, {"starting_time": 1476796394227, "ending_time": 1476796443667, "color":c1(0)}]},
-{"label": "manta (1)", "times": [{"starting_time": 1476796444593, "ending_time": 1476796445663, "color":c1(1)}, {"starting_time": 1476796445663, "ending_time": 1476796853365, "color":c2(1), "label": "7m 2s \/ 1 GB"}, {"starting_time": 1476796853365, "ending_time": 1476796866799, "color":c1(1)}]},
-{"label": "mask_beds (1)", "times": [{"starting_time": 1476796867409, "ending_time": 1476796868760, "color":c1(2)}, {"starting_time": 1476796868760, "ending_time": 1476796871553, "color":c2(2), "label": "31.4s \/ 237.9 MB"}, {"starting_time": 1476796871553, "ending_time": 1476796898769, "color":c1(2)}]}
+{"label": "index_bamfile (1)", "times": [{"starting_time": 1477355366564, "ending_time": 1477355367909, "color":c1(0)}, {"starting_time": 1477355367909, "ending_time": 1477355458927, "color":c2(0), "label": "1m 32s \/ -"}]},
+{"label": "manta (1)", "times": [{"starting_time": 1477355459781, "ending_time": 1477355460922, "color":c1(1)}, {"starting_time": 1477355460922, "ending_time": 1477355904363, "color":c2(1), "label": "7m 33s \/ 1 GB"}, {"starting_time": 1477355904363, "ending_time": 1477355913022, "color":c1(1)}]},
+{"label": "mask_beds (1)", "times": [{"starting_time": 1477355913853, "ending_time": 1477355915016, "color":c1(2)}, {"starting_time": 1477355915016, "ending_time": 1477355918050, "color":c2(2), "label": "31.2s \/ 191.7 MB"}, {"starting_time": 1477355918050, "ending_time": 1477355945023, "color":c1(2)}]}
 ]
 
 

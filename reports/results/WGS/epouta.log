@@ -1,0 +1,23 @@
+N E X T F L O W  ~  version 0.22.3
+Launching `/home/centos/vault/WGS.nf` [mad_panini] - revision: 11147ae6d4
+======================
+WGS-structvar pipeline
+======================
+Bamfile    : /mnt/data/CEUTrio.HiSeq.WGS.b37.NA12878.bam
+Scriptdir  : /home/centos/vault
+Datadir    : /mnt/projects/WGS/data
+Revision   : v0.2
+Work dir   : /mnt/projects/WGS/work
+Output dir : results
+Partition  : epouta
+Will run   : manta, indexbam
+
+[warm up] executor > slurm
+WARN: A variable named 'vcfs' already exists in script global context -- Consider renaming it 
+WARN: A variable named 'masked_vcfs' already exists in script global context -- Consider renaming it 
+WARN: A variable named 'masked_vcfs' already exists in script global context -- Consider renaming it 
+WARN: A variable named 'annotate_files' already exists in script global context -- Consider renaming it 
+WARN: A variable named 'annotate_files' already exists in script global context -- Consider renaming it 
+[e8/f41406] Submitted process > index_bamfile (1)
+[19/8dc3e3] Submitted process > manta (1)
+[b9/a7a6be] Submitted process > mask_beds (1)
