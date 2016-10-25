@@ -93,10 +93,9 @@ chmod 757 {{ env['MM_PROJECTS'] }}/CAW
 cat > /usr/local/bin/run-CAW.sh <<EOF
 set -x -e
 for n in compute{1..3} epouta{1..3}; do sudo scontrol update NodeName=\$n Weight=1; done
-cd {{ env['MM_PROJECTS'] }}/CAW
 export NXF_WORK={{ env['MM_PROJECTS'] }}/CAW/work
-export NXF_DEBUG=1
-rm -rf ~/results/CAW
+#export NXF_DEBUG=1
+#rm -rf ~/results/CAW
 mkdir -p ~/results/CAW/timeline
 EOF
 chmod +x /usr/local/bin/run-CAW.sh
@@ -105,16 +104,22 @@ for partition in ${!PARTITIONS[@]}; do
     _NODES=(${PARTITIONS[$partition]})
     cat >> /usr/local/bin/run-CAW.sh <<EOF
 rm -rf {{ env['MM_PROJECTS'] }}/CAW/{work,Preprocessing}
-sync
-# cd
-# sudo umount {{ env['CAW_DATA'] }}
-# sudo mount -t nfs storage:/mnt/data {{ env['CAW_DATA'] }} || exit 1
-# sudo umount {{ env['MM_PROJECTS'] }}
-# sudo mount -t nfs storage:/mnt/projects {{ env['MM_PROJECTS'] }} || exit 1
-# cd {{ env['MM_PROJECTS'] }}/CAW
+# sync
+cd
+sudo umount {{ env['CAW_DATA'] }}
+sudo mount -t nfs storage:/mnt/data {{ env['CAW_DATA'] }}
+sudo umount {{ env['MM_PROJECTS'] }}
+sudo mount -t nfs storage:/mnt/projects {{ env['MM_PROJECTS'] }}
+for n in \${_NODES[@]//,/ }; do
+ssh \$n sudo umount {{ env['CAW_DATA'] }}
+ssh \$n sudo mount -t nfs storage:/mnt/data {{ env['CAW_DATA'] }}
+ssh \$n sudo umount {{ env['MM_PROJECTS'] }}
+ssh \$n sudo mount -t nfs storage:/mnt/projects {{ env['MM_PROJECTS'] }}
+done
 sudo scontrol update NodeName=${_NODES[0]} Weight=1
 sudo scontrol update NodeName=${_NODES[1]} Weight=2
 sudo scontrol update NodeName=${_NODES[2]} Weight=3
+cd {{ env['MM_PROJECTS'] }}/CAW
 nextflow run /home/centos/{{ env['VAULT'] }}/CAW.nf -c /home/centos/{{ env['VAULT'] }}/CAW.config --partition ${partition} --sample {{ env['MM_PROJECTS'] }}/CAW/data/tsv/sample.tsv -with-timeline ~/results/CAW/timeline/${partition}.html > ~/results/CAW/${partition}.log
 sudo scontrol update NodeName=${_NODES[0]} Weight=1
 sudo scontrol update NodeName=${_NODES[1]} Weight=1
@@ -140,8 +145,8 @@ cat > /usr/local/bin/run-WGS.sh <<EOF
 set -x -e
 for n in compute{1..3} epouta{1..3}; do sudo scontrol update NodeName=\$n Weight=1; done
 export NXF_WORK={{ env['MM_PROJECTS'] }}/WGS/work
-export NXF_DEBUG=1
-rm -rf ~/results/WGS
+#export NXF_DEBUG=1
+#rm -rf ~/results/WGS
 mkdir -p ~/results/WGS/timeline
 EOF
 chmod +x /usr/local/bin/run-WGS.sh
@@ -149,9 +154,15 @@ chmod +x /usr/local/bin/run-WGS.sh
 # Adjusting the wgs.config
 for partition in ${!PARTITIONS[@]}; do
     _NODES=(${PARTITIONS[$partition]})
-    cat > /usr/local/bin/run-WGS.sh <<EOF
+    cat >> /usr/local/bin/run-WGS.sh <<EOF
 rm -rf {{ env['MM_PROJECTS'] }}/WGS/work
-sync
+#sync
+sudo umount {{ env['MM_PROJECTS'] }}
+sudo mount -t nfs storage:/mnt/projects {{ env['MM_PROJECTS'] }}
+for n in \${PARTITIONS[\$partition]}; do
+    ssh \$n sudo umount {{ env['MM_PROJECTS'] }}
+    ssh \$n sudo mount -t nfs storage:/mnt/projects {{ env['MM_PROJECTS'] }}
+done
 sudo scontrol update NodeName=${_NODES[0]} Weight=1
 sudo scontrol update NodeName=${_NODES[1]} Weight=2
 sudo scontrol update NodeName=${_NODES[2]} Weight=3
@@ -161,6 +172,7 @@ sudo scontrol update NodeName=${_NODES[1]} Weight=1
 sudo scontrol update NodeName=${_NODES[2]} Weight=1
 EOF
 done
+
 
 ###################################################
 # SOB stress test
