@@ -1,5 +1,5 @@
 #!/usr/bin/env nextflow
-# -*- mode: groovy;-*- 
+// -*- mode: groovy;-*-
 
 /*
 WGS Structural Variation Pipeline
