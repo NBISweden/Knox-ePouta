@@ -1,0 +1,30 @@
+N E X T F L O W  ~  version 0.22.3
+Launching `/home/centos/vault/CAW.nf` [reverent_meitner] - revision: e1cce79116
+Folder Preprocessing created
+Folder Preprocessing/NonRecalibrated created
+Folder Preprocessing/Recalibrated created
+[warm up] executor > slurm
+WARN: Duplicate output channel name: 'tcga.cl' in the script context -- it's worth to rename it to avoid possible conflicts
+[df/b9a844] Submitted process > Mapping (tcga.cl.normal_1)
+[30/6ed4c5] Submitted process > Mapping (tcga.cl.tumor_1)
+[71/789074] Submitted process > Mapping (tcga.cl.tumor_2)
+[ae/f81ec8] Submitted process > MergeBam (tcga.cl.tumor__1)
+[e1/723bc8] Submitted process > RenameSingleBam (tcga.cl.normal__0)
+[11/621e8e] Submitted process > MarkDuplicates (tcga.cl.tumor__1)
+[09/bd0746] Submitted process > MarkDuplicates (tcga.cl.normal__0)
+[0f/953289] Submitted process > CreateIntervals (tcga.cl)
+[60/bc5d84] Submitted process > Realign (tcga.cl)
+[1f/757742] Submitted process > CreateRecalibrationTable (tcga.cl.normal__0)
+[93/c22c30] Submitted process > CreateRecalibrationTable (tcga.cl.tumor__1)
+[90/913c21] Submitted process > RecalibrateBam (tcga.cl.normal__0)
+[56/9815d9] Submitted process > RecalibrateBam (tcga.cl.tumor__1)
+CANCER ANALYSIS WORKFLOW ~ v0.8.3
+Git info    : null - null [null]
+Project     : /home/centos/vault
+workDir     : /mnt/projects/CAW/work
+Command line: nextflow run /home/centos/vault/CAW.nf -c /home/centos/vault/CAW.config --partition epouta --sample /mnt/projects/CAW/data/tsv/sample.tsv -with-timeline /home/centos/results/CAW/timeline/epouta.html
+Completed at: Tue Oct 25 15:47:05 CEST 2016
+Duration    : 15m 32s
+Success     : true
+Exit status : 0
+Error report: -

@@ -7,8 +7,7 @@ countries.
 
 We sat up a test project that runs on Knox (in Sweden), and uses
 Epouta's virtual machines (VMs in Finland) to extend the list of
-compute nodes. The main limitation is the disk access, i.e. the
-network file system (NFS) (cf. the last test).
+compute nodes. 
 
 The two workflows we tested already run on `milou` at Uppmax, and
 therefore use `slurm`. We instantiated 3 compute nodes on Knox and 3
@@ -20,11 +19,6 @@ Moreover, when a task from the workflow only requires one node, we
 were interested in finding out if the first node on the slurm
 partition matters (marked with *).
 
-Finally, we ran a comparision with the same workflow running on
-`milou` with 3 compute nodes (similar to the ones in Knox and
-Epouta).
-
-
 | Partition     | #nodes in Knox | #nodes in Epouta | Notes |
 |:------------- |:--------------:|:----------------:|:----- |
 | mm            | 3              | 0                |       |
@@ -33,7 +27,6 @@ Epouta).
 | epouta        | 0              | 3                |       |
 | epouta1-mm2 * | 1              | 2                | epouta nodes first in the slurm listing |
 | epouta2-mm1 * | 2              | 1                | epouta nodes first in the slurm listing |
-| _milou_       | -              | -                | 3 nodes on `milou` |
 
 
 # Cancer Analysis Workflow
@@ -48,19 +41,23 @@ sensitive data, as in Mosler.
 The workflow runs using nextflow. We ran it on a small non-sensitive
 data sample, and recorded the elapsed time, for each partition.
 
-`nextflow run MultiFQtoVC.nf -c <slurm_partition>.config --sample <sample.tsv>`
+`nextflow run main.nf -c <slurm_partition>.config --sample <sample.tsv>`
 
 The results are as follows:
 
 | Partition     | Elapsed Time   |
 | ------------- |:-------------- |
-| mm            | [](results/CAW/timeline/mm.html)                 |
-| mm2-epouta1   | [23m 1s](results/CAW/timeline/mm2-epouta1.html)  |
-| mm1-epouta2   | [22m 53s](results/CAW/timeline/mm1-epouta2.html) |
-| epouta        | [15m 28s](results/CAW/timeline/epouta.html)      |
-| epouta1-mm2   | [23m 32s](results/CAW/timeline/epouta1-mm2.html) |
-| epouta2-mm1   | [22m 24s](results/CAW/timeline/epouta2-mm1.html) |
-| milou         | [](results/CAW/timeline/milou.html)              |
+| mm            | [23m 58s](results/CAW/timeline/mm.html)          |
+| mm2-epouta1   | [23m 27s](results/CAW/timeline/mm2-epouta1.html) |
+| mm1-epouta2   | [22m 55s](results/CAW/timeline/mm1-epouta2.html) |
+| epouta        | [15m 32s](results/CAW/timeline/epouta.html) &#9754; |
+| epouta1-mm2   | [17m 28s](results/CAW/timeline/epouta1-mm2.html) |
+| epouta2-mm1   | [15m 27s](results/CAW/timeline/epouta2-mm1.html) |
+
+> Conclusion: Since we know that the node in Epouta are technically
+> superior to the ones in Knox (ie, better hardware), we can observe
+> that the epouta-knox connection does not influence much the results
+> and that the network file system (NFS) seems to hold the load
 
 # Whole Genome Sequencing Structural Variation Pipeline
 
@@ -75,18 +72,23 @@ The results are as follows:
 
 | Partition     | Elapsed Time   |
 | ------------- |:-------------- |
-| mm            | [9m 42s](results/CAW/timeline/mm.html)          |
-| mm2-epouta1   | [9m 11s](results/CAW/timeline/mm2-epouta1.html) |
-| mm1-epouta2   | [9m 41s](results/CAW/timeline/mm1-epouta2.html) |
-| epouta        | [11m 12s](results/CAW/timeline/epouta.html) &#9754; |
-| epouta1-mm2   | [9m 40s](results/CAW/timeline/epouta1-mm2.html) |
-| epouta2-mm1   | [9m 11s](results/CAW/timeline/epouta2-mm1.html) |
-| milou         | [](results/CAW/timeline/milou.html)             |
+| mm            | [8m 40s](results/CAW/timeline/mm.html)          |
+| mm2-epouta1   | [9m 43s](results/CAW/timeline/mm2-epouta1.html) |
+| mm1-epouta2   | [9m 42s](results/CAW/timeline/mm1-epouta2.html) |
+| epouta        | [10m 14s](results/CAW/timeline/epouta.html) &#9754; |
+| epouta1-mm2   | [11m 11s](results/CAW/timeline/epouta1-mm2.html) &#9754; |
+| epouta2-mm1   | [11m 13s](results/CAW/timeline/epouta2-mm1.html) &#9754; |
+
+> Conclusion: As better hardware, we expected the pipeline to run
+> slightly faster on Epouta than it does on Knox. We can observe
+> something a bit different: It is slightly slower when Epouta nodes
+> are involved. However, the difference is not significant. The
+> network file system (NFS) seems to still hold the load.
 
 # NFS stress test
 
-We suspected the the network file system (NFS) to be the bottleneck in
-the previous workflows, since they require a lot of disk access (and
+We suspected the network file system (NFS) to be a bottleneck in the
+previous workflows, since they require a lot of disk access (and
 comparatively not so much compute power). So we stress-tested NFS by
 writing files from the compute nodes onto an NFS-shared location,
 using [sob](https://www.pdc.kth.se/~pek/sob).
@@ -100,23 +102,28 @@ We used the following tests
 | 3 | Write 50 128MB files (6.4GB) with a block size of 64kB, then read random files among these 5000 times. A good way to test random access and mask buffer cache effects (provided the sum size of all the files is much larger than main memory). <br><br>**Command:**  `sob -w -R 5000 -n 50 -s 128m -b 64k` |
 | 4 | Read and write 1 file of 1 GB. Is it cached in mem? <br><br>**Command:**  `sob -rw -b 128k -s 1g` | 
 
+The results are as follows:
+	
+	TO BE PASTED IN.
 
 # Testing the 1GB-link
 
-Finally, we test the network between the VMs, and especially the link between the VMs in Epouta and the ones on Knox.
+Finally, we test the network link between the VMs, and especially the
+link between the VMs in Epouta and the ones on Knox.
 
 The first test consists in opening 10 connections between `epouta1`
-and `compute1` and holding them during 60 seconds. We used
-`iperf` with the following commands:
+and `compute1` and holding them during 60 seconds. One machine acts as
+the server, and the other one connects to it, as a sender as well as a
+receiver. We used `iperf` with the following commands:
 
 	[compute1]$ iperf3 -4 -s # the server
 	[epouta1]$ iperf3 -4 -c compute1 -P 10 -t 60 # the 10 connections
 
-The results are surprising: We get near the link speed! After summing
-the different connections, we reached `941 Mbits/sec` as sender and
-`937 Mbits/sec` as receiver. To compare, running the same test
-between compute2 and compute1, we get `942 Mbits/sec` as sender and
-`938 Mbits/sec` as receiver.
+The results are surprising: We get near the physical link speed! After
+summing the different connections, we reached `941 Mbits/sec` as
+sender and `937 Mbits/sec` as receiver. To compare, running the same
+test between `compute2` and `compute1`, we get `942 Mbits/sec` as
+sender and `938 Mbits/sec` as receiver.
 
 The last test was to connect `epouta1` to `compute1`, `epouta2` to
 `compute2` and `epouta3` to `compute3`, using a similar `iperf` test
@@ -135,18 +142,20 @@ as above.
 So a total of 1008 Mbits/sec as sender and 997 Mbits/sec as receiver.
 
 Note that we get similar speed between `compute1` and `compute2`,
-which happens to be scheduled on different physical nodes in Knox.
+which happen to be scheduled on different physical nodes in Knox.
 
 # Conclusions
 
-* The first compute node on the slurm partition does *not* matters!
-* The use of NFS is a bottleneck, but if the workflows do not write
-  big file, it should hold the load.
+* The first compute node on the slurm partition appears to *not* matter!
+* The use of NFS is not necessarily a bottleneck: if the workflows do
+  not write big files, it should hold the load.
+* The VMs' network is smoothly at near link-speed.
 
 # Suggestions for Future Work
 
 * Tweak NFS to gain even further speed
-* Use a cinder volume and not a ephemeral disk (ie not some libvirt file).
 * Tweak the TCP settings in the Kernel
+* Scale up the solution to **many-many-many** nodes in Epouta and some in Knox, to see how much the link can be shared.
+* Use a cinder volume and not a ephemeral disk (ie not some libvirt file).
 
 

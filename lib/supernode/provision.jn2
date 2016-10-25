@@ -110,7 +110,7 @@ sudo umount {{ env['CAW_DATA'] }}
 sudo mount -t nfs storage:/mnt/data {{ env['CAW_DATA'] }}
 sudo umount {{ env['MM_PROJECTS'] }}
 sudo mount -t nfs storage:/mnt/projects {{ env['MM_PROJECTS'] }}
-for n in \${_NODES[@]//,/ }; do
+for n in ${PARTITIONS[$partition]}; do
 ssh \$n sudo umount {{ env['CAW_DATA'] }}
 ssh \$n sudo mount -t nfs storage:/mnt/data {{ env['CAW_DATA'] }}
 ssh \$n sudo umount {{ env['MM_PROJECTS'] }}
@@ -120,6 +120,7 @@ sudo scontrol update NodeName=${_NODES[0]} Weight=1
 sudo scontrol update NodeName=${_NODES[1]} Weight=2
 sudo scontrol update NodeName=${_NODES[2]} Weight=3
 cd {{ env['MM_PROJECTS'] }}/CAW
+nextflow clean -f
 nextflow run /home/centos/{{ env['VAULT'] }}/CAW.nf -c /home/centos/{{ env['VAULT'] }}/CAW.config --partition ${partition} --sample {{ env['MM_PROJECTS'] }}/CAW/data/tsv/sample.tsv -with-timeline ~/results/CAW/timeline/${partition}.html > ~/results/CAW/${partition}.log
 sudo scontrol update NodeName=${_NODES[0]} Weight=1
 sudo scontrol update NodeName=${_NODES[1]} Weight=1
@@ -159,13 +160,14 @@ rm -rf {{ env['MM_PROJECTS'] }}/WGS/work
 #sync
 sudo umount {{ env['MM_PROJECTS'] }}
 sudo mount -t nfs storage:/mnt/projects {{ env['MM_PROJECTS'] }}
-for n in \${PARTITIONS[\$partition]}; do
+for n in ${PARTITIONS[$partition]}; dox
     ssh \$n sudo umount {{ env['MM_PROJECTS'] }}
     ssh \$n sudo mount -t nfs storage:/mnt/projects {{ env['MM_PROJECTS'] }}
 done
 sudo scontrol update NodeName=${_NODES[0]} Weight=1
 sudo scontrol update NodeName=${_NODES[1]} Weight=2
 sudo scontrol update NodeName=${_NODES[2]} Weight=3
+nextflow clean -f
 nextflow run /home/centos/{{ env['VAULT'] }}/WGS.nf -c /home/centos/{{ env['VAULT'] }}/WGS.config --partition ${partition} --datadir {{ env['MM_PROJECTS'] }}/WGS/data -with-timeline ~/results/WGS/timeline/${partition}.html > ~/results/WGS/${partition}.log
 sudo scontrol update NodeName=${_NODES[0]} Weight=1
 sudo scontrol update NodeName=${_NODES[1]} Weight=1
