@@ -50,7 +50,7 @@ The results are as follows:
 | mm            | [23m 58s](results/CAW/timeline/mm.html)          |
 | mm2-epouta1   | [23m 27s](results/CAW/timeline/mm2-epouta1.html) |
 | mm1-epouta2   | [22m 55s](results/CAW/timeline/mm1-epouta2.html) |
-| epouta        | [15m 32s](results/CAW/timeline/epouta.html) &#9754; |
+| epouta        | [15m 32s](results/CAW/timeline/epouta.html) &nbsp;&#9754; |
 | epouta1-mm2   | [17m 28s](results/CAW/timeline/epouta1-mm2.html) |
 | epouta2-mm1   | [15m 27s](results/CAW/timeline/epouta2-mm1.html) |
 
@@ -75,9 +75,9 @@ The results are as follows:
 | mm            | [8m 40s](results/CAW/timeline/mm.html)          |
 | mm2-epouta1   | [9m 43s](results/CAW/timeline/mm2-epouta1.html) |
 | mm1-epouta2   | [9m 42s](results/CAW/timeline/mm1-epouta2.html) |
-| epouta        | [10m 14s](results/CAW/timeline/epouta.html) &#9754; |
-| epouta1-mm2   | [11m 11s](results/CAW/timeline/epouta1-mm2.html) &#9754; |
-| epouta2-mm1   | [11m 13s](results/CAW/timeline/epouta2-mm1.html) &#9754; |
+| epouta        | [10m 14s](results/CAW/timeline/epouta.html) &nbsp;&#9754; |
+| epouta1-mm2   | [11m 11s](results/CAW/timeline/epouta1-mm2.html) &nbsp;&#9754; |
+| epouta2-mm1   | [11m 13s](results/CAW/timeline/epouta2-mm1.html) &nbsp;&#9754; |
 
 > Conclusion: As better hardware, we expected the pipeline to run
 > slightly faster on Epouta than it does on Knox. We can observe
@@ -146,16 +146,23 @@ which happen to be scheduled on different physical nodes in Knox.
 
 # Conclusions
 
-* The first compute node on the slurm partition appears to *not* matter!
 * The use of NFS is not necessarily a bottleneck: if the workflows do
   not write big files, it should hold the load.
 * The VMs' network is smoothly at near link-speed.
+* The first compute node on the slurm partition appears to *not*
+  matter!
+  
+> In other words, whether computations are scheduled in Finland or
+> Sweden does _not_ seem to matter.
 
 # Suggestions for Future Work
 
 * Tweak NFS to gain even further speed
 * Tweak the TCP settings in the Kernel
-* Scale up the solution to **many-many-many** nodes in Epouta and some in Knox, to see how much the link can be shared.
-* Use a cinder volume and not a ephemeral disk (ie not some libvirt file).
+* Scale up the solution to **many-many-many** nodes in Epouta and some
+  nodes in Knox, to see how much the link can be shared.
+* Improve disk accesses:
+    * Use object storage or
+    * Use a cinder volume and not a ephemeral disk (ie the default libvirt file).
 
 
