@@ -102,9 +102,64 @@ We used the following tests
 | 3 | Write 50 128MB files (6.4GB) with a block size of 64kB, then read random files among these 5000 times. A good way to test random access and mask buffer cache effects (provided the sum size of all the files is much larger than main memory). <br><br>**Command:**  `sob -w -R 5000 -n 50 -s 128m -b 64k` |
 | 4 | Read and write 1 file of 1 GB. Is it cached in mem? <br><br>**Command:**  `sob -rw -b 128k -s 1g` | 
 
-The results are as follows:
-	
-	TO BE PASTED IN.
+
+We ran those tests using
+[a script that simply connects via `ssh`](../../lib/supernode/files/run-SOB.sh) to
+the VMs (in the specified order) and runs a `sob` command.
+
+We get the following results:
+
+---
+| Test | `compute1` | `compute2` | `compute3` |
+| ----:|:-----------|:-----------|:-----------|
+| 1 | Write: 212s (48.368 MB/s)<br>Read: 166s (61.830 MB/s) | Write: 487s for (21.040 MB/s)<br>Read: 219s (46.657 MB/s) | Write: 492s (20.803 MB/s)<br>Read: 208s (49.290 MB/s) |
+| 2 | Write: 55s (9.020 MB/s) | Write: 60s (8.369 MB/s) | Wrote: 60s (8.305 MB/s) |
+| 3 | Write: 204s (31.305 MB/s) | Write: 237s (26.964 MB/s) | Write: 243s (26.385 MB/s) |
+| 4 | Write: 26s (38.689 MB/s)<br>Read: 0.307s (3330.527 MB/s) | Write: 39s (26.332 MB/s)<br>Read: 0.3s (3379.480 MB/s) | Write: 37s (27.764 MB/s)<br>Read: 0.3s (3703.682 MB/s) |
+
+---
+| Test | `epouta3` | `epouta2` | `epouta3` |
+| ----:|:-----------|:-----------|:-----------|
+| 1 | Write: 527s (19.429 MB/s)<br>Read: 217s (47.104 MB/s) | Write: 399s (25.660 MB/s)<br>Read: 300s (34.103 MB/s) | Write: 363s (28.231 MB/s)<br>Read: 287s (35.631 MB/s) |
+| 2 | Write: 79s (6.296 MB/s) | Write: 72s (6.912 MB/s) | Write: 75s (6.661 MB/s) |
+| 3 | Write: 267s (23.973 MB/s) | Write: 259s (24.752 MB/s) | Write: 267s (23.963 MB/s) |
+| 4 | Write: 31s (33.389 MB/s)<br>Read: 0.4s (2583.793 MB/s) | Write: 38s (26.868 MB/s)<br>Read: 0.3 s (3702.660 MB/s) | Write: 34s (29.761 MB/s)<br>Read: 0.3s (4053.569 MB/s) |
+
+
+---
+| Test | `compute1` | `epouta1` | `epouta2` |
+| ----:|:-----------|:-----------|:-----------|
+| 1 | Write: 315s (32.545 MB/s)<br>Read: 268s (38.155 MB/s) | Write: 529s (19.348 MB/s)<br>Read: 226s (45.351 MB/s) | Write: 449s (22.808 MB/s)<br>Read: 271s (37.824 MB/s) |
+| 2 | Write: 50s (9.920 MB/s) | Write: 77s (6.519 MB/s) | Write: 75s (6.706 MB/s) |
+| 3 | Write: 193s (33.153 MB/s) | Write: 250s (25.591 MB/s) | Write: 247s (25.883 MB/s) |
+| 4 | Write: 18s (57.380 MB/s)<br>Read: 0.3s (3357.815 MB/s) | Write: 37s (27.616 MB/s)<br>Read: 0.3s (3758.074 MB/s) | Write: 35s (28.889 MB/s)<br>Read: 0.2s (4132.128 MB/s) |
+
+
+---
+| Test | `compute3` | `compute2` | `epouta1`  |
+| ----:|:-----------|:-----------|:-----------|
+| 1 | Write: 317s (32.265 MB/s)<br>Read: 227s (45.100 MB/s) | Write: 301s (34.073 MB/s)<br>Read: 236s (43.432 MB/s) | Write: 695s (14.726 MB/s)<br>Read: 104s (98.009 MB/s) |
+| 2 | Write: 62s (8.100 MB/s) | Write: 62s (8.095 MB/s) | Write: 81s (6.165 MB/s) | 
+| 3 | Write: 241s (26.509 MB/s) | Write: 244s (26.174 MB/s) | Write: 317s (20.208 MB/s) | 
+| 4 | Write: 29s (35.531 MB/s)<br>Read: 0.3s (3752.689 MB/s) | Write: 30s (33.863 MB/s)<br>Read: 0.3s (3347.075 MB/s) | Write: 42s (24.417 MB/s)<br>Read: 0.3s (3372.855 MB/s) |
+
+---
+| Test | `epouta3` | `epouta1` | `compute2`  |
+| ----:|:-----------|:-----------|:-----------|
+| 1 | Write: 529s (19.348 MB/s)<br>Read: 211s (48.515 MB/s) | Write: 520s (19.675 MB/s)<br>Read: 220s (46.538 MB/s) | Write: 190s (53.941 MB/s)<br>Read: 169s (60.713 MB/s) |
+| 2 | Write: 75s (6.623 MB/s) | Write: 75s (6.670 MB/s) | Write: 56s (8.984 MB/s) |
+| 3 | Write: 296s (21.604 MB/s) | Write: 303s (21.087 MB/s) | Write: 202s (31.655 MB/s) | 
+| 4 | Write: 39s (26.079 MB/s)<br>Read: 0.3s (2936.802 MB/s) | Write: 39s (26.013 MB/s)<br>Read: 0.2s (4486.861 MB/s) | Write: 24s (43.204 MB/s)<br>Read: 0.3 s (3419.887 MB/s) |
+
+---
+Partial conclusions:
+
+> There is a price to pay if we stress the NFS server with many files,
+> either with big files or with many small files.  However, if we do
+> not read/write so many, or stay within the memory size, the NFS
+> server seems to hold the load and not penalize too much.
+
+
 
 # Testing the 1GB-link
 
