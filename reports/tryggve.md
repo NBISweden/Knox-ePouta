@@ -12,12 +12,8 @@ compute nodes.
 The two workflows we tested already run on `milou` at Uppmax, and
 therefore use `slurm`. We instantiated 3 compute nodes on Knox and 3
 in Epouta. After we installed all the dependencies for those workflows
-on the compute nodes, we distributed the compute nodes in slurm
-partitions as follows.
-
-Moreover, when a task from the workflow only requires one node, we
-were interested in finding out if the first node on the slurm
-partition matters (marked with *).
+on the compute nodes (tricky task), we distributed the compute nodes
+in slurm partitions as follows.
 
 | Partition     | #nodes in Knox | #nodes in Epouta | Notes |
 |:------------- |:--------------:|:----------------:|:----- |
@@ -27,6 +23,10 @@ partition matters (marked with *).
 | epouta        | 0              | 3                |       |
 | epouta1-mm2 * | 1              | 2                | epouta nodes first in the slurm listing |
 | epouta2-mm1 * | 2              | 1                | epouta nodes first in the slurm listing |
+
+Moreover, when a task from the workflow only requires one node, we
+were interested in finding out if the first node on the slurm
+partition matters (marked with * in the above table).
 
 
 # Cancer Analysis Workflow
