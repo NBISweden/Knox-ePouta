@@ -104,7 +104,7 @@ We used the following tests
 
 
 We ran those tests using
-[a script that simply connects via `ssh`](../../lib/supernode/files/run-SOB.sh) to
+[a script that simply connects via `ssh`](../lib/supernode/files/run-SOB.sh) to
 the VMs (in the specified order) and runs a `sob` command.
 
 We get the following results:
