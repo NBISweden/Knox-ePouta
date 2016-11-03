@@ -1,7 +1,0 @@
-# -*-sh-*-
-
-# Create port (which was deleted when deleting the VM)
-LEIF_PORT=$(neutron port-create --name port-leif --fixed-ip subnet_id=UU-MOSLER-subnet,ip_address=10.101.0.10 UU-MOSLER-network | awk '/ id / {print $4}')
-
-# Booting using that port. Enforces that particular IP.
-nova boot --flavor hpc.small --image CentOS-7.0 --nic port-id=$LEIF_PORT --user-data leif.vm.yml leif

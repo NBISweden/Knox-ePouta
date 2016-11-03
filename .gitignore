@@ -1,7 +1,3 @@
 *~
 .#*
-test/
-micromosler.rc
-user.rc
-tmp/
-reports/presentation.key
+presentation.key
