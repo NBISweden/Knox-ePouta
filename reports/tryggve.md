@@ -118,7 +118,7 @@ We get the following results:
 | 4 | Write: 26s (38.689 MB/s)<br>Read: 0.307s (3330.527 MB/s) | Write: 39s (26.332 MB/s)<br>Read: 0.3s (3379.480 MB/s) | Write: 37s (27.764 MB/s)<br>Read: 0.3s (3703.682 MB/s) |
 
 ---
-| Test | `epouta3` | `epouta2` | `epouta3` |
+| Test | `epouta3` | `epouta2` | `epouta1` |
 | ----:|:-----------|:-----------|:-----------|
 | 1 | Write: 527s (19.429 MB/s)<br>Read: 217s (47.104 MB/s) | Write: 399s (25.660 MB/s)<br>Read: 300s (34.103 MB/s) | Write: 363s (28.231 MB/s)<br>Read: 287s (35.631 MB/s) |
 | 2 | Write: 79s (6.296 MB/s) | Write: 72s (6.912 MB/s) | Write: 75s (6.661 MB/s) |
