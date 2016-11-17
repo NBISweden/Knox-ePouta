@@ -1,8 +1,6 @@
 *~
 .#*
+.DS_Store
 test/
-micromosler.rc
-user.rc
 tmp/
-presentation.key
-management.key
+experiments/lib/settings/*.rc
