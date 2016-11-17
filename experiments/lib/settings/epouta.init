@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+# Get credentials 
+_CREDENTIALS=$(dirname ${BASH_SOURCE[0]})/epouta.rc
+
+if [ -f ${_CREDENTIALS} ]; then
+    # Adding the knox variables to the environment
+    source ${_CREDENTIALS}
+    # Note: this includes some rudimentary checks
+    # And the definition of the ke_boot_machine function
+else
+    echo "ERROR: Cloud credentials not found [${_CREDENTIALS}]"
+    exit 1;
+fi
+
+
+declare -A EPOUTA_FLAVORS=(\
+    [epouta1]=hpc.small \
+    [epouta2]=hpc.small \
+    [epouta3]=hpc.small \
+)
+
+EPOUTA_NET_ID=af8c6b4c-55b8-41de-a1ec-943e9a06d1e7
+
+# For the phone home server
+_PORT=12346
+
+# Declaring a function to be used in the init script
+function ke_boot_machine {
+    local machine=$1
+
+    local _IP=$2
+    local _IMAGE=$3
+    local _VM_INIT=$4
+    local _FLAVOR=${EPOUTA_FLAVORS[$machine]}
+
+    # Silencing epouta's stderr (about the InsecurePlatformWarning from urllib3)
+    exec 2>/dev/null
+
+    echo -ne "\t* $machine: port "
+    local _PORT=$(neutron port-create --name port-$machine --fixed-ip subnet_id=UU-MOSLER-subnet,ip_address=${_IP} UU-MOSLER-network | awk '/ id / {print $4}')
+    [ -z "$_port" ] && echo $'\e[31m\xE2\x9C\x97\e[0m' " Skipping..." && return 1
+
+    echo -e $'\e[32m\xE2\x9C\x93\e[0m | booting '
+    nova boot --flavor ${_FLAVOR} --image ${_IMAGE} --nic port-id=${_PORT} --user-data ${_VM_INIT} $machine 1>/dev/null
+     && echo -e $'\e[32m\xE2\x9C\x93\e[0m'
+    || echo -e $'\e[31m\xE2\x9C\x97\e[0m'
+    
+} # End boot_machine function

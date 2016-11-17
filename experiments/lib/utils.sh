@@ -1,7 +1,7 @@
 ########################################################################
 # Checking the global task
-TASK=$1
-[ -z $TASK ] && echo "Task not set: Aborting..." && exit 1
+_TASK=$1
+[ -z "${_TASK}" ] && echo "Task not set: Aborting..." && exit 1
 
 ########################################################################
 declare -a MSG
@@ -16,7 +16,7 @@ MSG[4]=$'\xF0\x9F\x91\x8D'            # success (thumb up)
 ALL_MACHINES=("${MACHINES[@]}")
 
 # Prepare the tmp folders
-for machine in ${MACHINES[@]}; do mkdir -p ${KE_TMP}/$machine/$TASK; done
+for machine in ${MACHINES[@]}; do mkdir -p ${KE_TMP}/$machine/${_TASK}; done
 
 function thumb_up {
     [ -n "$1" ] && echo -ne "$1 "
@@ -30,22 +30,22 @@ function oups {
 function print_progress {
     ( flock -x 200 # lock exclusively fd 200. Unlock is automatic
       printf "\e[2K\r|" # clear line and go back to the beginning
-      for machine in ${ALL_MACHINES[@]}; do printf " %s %3b |" $machine ${MSG[$(<${KE_TMP}/$machine/$TASK/progress)]}; done
-    ) 200>${KE_TMP}/lock.$TASK
+      for machine in ${ALL_MACHINES[@]}; do printf " %s %3b |" $machine ${MSG[$(<${KE_TMP}/$machine/${_TASK}/progress)]}; done
+    ) 200>${KE_TMP}/lock.${_TASK}
 }
 
 function reset_progress { # Initialization
-    for machine in ${MACHINES[@]}; do echo -n 0 > ${KE_TMP}/$machine/$TASK/progress; done
+    for machine in ${MACHINES[@]}; do echo -n 0 > ${KE_TMP}/$machine/${_TASK}/progress; done
 }
 function report_ok { # Not testing if $1 exists. It will!
-    echo -n 1 > ${KE_TMP}/$1/$TASK/progress
+    echo -n 1 > ${KE_TMP}/$1/${_TASK}/progress
 }
 function report_fail {
-    echo -n 2 > ${KE_TMP}/$1/$TASK/progress
+    echo -n 2 > ${KE_TMP}/$1/${_TASK}/progress
     #curl -X POST ${NOTIFICATION_URL}/fail/$1 &>/dev/null
 }
 function filter_out {
-    echo -n 3 > ${KE_TMP}/${MACHINES[$1]}/$TASK/progress
+    echo -n 3 > ${KE_TMP}/${MACHINES[$1]}/${_TASK}/progress
     unset MACHINES[$1]
 }
 function filter_out_machine {

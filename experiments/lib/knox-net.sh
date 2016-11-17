@@ -1,13 +1,5 @@
 #!/usr/bin/env bash
 
-# Get credentials and machines settings
-source $(dirname ${BASH_SOURCE[0]})/../settings/common.sh
-
-# Default values
-KE_VLAN=1203
-MGMT_ALLOCATION_START=10.101.128.2
-MGMT_ALLOCATION_END=10.101.255.254
-
 function usage {
     echo "Usage: ${KE_CMD:-$0} [options]"
     echo -e "\noptions are"
@@ -27,41 +19,27 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-_CLOUD=knox
+# Get credentials and machines settings
+source $(dirname ${BASH_SOURCE[0]})/settings/common.rc
 
-if [ -f $KE_HOME/settings/${_CLOUD}.rc ]; then
-    source $KE_HOME/settings/${_CLOUD}.rc
+# Additional settings
+KE_VLAN=1203
+MGMT_ALLOCATION_START=10.101.128.2
+MGMT_ALLOCATION_END=10.101.255.254
+
+if [ -f $KE_HOME/settings/knox.rc ]; then
+    source $KE_HOME/settings/knox.rc
 else
-    echo "ERROR: Cloud credentials not found [$KE_HOME/settings/${_CLOUD}.rc]"
+    echo "ERROR: Cloud credentials not found [$KE_HOME/settings/knox.rc]"
     exit 1;
 fi
 
-if [ -z $OS_TENANT_NAME ]; then
-    echo "ERROR: No tenant name found in [$KE_HOME/settings/${_CLOUD}.rc]"
-    echo "Exiting..."
-    exit 1;
-fi
-export OS_PROJECT_NAME=${OS_TENANT_NAME}
-
-if [ -z "$TENANT_ID" ]; then
-    echo "ERROR: Tenant ID not specified (for tenant ${OS_TENANT_NAME})"
-    exit 1
-fi
-
-# Checking if the user is admin for that tenant
-CHECK=$(openstack role assignment list --user ${OS_USERNAME} --role admin --project ${OS_TENANT_NAME})
-if [ $? -ne 0 ] || [ -z "$CHECK" ]; then
-    echo "ERROR: $CHECK"
-    echo -e "\nThe user ${OS_USERNAME} does not seem to have the 'admin' role for the project ${OS_TENANT_NAME}"
-    echo "Exiting..."
-    exit 1
-fi
+[ -z "$OS_TENANT_NAME" ] && echo "ERROR: No tenant name found in [$KE_HOME/settings/knox.rc]" && exit 1
+[ -z "$TENANT_ID" ] && echo "ERROR: Tenant ID not specified (for tenant ${OS_TENANT_NAME})" && exit 1
 
 #######################################################################
-[ $VERBOSE == 'no' ] && exec 1>${KE_TMP}/init.log
+[ $VERBOSE == 'no' ] && exec 1>${KE_TMP}/net.log
 ORG_FD1=$(tty)
-
-source $(dirname ${BASH_SOURCE[0]})/../settings/common.sh
 
 #######################################################################
 # Preparing the network components
@@ -69,12 +47,13 @@ source $(dirname ${BASH_SOURCE[0]})/../settings/common.sh
 echo "Creating routers and networks"
 
 MGMT_ROUTER_ID=$(neutron router-create ${OS_TENANT_NAME}-mgmt-router | awk '/ id / { print $4 }')
-echo qrouter-$MGMT_ROUTER_ID > ${KE_TMP}/netns
 
 # if [ -z "$MGMT_ROUTER_ID" ]; then
 # 	echo "Router issues. Exiting..."
 #   exit 1
 # fi
+
+NETNS=qrouter-$MGMT_ROUTER_ID
 
 # Creating the management and data networks
 neutron net-create --provider:network_type vlan --provider:physical_network vlan --provider:segmentation_id ${KE_VLAN} ${OS_TENANT_NAME}-mgmt-net >/dev/null
@@ -94,4 +73,3 @@ nova quota-update --instances $((10 * FACTOR)) --ram $((51200 * FACTOR)) ${TENAN
 # nova flavor-create --is-public false mm.compute   10 7200 80 4
 # nova flavor-create --is-public false mm.storage   11 2048 160 1
 # nova flavor-create --is-public false mm.supernode 12 2048 20 1
-

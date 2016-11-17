@@ -16,3 +16,4 @@ export OS_PASSWORD=<password>
 export OS_TENANT_NAME=<some-project>
 export OS_TENANT_ID=<some-id>
 export OS_PROJECT_NAME=${OS_TENANT_NAME}
+

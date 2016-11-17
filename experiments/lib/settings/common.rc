@@ -20,10 +20,9 @@ export KE_TMP
 
 #################################################################
 # Declaring the machines
-declare -a KNOX_MACHINES
-KNOX_MACHINES=('supernode' 'storage' 'knox1' 'knox2' 'knox3')
-declare -a MACHINES
-EPOUTA_MACHINES=('epouta1' 'epouta2' 'epouta3')
+declare -a KNOX_MACHINES=('supernode' 'storage' 'knox1' 'knox2' 'knox3')
+declare -a EPOUTA_MACHINES=('epouta1' 'epouta2' 'epouta3')
+
 declare -a MACHINES=("${KNOX_MACHINES[@]}" "${EPOUTA_MACHINES[@]}")
 
 declare -A MACHINE_IPs
