@@ -1,0 +1,33 @@
+# -*-sh-*-
+
+# iptables
+sed -i "/^-A INPUT -m state --state NEW -s {{ env['MGMT_CIDR']|replace('/','\/') }} -j ACCEPT/ d" /etc/sysconfig/iptables
+service iptables restart
+
+##############################################################
+# Un-mount the nfs shares
+if mount | grep -q {{ env['CAW_DATA'] }} ;then umount {{ env['CAW_DATA'] }}; fi
+if mount | grep -q {{ env['CAW_SW'] }} ;then umount {{ env['CAW_SW'] }}; fi
+if mount | grep -q {{ env['SLURM_LOCATION'] }} ;then umount {{ env['SLURM_LOCATION'] }}; fi
+if mount | grep -q {{ env['KE_PROJECTS'] }} ;then umount {{ env['KE_PROJECTS'] }}; fi
+sed -i '/storage:.*/ d' /etc/fstab
+
+##############################################################
+sed -i "/server 130.238.15.1 iburst/ d" /etc/chrony.conf
+systemctl stop chronyd.service
+systemctl disable chronyd.service
+
+##############################################################
+for f in /etc/environment ~/.wgetrc
+do
+    [ -e $f ] && sed -i "/http_proxy/ d" $f
+    [ -e $f ] && sed -i "/https_proxy/ d" $f
+done
+
+systemctl stop munge.service
+systemctl stop slurmctld.service
+# No need to add to iptables: ports 6817/udp 6817/tcp 6818/tcp 7321/tcp
+systemctl disable munge.service
+systemctl disable slurmctld.service
+
+rm -f /etc/profile.d/mmrc.sh /etc/slurm/slurm.conf /etc/munge/munge.key

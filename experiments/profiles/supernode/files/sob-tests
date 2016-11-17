@@ -1,0 +1,24 @@
+# -*-sh-*-
+
+# Write a 24GB file in chunks of 8MB. Basic test of write I/O
+# bandwidth. For this kind of test it is important that the file is
+# substantially larger than the main memory of the machine. If the
+# file is 2GB and main memory is 1GB then up to 50% of the file could
+# be cached by the operating system and the reported write bandwidth
+# would be much higher than what the disk+filesystem could actually
+# provide.
+# Read and Write
+sob -rw -b 8m -s 10g
+
+# Writing 500 files of 1 MB, spread out in 10 directories
+sob -w -b 64k -s 1m -n 500 -o 50
+
+# Write 50 128MB files (6.4GB) with a block size of 64kB, then
+# read random files among these 5000 times. A good way to test
+# random access and mask buffer cache effects (provided the sum
+# size of all the files is much larger than main memory).
+sob -w -R 5000 -n 50 -s 128m -b 64k
+
+# Read and write 1 file of 1 GB. Is it cached in mem?
+sob -rw -b 128k -s 1g
+

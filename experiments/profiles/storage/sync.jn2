@@ -1,0 +1,12 @@
+# -*-sh-*-
+
+yum -y install nc nmap tcpdump chrony nfs-utils nfs-utils-lib iptables-services
+
+systemctl enable iptables
+systemctl enable rpcbind
+systemctl enable nfs-server
+# systemctl enable nfs-lock
+# systemctl enable nfs-idmap
+
+# free pagecache, dentries and inodes
+echo 3 > /proc/sys/vm/drop_caches
