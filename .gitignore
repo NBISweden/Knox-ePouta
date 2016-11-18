@@ -1,1 +1,6 @@
+*~
+.#*
+.DS_Store
+test/
+tmp/
 _build
