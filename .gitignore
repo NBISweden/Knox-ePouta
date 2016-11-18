@@ -1,8 +1,1 @@
-*~
-.#*
-.DS_Store
-test/
-tmp/
-experiments/lib/settings/authorized_keys
-experiments/lib/settings/*.rc
-!experiments/lib/settings/common.rc
+_build

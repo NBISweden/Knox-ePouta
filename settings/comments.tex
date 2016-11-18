@@ -1,0 +1,78 @@
+\ifcomments %% =====================================================
+
+\setlength{\fboxsep}{2pt}
+
+\newdimen\len
+\len=\marginparwidth
+\advance\len by -\marginparsep
+\advance\len by -\marginparsep
+%\advance\len by -\marginparsep
+
+\newcounter{notec}
+\newcommand{\mynote}[1]{%
+  \stepcounter{notec}%
+  {$^{\footnotesize\textcolor{red}\bf (\arabic{notec})}$}%
+  \leavevmode%
+  \marginpar[\fbox{\parbox{\len}{$^{\footnotesize\textcolor{red}\bf (\arabic{notec})}$ \footnotesize\raggedleft #1}}]%
+  {\fbox{\parbox{\len}{$^{\footnotesize\textcolor{red}\bf (\arabic{notec})}$ \footnotesize\raggedright #1}}}%
+}%
+
+%% Local note, as footnote
+\newcommand{\lnote}[1]{\footnote{#1}}
+
+%% Thesis Keywords (included in the index)
+\usepackage{marginfix}
+%\usepackage[noadjust]{marginnote}
+\newcommand*{\KW}[1]{\leavevmode%
+{%\mbox{}
+\marginpar[\fbox{\parbox[b]{\len}{\raggedleft\footnotesize #1}}]{\fbox{\parbox[b]{\len}{\raggedright\footnotesize #1}}}%
+%\marginnote[\fbox{\parbox[b]{\len}{\raggedleft\footnotesize #1}}]{\fbox{\parbox[b]{\len}{\raggedright\footnotesize #1}}}[0pt]%
+%\index{KEYWORDS!#1}
+}%
+%\ignorespaces%
+}
+
+\else %% ==========================================================
+
+\newcommand{\mynote}[1]{}
+\newcommand{\lnote}[1]{}
+\newcommand*{\KW}[1]{}
+
+\fi %% ============================================================
+
+\ifunderprogress
+
+\mdfdefinestyle{CommentFrame}{%
+    linecolor=green!10,outerlinewidth=1pt,roundcorner=1ex,
+    innertopmargin=1em,innerrightmargin=2ex,innerbottommargin=1em,innerleftmargin=2ex,
+    backgroundcolor=green!5!white}
+\mdfdefinestyle{TodoFrame}{%
+    linecolor=red!10,outerlinewidth=1pt,roundcorner=1ex,
+    innertopmargin=1em,innerrightmargin=2ex,innerbottommargin=1em,innerleftmargin=2ex,
+    backgroundcolor=red!5!white}
+
+\newenvironment{comment}{\vspace{1em}\begin{mdframed}[style=CommentFrame]}{\end{mdframed}\vspace{1em}}
+\newenvironment{todo}{\vspace{1em}\begin{mdframed}[style=TodoFrame]\noindent\hrulefill\raisebox{-0.5ex}{\ TODO\ }\hrulefill\par\vspace{1em}}{\end{mdframed}\vspace{1em}}
+
+\else
+%\newsavebox\myframeb %% Saving and throwing away the content
+%\newenvironment{myframe}[1]{\setbox\myframeb\hbox\bgroup}{\egroup}
+
+% \usepackage{comment}   % for the comment environment
+% \newenvironment{todo}{\begin{comment}}{\end{comment}}
+
+\usepackage{environ}
+\NewEnviron{killcontents}{}
+\newenvironment{todo}{\killcontents}{\endkillcontents}
+\newenvironment{comment}{\killcontents}{\endkillcontents}
+\fi
+
+
+%% -----------------------------------------------------------
+%% So far so good
+\newcommand*{\sofarsogood}{\ifunderprogress\par\bigskip\noindent\hrulefill\begingroup\tiny\raisebox{-0.5ex}{\ SO FAR SO GOOD\ }\endgroup\hrulefill\par\bigskip\fi}
+\newcommand*{\sfsg}{\sofarsogood\endinput}
+\newcommand*{\cutafter}{\endinput}
+%\newcommand*{\cutpage}{\noindent\makebox[\linewidth]{\rule{\paperwidth}{2pt}}}
+
+

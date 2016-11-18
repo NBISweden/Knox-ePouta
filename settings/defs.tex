@@ -1,0 +1,88 @@
+%% ---------------------------------------------
+%% Framing the lists
+\usepackage[framemethod=TikZ]{mdframed}
+\mdfdefinestyle{DazFrame}{%
+    linecolor=gray!10!white,outerlinewidth=1pt,roundcorner=1ex,
+    innertopmargin=1ex,innerrightmargin=2ex,innerbottommargin=1ex,innerleftmargin=1ex,
+    backgroundcolor=white}
+
+%% -----------------------------------------------------------
+\input{settings/builddir.tex}
+\input{settings/comments.tex}
+
+\newcommand{\tikzinput}[2][]{%
+  \ifnotikz%
+  \let\myparam\empty%
+  \ifunderprogress\eappto\myparam{draft,}\fi%
+  \ifstrempty{#1}{}{\eappto\myparam{width=#1}}%
+  \expandafter\includegraphics\expandafter[\myparam]{\builddir/#2}%
+  \else%
+  \ifstrempty{#1}{\input{#2}}{\resizebox{#1}{!}{\input{#2}}}%
+  \fi%
+}%
+
+\newcommand{\tikzinputcenter}[1]{\smallskip{\noindent\centering \tikzinput{#1}\par}\smallskip}
+
+\newcommand{\listinginput}[1]{
+  \ifthenelse{\equal{#1}{force}}%
+  {\lstinputlisting[style=custom]{#1}}%
+  {%
+    \ifunderprogress
+       \ifnolistings
+          \fbox{\parbox[t][3cm][c]{0.9\linewidth}{\centering\detokenize{#1}}}
+       \else
+           \lstinputlisting[style=custom]{#1}
+       \fi
+    \else
+       \lstinputlisting[style=custom]{#1}
+    \fi
+  }%
+}
+
+%% ---------------------------------------------
+\newenvironment{statement}{\begin{quote}\raggedleft}{\end{quote}}
+
+%% Settings for enumerations and item lists
+\setlist{noitemsep}
+\setlist[enumerate,1]{itemsep=1ex}
+%\setlist[enumerate]{align=right,labelindent=\parindent, leftmargin=*,widest*=4}
+\setlist[enumerate]{align=right,leftmargin=*,widest*=4}
+%\setlist[itemize]{labelindent=0pt,align=right,leftmargin=*}
+
+\newcommand{\point}[1]{\ifnotikz\arabic{enumi}.\else\protect\tikz[baseline=(n.base)]{\protect\node[enumbullet](n){#1};}\fi}
+
+\newenvironment{strategy}{%
+  \renewcommand{\labelenumi}{\point{\arabic{enumi}}}
+  % No need to redefine \theenumi since there is no cross-referencing
+  \begin{mdframed}[style=DazFrame]\begin{enumerate}}{\end{enumerate}\end{mdframed}}
+
+\newenvironment{challenges}{%
+  \renewcommand{\labelenumi}{\theenumi}%
+  \renewcommand{\theenumi}{\ifnotikz\Alph{enumi}\else\protect\tikz[baseline=(n.base)]{\protect\path node[challenge](n){\Alph{enumi}};}\fi}%
+  % \smallskip\hrule\smallskip%
+  \begin{mdframed}[style=DazFrame]%
+    % \begin{enumerate}[leftmargin=0pt]
+    \begin{enumerate}%
+    }{\end{enumerate}%
+    % \smallskip\hrule\smallskip
+  \end{mdframed}%
+}
+\newenvironment{subchallenges}{%
+  \renewcommand{\labelenumii}{\theenumii}%
+  \renewcommand{\theenumi}{}%
+  \renewcommand{\theenumii}{\ifnotikz\Alph{enumi}.\arabic{enumii}\else\protect\tikz[baseline=(n.base)]{\protect\path node[challenge](n){\Alph{enumi}} node[subchallenge,right=-1pt of n.south east]{\arabic{enumii}};}\fi}%
+  \begin{enumerate}}{\end{enumerate}}
+
+%% ---------------------------------------------
+%% Wrapfigures
+%% ---------------------------------------------
+%\setlength{\intextsep}{1em}
+\setlength{\intextsep}{0pt}
+%\setlength{\columnsep}{1ex}
+
+%% ---------------------------------------------
+\input{settings/macros.tex}
+
+
+
+
