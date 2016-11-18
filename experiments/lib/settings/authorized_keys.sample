@@ -1,8 +1,0 @@
-# Put here the public SSH keys for the users that could have direct
-# access to the VMs
-#
-# If a user adds the ssh private key to its ssh-agent, he/she could
-# then log onto the VMs password-less.
-#
-ssh-dss <crazy-hash-string> user@some.organisation
-ssh-dss <another-crazy-hash-string> another.user@some.other.organisation
