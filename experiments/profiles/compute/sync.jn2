@@ -153,7 +153,7 @@ done
 for v in {{ env['SAMTOOLS_VERSIONS'] }}; do
     if [ ! -x /usr/local/samtools-${v}/bin/samtools ]; then
 	rm -rf ${KE_BUILD}/samtools-${v}
-	tar -xzf {{ env['VAULT'] }}/sw/samtools-${v}.tar.gz -C ${KE_BUILD}
+	tar -xjf {{ env['VAULT'] }}/sw/samtools-${v}.tar.bz2 -C ${KE_BUILD}
 	pushd ${KE_BUILD}/samtools-${v}
 	./configure --enable-plugins --enable-libcurl --prefix=/usr/local/samtools-${v}
 	make all all-htslib
