@@ -83,7 +83,8 @@ fi
 
 #######################################################################
 # Testing if the image exists
-if nova image-list | grep "${_IMAGE}" > /dev/null; then : ; else
+# Silencing the SSL warnings from ePouta with 2>/dev/null
+if nova image-list 2>/dev/null | grep "${_IMAGE}" > /dev/null; then : ; else
     echo "Error: Could not find the image '${_IMAGE}' to boot from."
     exit 1
 fi
