@@ -110,10 +110,12 @@ function prepare_machine {
 
     local _VM_INIT=${KE_TMP}/$machine/init/vm.sh
     echo '#!/usr/bin/env bash' > ${_VM_INIT}
-    echo "cat >> /home/centos/.ssh/authorized_keys <<EOF" >> ${_VM_INIT}
-    cat ${KE_HOME}/lib/settings/authorized_keys >> ${_VM_INIT}
+    if [ -r ${KE_HOME}/lib/settings/authorized_keys ]; then
+	echo "cat >> /home/centos/.ssh/authorized_keys <<EOF" >> ${_VM_INIT}
+	cat ${KE_HOME}/lib/settings/authorized_keys >> ${_VM_INIT}
+	echo "EOF" >> ${_VM_INIT}
+    fi
     cat >> ${_VM_INIT} <<ENDCLOUDINIT
-EOF
 echo "================================================================================"
 echo "Adjusting the timezone"
 echo 'Europe/Stockholm' > /etc/timezone
