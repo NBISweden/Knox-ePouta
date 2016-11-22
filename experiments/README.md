@@ -99,6 +99,11 @@ VM. This configures the servers. The task should be idempotent.
 You can append the `-q` flag to turn off the verbose output.
 You can append the `-h` flag to see the command options.
 
+Finally, use `knox-epouta connect <machine>` (from the router) to log
+onto the mentioned VM. The `supernode` VM was created so that we'd run
+any command from it. It is, for example, the `slurm controller` and
+the place where test-scripts are located and the results are stored.
+
 ## Example
 
 	git clone https://github.com/NBISweden/Knox-ePouta <some_dir>
@@ -114,5 +119,10 @@ You can append the `-h` flag to see the command options.
 	./knox-epouta init epouta --image CentOS7-extended
 	./knox-epouta sync
 	./knox-epouta provision
+	
+	./knox-epouta connect supernode
+	/usr/local/bin/run-CAW.sh
+	/usr/local/bin/run-WGS.sh
+	# etc...
 
 
