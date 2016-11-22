@@ -39,7 +39,7 @@ function ke_boot_machine {
 
     echo -ne "\t* $machine: port "
     local _PORT=$(neutron port-create --name port-$machine --fixed-ip subnet_id=UU-MOSLER-subnet,ip_address=${_IP} UU-MOSLER-network | awk '/ id / {print $4}')
-    [ -z "$_port" ] && echo $'\e[31m\xE2\x9C\x97\e[0m' " Skipping..." && return 1
+    [ -z "$_PORT" ] && echo $'\e[31m\xE2\x9C\x97\e[0m' " Skipping..." && return 1
 
     echo -e $'\e[32m\xE2\x9C\x93\e[0m | booting '
     nova boot --flavor ${_FLAVOR} --image ${_IMAGE} --nic port-id=${_PORT} --user-data ${_VM_INIT} $machine 1>/dev/null \
