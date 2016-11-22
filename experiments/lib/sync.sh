@@ -152,7 +152,7 @@ if [ $WITH_KEY = yes ]; then
 	ssh-keygen -q -t rsa -N "" -f ${KE_TMP}/ssh_key.user -C supernode
     fi
     cat > ${KE_TMP}/ssh_key.config <<EOF
-Host $${MGMT_CIDR} #{MACHINES[@]// /,}
+Host ${MGMT_CIDR} ${MACHINES[@]// /,}
         User root
         StrictHostKeyChecking no
         UserKnownHostsFile /dev/null
