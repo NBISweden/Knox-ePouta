@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Get credentials and machines settings
-source $(dirname ${BASH_SOURCE[0]})/settings/common.sh
+source $(dirname ${BASH_SOURCE[0]})/settings/common.rc
 
 export VAULT=vault
 CONNECTION_TIMEOUT=1 #seconds
@@ -66,8 +66,7 @@ if [ ${#MACHINES[@]} -eq 0 ]; then
 fi
 
 #######################################################################
-source $(dirname ${BASH_SOURCE[0]})/lib/utils.sh sync
-#source $(dirname ${BASH_SOURCE[0]})/lib/ssh_connections.sh
+source $(dirname ${BASH_SOURCE[0]})/utils.sh sync
 
 #######################################################################
 declare -A JOB_PIDS
@@ -80,7 +79,7 @@ trap 'cleanup' INT TERM #EXIT #HUP ERR
 # trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
 # Will be read from the profile templates
-export KE_SW KE_DATA
+export BIO_SW BIO_DATA
 export PROFILES=${KE_HOME}/profiles
 
 echo "Syncing servers"
@@ -108,14 +107,14 @@ do
 	    # For the compute nodes
 	    if [ "${MACHINE_PROFILES[$machine]}" == "compute" ]; then
 	        ssh -F ${SSH_CONFIG} ${MACHINE_IPs[$machine]} mkdir -p ${VAULT}/sw
-		echo "Copying files from $KE_SW/ to ${MACHINE_IPs[$machine]}:${VAULT}/sw/."
-		[ -d $KE_SW ] && rsync -av -e "ssh -F ${SSH_CONFIG}" $KE_SW/ ${MACHINE_IPs[$machine]}:${VAULT}/sw/.
+		echo "Copying files from $BIO_SW/ to ${MACHINE_IPs[$machine]}:${VAULT}/sw/."
+		[ -d $BIO_SW ] && rsync -av -e "ssh -F ${SSH_CONFIG}" $BIO_SW/ ${MACHINE_IPs[$machine]}:${VAULT}/sw/.
 		# Don't rsync with -L. We want links to be links (Not follow them).
 	    fi
 
 	    if [ "$machine" == "storage" ]; then
 		ssh -F ${SSH_CONFIG} ${MACHINE_IPs[$machine]} mkdir -p ${VAULT}/data
-		[ -d $KE_DATA ] && rsync -av -e "ssh -F ${SSH_CONFIG}" $KE_DATA/ ${MACHINE_IPs[$machine]}:${VAULT}/data/.
+		[ -d $BIO_DATA ] && rsync -av -e "ssh -F ${SSH_CONFIG}" $BIO_DATA/ ${MACHINE_IPs[$machine]}:${VAULT}/data/.
 	    fi
 	    
 	    # Phase 2: running some commands

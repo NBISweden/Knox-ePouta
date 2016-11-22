@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Get credentials and machines settings
-source $(dirname ${BASH_SOURCE[0]})/settings/common.sh
+source $(dirname ${BASH_SOURCE[0]})/settings/common.rc
 
 export VAULT=vault
 CONNECTION_TIMEOUT=1 #seconds
@@ -61,8 +61,7 @@ if [ -n ${CUSTOM_MACHINES:-''} ]; then
 fi
 
 #######################################################################
-source $(dirname ${BASH_SOURCE[0]})/lib/utils.sh provision
-#source $(dirname ${BASH_SOURCE[0]})/lib/ssh_connections.sh
+source $(dirname ${BASH_SOURCE[0]})/utils.sh provision
 
 #######################################################################
 if [ ${#MACHINES[@]} -eq 0 ]; then

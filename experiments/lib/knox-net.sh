@@ -48,12 +48,10 @@ echo "Creating routers and networks"
 
 MGMT_ROUTER_ID=$(neutron router-create ${OS_TENANT_NAME}-mgmt-router | awk '/ id / { print $4 }')
 
-# if [ -z "$MGMT_ROUTER_ID" ]; then
-# 	echo "Router issues. Exiting..."
-#   exit 1
-# fi
-
-NETNS=qrouter-$MGMT_ROUTER_ID
+if [ -z "$MGMT_ROUTER_ID" ]; then
+	echo "Router issues. Exiting..."
+  exit 1
+fi
 
 # Creating the management and data networks
 neutron net-create --provider:network_type vlan --provider:physical_network vlan --provider:segmentation_id ${KE_VLAN} ${OS_TENANT_NAME}-mgmt-net >/dev/null

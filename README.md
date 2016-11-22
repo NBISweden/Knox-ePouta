@@ -1,4 +1,4 @@
-# Successful demonstration of cross-border use of secure cloud
+# Sucessful cross-border use of secure cloud
 
 When a cluster runs at full capacity, all the newly scheduled jobs
 have to wait. In case this happens often, it is necessary to scale up
@@ -8,8 +8,8 @@ more disks and more network switches. However, this might be an
 expensive
 solution. The [Tryggve project](https://wiki.neic.no/wiki/Tryggve)
 focused therefore on an alternative approach, where we ask other
-clusters if they have available resources that we could "borrow for a
-while".
+clusters if they have available resources that we could *"borrow for a
+while"*.
 
 An immediate issue with such a solution is whether a connection across
 borders is even feasible, or if there is a penalizing latency. We can

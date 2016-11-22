@@ -21,6 +21,11 @@ _SCRIPT=$(dirname ${BASH_SOURCE[0]})/lib/${KE_TASK}.sh
 case "${KE_TASK}" in
     init)
 	export KE_CLOUD=$2
+	if [ -z "$KE_CLOUD" ] || [[ $KE_CLOUD == -* ]]; then
+	    echo "ERROR: In which cloud do you want to initialize the VMs?"
+	    usage
+	    exit 1
+	fi
 	shift; shift # Remove the 2 first arguments from $@
 	${_SCRIPT} --cloud ${KE_CLOUD} $@ # pass the remaining arguments
 	;;

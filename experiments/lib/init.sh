@@ -54,16 +54,6 @@ fi
 [ $VERBOSE == 'no' ] && exec 1>${KE_TMP}/init.log
 ORG_FD1=$(tty)
 
-#######################################################################
-# Create the host file first
-cat > ${KE_TMP}/hosts <<ENDHOST
-127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
-::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
-
-130.238.7.178 uu_proxy
-ENDHOST
-for name in ${MACHINES[@]}; do echo "${MACHINE_IPs[$name]} $name" >> ${KE_TMP}/hosts; done
-
 # Resetting the machines afterwards
 # if _CLOUD is 'knox' the next line evaluates to ${KNOX_MACHINES[@]}
 # So that MACHINES is either the KNOX_MACHINES array
@@ -140,19 +130,23 @@ echo "Disabling SElinux"
 echo "================================================================================"
 echo "Creating hosts file"
 cat > /etc/hosts <<EOF
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
+130.238.7.178 uu_proxy
 ENDCLOUDINIT
-    cat ${KE_TMP}/hosts >> ${_VM_INIT}
+for name in ${!MACHINE_IPs[@]}; do echo "${MACHINE_IPs[$name]} $name" >> ${_VM_INIT}; done
     cat >> ${_VM_INIT} <<ENDCLOUDINIT
 EOF
 chown root:root /etc/hosts
 chmod 0644 /etc/hosts
 echo "================================================================================"
 echo "Growing partition to disk size"
-curl http://${MGMT_GATEWAY}:$KE_PORT/machine/$machine/growing 2>&1 > /dev/null || true
+curl http://${MGMT_GATEWAY}:${_PORT}/machine/$machine/growing 2>&1 > /dev/null || true
 growpart /dev/vda 1
 echo "================================================================================"
 echo "Cloudinit phone home"
-curl http://${MGMT_GATEWAY}:$KE_PORT/machine/$machine/ready 2>&1 > /dev/null || true
+curl http://${MGMT_GATEWAY}:${_PORT}/machine/$machine/ready 2>&1 > /dev/null || true
 ENDCLOUDINIT
 
 } # End prepare_machine
@@ -162,7 +156,7 @@ for machine in ${MACHINES[@]}; do echo -e "\t* $machine"; prepare_machine $machi
 
 ########################################################################
 # Is the boot_machine function defined
-type ke_boot_machine &>/dev/null || { echo "boot function not found"; exit 1 }
+type ke_boot_machine &>/dev/null || { echo "boot function not found"; exit 1; }
 
 # Aaaaannndddd....cue music!
 echo "Booting the machines"

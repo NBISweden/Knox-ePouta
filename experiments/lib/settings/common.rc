@@ -2,7 +2,7 @@
 [ ${BASH_VERSINFO[0]} -lt 4 ] && exit 1
 
 # Find the absolute path to the folder one level up
-ABOVE=$(cd $(dirname ${BASH_SOURCE[0]})/.. && pwd -P)
+ABOVE=$(cd $(dirname ${BASH_SOURCE[0]})/../.. && pwd -P)
 
 export VERBOSE=yes
 
@@ -15,8 +15,8 @@ export VERBOSE=yes
 mkdir -p ${KE_TMP}
 export KE_TMP
 
-[ -n "$KE_DATA" ] || readonly KE_DATA=/home/fred/BioInfo/data
-[ -n "$KE_SW" ]   || readonly KE_SW=/home/fred/BioInfo/sw
+[ -n "$BIO_DATA" ] || readonly BIO_DATA=/home/fred/BioInfo/data
+[ -n "$BIO_SW" ]   || readonly BIO_SW=/home/fred/BioInfo/sw
 
 #################################################################
 # Declaring the machines
