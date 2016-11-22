@@ -29,7 +29,9 @@ administrator_. Note that this user might need an admin role for the
 given tenant/project. This is the case for Knox, since we also provide
 scripts to set up the network infrastructure.
 
-The scripts define some variables (in `lib/settings/common.rc`)
+The credentials are for the moment for `lib/settings/knox.rc` and `lib/settings/epouta.rc`.
+
+The scripts define some variables (in [lib/settings/common.rc](lib/settings/common.rc))
 * `KE_HOME` (that current folder)
 * `BIO_DATA` (currently pointing to `/home/fred/BioInfo/data`)
 * `BIO_SW` (currently pointing to `/home/fred/BioInfo/sw`)
@@ -47,9 +49,9 @@ These scripts are build to run on Knox.
 
 Prior to creating the VMs, whether on Knox or ePouta, it is necessary
 to make sure the necessary network components are set up.  On ePouta,
-it was already done. On Knox, you can have a look at the script
-`lib/knox-net.sh` which creates the necessary routers, networks and
-security groups.
+it was already done. On Knox, you can have a look at the
+script [lib/knox-net.sh](lib/knox-net.sh) which creates the necessary
+routers, networks and security groups.
 
 Once the network settings are in place (on Knox), two linux network
 namespaces are available: one for the virtual router (starting with
@@ -116,7 +118,6 @@ the place where test-scripts are located and the results are stored.
 	sed -i -e '/OS_PASSWORD=*/OS_PASSWORD=holala/' lib/settings/knox.rc
 	
 	./knox-epouta init knox --image CentOS7-extended
-	./knox-epouta init epouta --image CentOS7-extended
 	./knox-epouta sync
 	./knox-epouta provision
 	
