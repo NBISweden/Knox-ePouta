@@ -77,8 +77,8 @@ if [ ! -x /usr/local/bin/nextflow ]; then
     chmod +rx /usr/local/bin/nextflow
 fi
 
-cat > /etc/profile.d/mmrc.sh <<'EOF'
-# micromosler defs
+cat > /etc/profile.d/knox-epouta-rc.sh <<'EOF'
+# Knox-ePouta defs
 
 alias ls='ls -h'
 alias la='ls -a'

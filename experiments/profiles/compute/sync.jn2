@@ -262,8 +262,8 @@ mkdir -p /mnt
 [ -L /mnt/sw ] && unlink /mnt/sw
 ln -s /home/centos/{{ env['VAULT'] }}/sw /mnt/sw
 
-cat > /etc/profile.d/mmrc.sh <<'EOF'
-# micromosler defs
+cat > /etc/profile.d/knox-epouta-rc.sh <<'EOF'
+# Knox-ePouta defs
 
 alias ls='ls -h'
 alias la='ls -a'

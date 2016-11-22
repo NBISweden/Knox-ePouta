@@ -64,12 +64,12 @@ git config --global https.proxy ${http_proxy/http/https}
 
 declare -A PARTITIONS
 PARTITIONS=(\
-    ['mm']='compute1 compute2 compute3' \
-    ['mm2-epouta1']='compute1 compute2 epouta1' \
-    ['mm1-epouta2']='compute3 epouta2 epouta3' \
+    ['knox']='knox1 knox2 knox3' \
+    ['knox2-epouta1']='knox1 knox2 epouta1' \
+    ['knox1-epouta2']='knox3 epouta2 epouta3' \
     ['epouta']='epouta1 epouta2 epouta3' \
-    ['epouta1-mm2']='epouta1 compute1 compute2' \
-    ['epouta2-mm1']='epouta2 epouta3 compute3' \
+    ['epouta1-knox2']='epouta1 knox1 knox2' \
+    ['epouta2-knox1']='epouta2 epouta3 knox3' \
 )
 declare -a _NODES
 
