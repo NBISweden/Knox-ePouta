@@ -7,3 +7,4 @@ _build
 experiments/lib/settings/authorized_keys
 experiments/lib/settings/*.rc
 !experiments/lib/settings/common.rc
+suggestions
