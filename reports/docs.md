@@ -1,73 +1,112 @@
 # Knox setup for the Epouta connection
 
-This document describes how we set up a test project that runs on
-Knox, and uses Epouta's virtual machines (VMs) to extend the list of
-compute nodes.
+This document describes how we connected a set of virtual machines
+(VMs) running on Knox, in Sweden, to another set of VMs running on
+ePouta, in Finland.
 
-There is a fiber link with dedicated network between Knox and Epouta.
+We start with the low-level component. There is a 1GB/s fiber-link
+between Knox and ePouta with a dedicated network. This means that the
+link might be shared, but only the VMs on that network can communicate
+through it. This security is provided by VLAN encapsulation. In our
+case, the VLAN tag is 1203.
 
-Assume we have a project running in a (micro)mosler environment, and
-that this project uses a set of VMs on Knox. We use Epouta's VMs to
-extend the latter set.
+The network will use the following range of IPs: `10.101.0.0/16`.
 
-In reality, we do not have a mosler setup. Instead, we use a vanilla
-openstack installation, and non-sensitive data (or rather, trivial
-data from a small test case). On this openstack installation, we
-instantiate a project on VLAN 1203. The VMs on that VLAN will be
-communicate transparently to the ones in Epouta.
+The network settings use the following components:
+* a Virtual Router on Knox (with IP: 10.101.0.1/16)
+* a DHCP server on Knox (with IP: 10.101.128.2/16)
+* a DHCP server on ePouta (with IP: 10.101.0.3/16)
+* the Neutron Openstack linuxbridges plugin (on Knox) with VLAN capabilities
 
-Connectivity between the VMs is ensured by the Linux Bridge plugin in
-Neutron (on Knox), and we use the VLAN capabilities of that plugin.
+and of course 
+* a set of VMs on ePouta (with IP: 10.101.0.4/16 to 10.101.127.255/16)<br/>...that is, the third number starts in binary notation with a 0.
+* a set of VMs on Knox (with IP: 10.101.128.3/16 to 10.101.128.254/16)<br/>...that is, the third number starts in binary notation with a 1.
 
-We describe and illustrate here the different bits we chose to setup
-for the network.
+## The Virtual Router and DHCP server, on Knox
 
-The first one is the virtual router. Openstack uses the network
-namespace capabilities of the Linux kernel, in order to isolate
-routes, firewall rules and interfaces from the root namespace.
+Openstack uses the network namespace capabilities of the Linux kernel,
+in order to isolate routes, firewall rules and interfaces from the
+root namespace. This is where the virtual router and the dhcp server
+live, each in its own namespace. 
+
 
 	[controller]$ ip netns
-	qrouter-2b34b042-afaa-485c-86ae-9afa6e7d494f
-	qdhcp-8060ed02-cba7-4f2a-a8c5-e0ee5c238556
+	qrouter-<some-uuid>
+	qdhcp-<some-other-uuid>
 
-The neutron plugin creates veth pairs, where one end is moved to the
-router namespace, and the other end is still in the root namespace,
-and added to a linux bridge. Openstack creates a linux bridge per
-project. Moreover, the plugin makes sure that the outgoing interface,
-of the physical host, uses the VLAN tag 1203, and is also added to the
+The neutron plugin creates veth pairs, where one end is moved to a
+network namespace, and the other end is still in the root namespace.
+The end in the router namespace is of the form `qr-<some-uuid>` and
+the one in the dhcp namespace is of the form `ns-<some-uuid>` (This
+naming is for historical reasons, in the early stages of the neutron
+project).
+
+The other end of the veth pairs, in the root namespace, is added to a
+linux bridge. Openstack creates a linux bridge per project.
+
+Moreover, the plugin makes sure that the outgoing interface, of the
+physical host, uses the VLAN tag 1203, and is also added to that same
 bridge, therefore providing connectivity and security to the router
-over that VLAN 1203.
-
-There is another namespace created in our case that isolate a
-`dnsmasq` process, in order to provide a DHCP server for the project's
-VMs. A veth pair's end belongs to the dhcp namespace and the other end
-is added to the project's bridge.
+(over that VLAN).
 
 ![neutron on controller](./img/controller.jpeg)
 
-And on the compute node, a bridge is created (per project), along with
-an interface with VLAN tag 1203. A veth pair's end is added to the
-bridge, while to other end is used by a VM, as its internal interface.
+The dhcp namespace isolates a `dnsmasq` process, while the other
+namespace isolates routes and IPtables rules for the virtual router.
+
+## VM connectivity on the compute nodes
+
+On each compute node, a bridge is created (also per project), along
+with an interface with VLAN tag 1203. A veth pair's end is added to
+the bridge, while to other end is used by a VM, as its internal
+interface.
+
+A kernel setting is used to force `IPtables` to filter traffic on the
+bridge. This is the way Openstack enforces security groups and in
+particular ensures some address spoofing protections. We'll come back
+to it later.
 
 ![neutron on compute node](./img/compute-node.jpeg)
 
-The router does not have any connection outside the `101` network. The
-exception is the address 130.238.7.178 which is the UU proxy. Each
-bridge is linked to a VLAN interface. For that project, VLAN 1203 was
-chosen
 
-# External connectivity for the VMs
+## External connectivity for the VMs
 
 All VMs have a default route to the virtual router. Therefore,
-external connectivity was adjusted in the virtual router's namespace.
+external connectivity is adjusted in the virtual router's namespace.
 
-Openstack usually adds a `gateway` interface to the virtual router,
-SNAT the traffic (source NATing), connects all virtual routers to a
-bridge that forwards traffic to the external interface.
+Openstack usually creates a veth pair, where one end is a `gateway`
+interface added to the virtual router, and the router translates the
+source address (source NATing, SNAT), using IPTables, for outgoing
+traffic over that interface. Traffic to the 10.101.0.0/16 network is
+routed through the `qr-<some-id>` interface, and all other traffic is
+routed through the gateway interface.
 
-In our case, we did not need all those settings, so only a veth pair
-(called `gw <-> mm`) was used, along with a fake external network
-`10.5.0.0/24`. There again, external traffic is source-NATed.
+The other end of the veth pair is still in the root namespace, and is
+added to an _external_ bridge, which already forwards traffic to the
+host's external interface.  That way, all virtual routers have
+external connectivity.
+
+However, in our case, we did not need all those settings, so we only
+used one veth pair (called `gw <-> mm`), along with a fake external
+network `10.5.0.0/24`.
+
+
+----
+
+
+<p style="text-align: center; font-size: 3em; border:1px solid red;">
+SO FAR SO GOOD
+</p>
+
+
+----
+
+
+
+The router does not have any connection outside the `101` network. The
+exception is the address 130.238.7.178 which is the UU proxy. Each
+bridge is linked to a VLAN interface. 
+
 
 	[controller] $ ip addr show dev mm
 	41: mm: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
