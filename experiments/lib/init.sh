@@ -38,7 +38,7 @@ done
 
 #######################################################################
 # Fetching the cloud settings
-[ -z "$_CLOUD" ] && echo "ERROR: Which cloud do you consider?" && usage && exit 1
+[ -z "$_CLOUD" ] && { echo "ERROR: Which cloud do you consider?"; usage; } >&2 && exit 1
 
 if [ -f $KE_HOME/lib/settings/${_CLOUD}.init ]; then
     # Adding the knox variables to the environment
@@ -46,12 +46,12 @@ if [ -f $KE_HOME/lib/settings/${_CLOUD}.init ]; then
     # Note: this includes some rudimentary checks
     # And the definition of the boot_machine function
 else
-    echo "ERROR: Cloud settings not found [$KE_HOME/lib/settings/${_CLOUD}.init]"
+    echo "ERROR: Cloud settings not found [$KE_HOME/lib/settings/${_CLOUD}.init]" >&2
     exit 1;
 fi
 
 #######################################################################
-[ $VERBOSE == 'no' ] && exec 1>${KE_TMP}/init.log
+[ $VERBOSE == 'no' ] && exec 1>${KE_TMP}/init.log #&& exec 2>${KE_TMP}/init.log
 ORG_FD1=$(tty)
 
 # Resetting the machines afterwards
@@ -68,15 +68,16 @@ if [ -n ${CUSTOM_MACHINES:-''} ]; then
 	if [[ "${MACHINES[@]}" =~ "$cm" ]]; then
 	    CUSTOM_MACHINES+="$cm "
 	else
-	    echo "Unknown machine: $cm"
+	    echo "Unknown machine: $cm" >&2
 	fi
     done
     if [ -n "$CUSTOM_MACHINES" ]; then
 	echo "Using these machines: ${CUSTOM_MACHINES// /,}"
 	MACHINES=($CUSTOM_MACHINES)
     else
-	echo "Error: all custom machines are unknown"
-	echo "Nothing to be done..."
+	{ echo "Error: all custom machines are unknown"
+	  echo "Nothing to be done..."
+	} >&2
 	exit 2
     fi  
 fi
@@ -85,7 +86,7 @@ fi
 # Testing if the image exists
 # Silencing the SSL warnings from ePouta with 2>/dev/null
 if nova image-list 2>/dev/null | grep "${_IMAGE}" > /dev/null; then : ; else
-    echo "Error: Could not find the image '${_IMAGE}' to boot from."
+    echo "Error: Could not find the image '${_IMAGE}' to boot from." >&2
     exit 1
 fi
 
@@ -100,7 +101,7 @@ for machine in ${MACHINES[@]}; do mkdir -p ${KE_TMP}/$machine/init; done
 ########################################################################
 echo "Starting the REST phone home server"
 fuser -k ${_PORT}/tcp || true
-trap "$KE_CONNECT fuser -k ${_PORT}/tcp &>/dev/null || true; exit 1" SIGINT SIGTERM EXIT
+trap "fuser -k ${_PORT}/tcp &>/dev/null || true; exit 1" SIGINT SIGTERM EXIT
 python ${KE_HOME}/lib/init-progress.py $_PORT "${MACHINES[@]}" 2>&1 &
 REST_PID=$!
 sleep 2
@@ -159,7 +160,7 @@ for machine in ${MACHINES[@]}; do echo -e "\t* $machine"; prepare_machine $machi
 
 ########################################################################
 # Is the boot_machine function defined
-type ke_boot_machine &>/dev/null || { echo "boot function not found"; exit 1; }
+type ke_boot_machine &>/dev/null || { echo "Error: boot function not found" >&2; exit 1; }
 
 # Aaaaannndddd....cue music!
 echo "Booting the machines"

@@ -18,10 +18,10 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-[ -z $host ] && usage && exit 1
+[ -z $host ] && usage >&2 && exit 1
 
 ############################################
-[ -z "${MACHINE_IPs[$host]}" ] && echo "Unknown machine: $host" && exit 1
+[ -z "${MACHINE_IPs[$host]}" ] && echo "Unknown machine: $host" >&2 && exit 1
 _IP=${MACHINE_IPs[$host]}
 
 ############################################
