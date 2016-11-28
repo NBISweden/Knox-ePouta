@@ -38,7 +38,7 @@ function ke_boot_machine {
     exec 2>/dev/null
 
     echo -ne "\t* $machine: port "
-    local _PORT=$(neutron port-create --name port-$machine --fixed-ip subnet_id=UU-MOSLER-subnet,ip_address=${_IP} UU-MOSLER-network | awk '/ id / {print $4}')
+    local _PORT=$(neutron port-create --name port-$machine --extra-dhcp-opts list=true opt_name='interface-mtu',opt_value='1450' --fixed-ip subnet_id=UU-MOSLER-subnet,ip_address=${_IP} UU-MOSLER-network | awk '/ id / {print $4}')
     [ -z "$_PORT" ] && echo $'\e[31m\xE2\x9C\x97\e[0m' " Skipping..." && return 1
 
     echo -e $'\e[32m\xE2\x9C\x93\e[0m | booting '
