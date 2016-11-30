@@ -101,6 +101,26 @@ SO FAR SO GOOD
 
 ----
 
+Updating the network on ePouta:
+
+	fred@knox1:~$ neutron subnet-show UU-MOSLER-subnet
+	+-------------------+--------------------------------------------------+
+	| Field             | Value                                            |
+	+-------------------+--------------------------------------------------+
+	| allocation_pools  | {"start": "10.101.0.2", "end": "10.101.127.255"} |
+	| cidr              | 10.101.0.0/16                                    |
+	| dns_nameservers   | 10.101.128.2                                     |
+	| enable_dhcp       | True                                             |
+	| gateway_ip        | 10.101.0.1                                       |
+	| host_routes       |                                                  |
+	| id                | ffffffff-gggg-hhhh-iiii-jjjjjjjjjjjj             |
+	| ip_version        | 4                                                |
+	| name              | UU-MOSLER-subnet                                 |
+	| network_id        | aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee             |
+	| subnetpool_id     |                                                  |
+	| tenant_id         | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa                 |
+	+-------------------+--------------------------------------------------+
+
 
 
 The router does not have any connection outside the `101` network. The
@@ -132,107 +152,113 @@ We chose to not give a full external connectivity to the VMs. We do
 not have a default route in the routing table of the virtual
 router. We only added one to one of Uppsala University's proxy 130.238.7.178.
 
+
+
+	[virtual-router] # iptables -t nat -S
+	...
+	-A POSTROUTING -o gw -j SNAT --to-source 10.5.0.2
+	...
+
+
+
+# Preparing the network
+
+The following commands create a network namespace, a bridge, and a
+veth pair that is dedicated for the 10.101.0.0/16 network.
+
+	# Create a router (Note its ID)
+	neutron router-create ${OS_TENANT_NAME}-mgmt-router
+	# Create a network (on VLAN 1203)
+	neutron net-create --provider:network_type vlan --provider:physical_network vlan --provider:segmentation_id 1203 ${OS_TENANT_NAME}-mgmt-net
+	# neutron subnet-create --name ${OS_TENANT_NAME}-mgmt-subnet ${OS_TENANT_NAME}-mgmt-net --allocation-pool start=10.101.128.1,end=10.101.255.254 --gateway 10.101.0.1 10.101.0.0/16
+	# Add an interface in the router for that 101 network
+	neutron router-interface-add ${OS_TENANT_NAME}-mgmt-router ${OS_TENANT_NAME}-mgmt-subnet
+	
+
+We think we found a problem with MAC address on the bridge in
+Ubuntu. A quickfix is to disable the MAC learning algorithm of the
+bridge, and make it behave like a hub (and not a virtual switch). We
+don't recall that it was necessary on CentOS.
+
+	brctl setageing brq<...>  0 
+
+We then create the necessary interfaces in order to get external
+access to the router, though limited.
+
+	# Create a veth pair for external access to the virtual router
+	ip link add gw type veth peer name mm
+	# Add the gw interface to the virtual router
+	ip link set gw netns qrouter-<...>
+	# Give an ip to `mm`
+	ip addr add 10.5.0.1/24 dev mm
+
+Inside the Virtual router:
+
+	# Give an ip to `gw`, and bring it up (that'll bring `mm` up on the other side too)
+	[virtual-router] # ip addr add 10.5.0.2/24 dev gw
+	                 # ip link set dev gw up
+
+The routes in the Virtual Router are so far:
+
 	[virtual-router] # ip route show
 	10.5.0.0/24 dev gw  proto kernel  scope link  src 10.5.0.2 
-	10.101.0.0/16 dev qr-<id> proto kernel  scope link  src 10.101.0.1 
+	10.101.0.0/16 dev qr-<...>  scope link  src 10.101.0.1 
+
+We add a few other ones:
+
+	[virtual-router] # ip route add 10.254.0.1/32 via 10.5.0.1 dev gw    # Knox openstack endpoint
+	                 # ip route add 86.50.28.63/32 via 10.5.0.1 dev gw   # ePouta openstack endpoint
+	                 # ip route add 130.238.7.10/32 via 10.5.0.1 dev gw  # UU DNS
+	                 # ip route add 130.238.7.178/32 via 10.5.0.1 dev gw # UU proxy
+
+
+Finally, 
+
+	[virtual-router] # ip addr list
+	1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default 
+		link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+		inet 127.0.0.1/8 scope host lo
+		valid_lft forever preferred_lft forever
+	2: qr-<...>: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+		link/ether fa:16:3e:44:18:8f brd ff:ff:ff:ff:ff:ff
+		inet 10.101.0.1/16 brd 10.101.255.255 scope global qr-bec87232-23
+		valid_lft forever preferred_lft forever
+	40: gw: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+		link/ether 36:66:d6:4f:d5:d1 brd ff:ff:ff:ff:ff:ff
+		inet 10.5.0.2/24 scope global gw
+		valid_lft forever preferred_lft forever
+
+	[virtual-router] # ip route show
+	10.5.0.0/24 dev gw  proto kernel  scope link  src 10.5.0.2 
+	10.101.0.0/16 dev qr-<...>  proto kernel  scope link  src 10.101.0.1 
+	10.254.0.1 via 10.5.0.1 dev gw 
+	86.50.28.63 via 10.5.0.1 dev gw 
+	130.238.7.10 via 10.5.0.1 dev gw 
 	130.238.7.178 via 10.5.0.1 dev gw 
 
 
 
 
-Security rules are implemented on each compute node, as IPtable rules
-filtering the bridge traffic. These rules are added by Openstack and
-can be slightly manipulated by updating the neutron port settings.
-
-	[compute-node] $ brctl show
-	bridge name	    bridge id		    STP enabled	interfaces
-	brq8060ed02-cb	8000.ecb1d7830cb0	no		      em1.1203
-	                                            tapb83935a5-30
-												tapeeec86c0-83
-
-
-	[compute-node] # iptables -S FORWARD
-	-A FORWARD -j neutron-linuxbri-FORWARD
-
-	[compute-node] # iptables -S neutron-linuxbri-FORWARD
-	-A neutron-linuxbri-FORWARD -m physdev --physdev-out tapb83935a5-30 --physdev-is-bridged -m comment --comment "Direct traffic from the VM interface to the security group chain." -j neutron-linuxbri-sg-chain
-	-A neutron-linuxbri-FORWARD -m physdev --physdev-in tapb83935a5-30 --physdev-is-bridged -m comment --comment "Direct traffic from the VM interface to the security group chain." -j neutron-linuxbri-sg-chain
-	...
-
-	[compute-node] # iptables -S neutron-linuxbri-sg-chain
-	-N neutron-linuxbri-sg-chain
-	-A neutron-linuxbri-sg-chain -m physdev --physdev-out tapb83935a5-30 --physdev-is-bridged -m comment --comment "Jump to the VM specific chain." -j neutron-linuxbri-ib83935a5-3
-	-A neutron-linuxbri-sg-chain -m physdev --physdev-in tapb83935a5-30 --physdev-is-bridged -m comment --comment "Jump to the VM specific chain." -j neutron-linuxbri-ob83935a5-3
-	-A neutron-linuxbri-sg-chain -j ACCEPT
-
-
-	[compute-node] # iptables -S neutron-linuxbri-ob83935a5-3
-	-N neutron-linuxbri-ob83935a5-3
-	-A neutron-linuxbri-ob83935a5-3 -p udp -m udp --sport 68 -m udp --dport 67 -m comment --comment "Allow DHCP client traffic." -j RETURN
-	-A neutron-linuxbri-ob83935a5-3 -j neutron-linuxbri-sb83935a5-3
-	-A neutron-linuxbri-ob83935a5-3 -p udp -m udp --sport 67 -m udp --dport 68 -m comment --comment "Prevent DHCP Spoofing by VM." -j DROP
-	-A neutron-linuxbri-ob83935a5-3 -m state --state RELATED,ESTABLISHED -m comment --comment "Direct packets associated with a known session to the RETURN chain." -j RETURN
-	-A neutron-linuxbri-ob83935a5-3 -j RETURN
-	-A neutron-linuxbri-ob83935a5-3 -m state --state INVALID -m comment --comment "Drop packets that appear related to an existing connection (e.g. TCP ACK/FIN) but do not have an entry in conntrack." -j DROP
-	-A neutron-linuxbri-ob83935a5-3 -m comment --comment "Send unmatched traffic to the fallback chain." -j neutron-linuxbri-sg-fallback
-
-
-	[compute-node] # iptables -S neutron-linuxbri-ib83935a5-3
-	-N neutron-linuxbri-ib83935a5-3
-	-A neutron-linuxbri-ib83935a5-3 -m state --state RELATED,ESTABLISHED -m comment --comment "Direct packets associated with a known session to the RETURN chain." -j RETURN
-	-A neutron-linuxbri-ib83935a5-3 -s 10.101.128.2/32 -p udp -m udp --sport 67 -m udp --dport 68 -j RETURN
-	-A neutron-linuxbri-ib83935a5-3 -s 10.101.0.0/16 -p icmp -j RETURN
-	-A neutron-linuxbri-ib83935a5-3 -s 10.101.0.0/16 -p tcp -m tcp -m multiport --dports 1:65535 -j RETURN
-	-A neutron-linuxbri-ib83935a5-3 -m set --match-set NIPv4ef2c878c-caf7-4c69-b6a5- src -j RETURN
-	-A neutron-linuxbri-ib83935a5-3 -m state --state INVALID -m comment --comment "Drop packets that appear related to an existing connection (e.g. TCP ACK/FIN) but do not have an entry in conntrack." -j DROP
-	-A neutron-linuxbri-ib83935a5-3 -m comment --comment "Send unmatched traffic to the fallback chain." -j neutron-linuxbri-sg-fallback
-
-	[compute-node] # iptables -S neutron-linuxbri-sb83935a5-3
-	-N neutron-linuxbri-sb83935a5-3
-	-A neutron-linuxbri-sb83935a5-3 -s 10.101.128.100/32 -m mac --mac-source FA:16:3E:8B:C4:6A -m comment --comment "Allow traffic from defined IP/MAC pairs." -j RETURN
-	-A neutron-linuxbri-sb83935a5-3 -m comment --comment "Drop traffic without an IP/MAC allow rule." -j DROP
-	
-	[compute-node] # iptables -S neutron-linuxbri-sg-fallback
-	-N neutron-linuxbri-sg-fallback
-	-A neutron-linuxbri-sg-fallback -m comment --comment "Default drop rule for unmatched traffic." -j DROP
-
-	[compute-node] # ipset list NIPv4ef2c878c-caf7-4c69-b6a5-
-	Name: NIPv4ef2c878c-caf7-4c69-b6a5-
-	Type: hash:net
-	Revision: 4
-	Header: family inet hashsize 1024 maxelem 65536
-	Size in memory: 16920
-	References: 2
-	Members:
-	10.101.128.100
-	10.101.128.102
-	10.101.128.104
-	10.101.128.101
-	10.101.128.103
-
-
-
-
-
-* allowed MAC/IP or filtering by iptables on the bridges of the compute nodes
-
 # For Leif
 
-	[controller] $ ip addr show dev brq8060ed02-cb
-	brq8060ed02-cb: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+We gave an IP on the 10.101.0.0/16 network and adjusted the routes so that this network is routed through
+the created bridge
+
+	[controller] $ ip addr add 10.101.127.254/16 dev brq<...>
+	brq<...>: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
     link/ether 0e:d5:71:c6:a5:da brd ff:ff:ff:ff:ff:ff
-    inet 10.101.0.2/16 scope global brq8060ed02-cb
+    inet 10.101.127.254/16 scope global brq<...>
        valid_lft forever preferred_lft forever
 	   
-
 	[controller] $ ip route show
-	10.101.0.0/16 dev brq8060ed02-cb  scope link 
+	...
+	10.101.0.0/16 dev brq<...>  proto kernel scope link src 10.101.127.254
+	...
+	
 
 # Notes
 
 * MAC/IP filtering on the bridges. did byte us in the...
-* Bridge MAC address problem on Ubuntu. setageing to 0, making the
-  bridge behave as a hub and not a virtual switch.
 * Broadcast traffic is still forwarded to all interface on VLAN 1203
   and therefore to all VMs. An improvment would be to use OpenVSwitch
   to learn about MAC addresses and skip physical nodes that don't host
