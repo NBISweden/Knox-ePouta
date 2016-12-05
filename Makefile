@@ -1,4 +1,5 @@
-SOURCES := $(wildcard settings/*.tex) settings/*.cls main.tex \
+TARGET := main
+SOURCES := $(wildcard settings/*.tex) settings/*.cls $(TARGET).tex \
 	   $(wildcard sections/*.tex) $(wildcard img/*.tex) sections/references.bib
 
 ERROR ?= no 
@@ -21,20 +22,20 @@ BUILD := $(CURRDIR)_build
 .PHONY: all web img experiments force
 
 ## ==== Thesis ==================================================
-all: $(BUILD)/main.pdf
+all: $(BUILD)/$(TARGET).pdf
 
 e:
 	@make ERROR=yes
 
-$(BUILD)/main.pdf: main.tex settings/builddir.tex $(SOURCES) 
-	@echo Compiling main.tex
+$(BUILD)/$(TARGET).pdf: $(TARGET).tex settings/builddir.tex $(SOURCES) 
+	@echo Compiling $(TARGET).tex
 	@$(LATEX) $(FLAGS) -output-directory=$(BUILD) $< $(REDIRECT)
 
 force:
-	@echo "Compiling main.tex [forcing]"
-	@$(LATEX) $(FLAGS) -output-directory=$(BUILD) main.tex $(REDIRECT)
+	@echo "Compiling $(TARGET).tex [forcing]"
+	@$(LATEX) $(FLAGS) -output-directory=$(BUILD) $(TARGET).tex $(REDIRECT)
 
-final: main.tex settings/builddir.tex $(SOURCES) bib index
+final: $(TARGET).tex settings/builddir.tex $(SOURCES) bib index
 	@echo "Second compilation"
 	@$(LATEX) $(FLAGS) -output-directory=$(BUILD) $< $(REDIRECT)
 	@echo "Final compilation"
@@ -42,16 +43,15 @@ final: main.tex settings/builddir.tex $(SOURCES) bib index
 
 ## ==== Bibtex ==================================================
 # Must use the TEXMFOUTPUT variable or change the openout_any=a in the texmf.cnf settings file
-$(BUILD)/main.bbl: misc/references.bib $(BUILD)/main.aux
+$(BUILD)/$(TARGET).bbl: sections/references.bib $(BUILD)/$(TARGET).aux
 	@echo "Compiling the bibliography"
-	@export TEXMFOUTPUT=$(BUILD); $(BIBTEX) $(BUILD)/main || true
-$(BUILD)/main.aux: $(BUILD)/main.pdf
-bib: $(BUILD)/main.bbl
+	@export TEXMFOUTPUT=$(BUILD); $(BIBTEX) $(BUILD)/$(TARGET) || true
+$(BUILD)/$(TARGET).aux: $(BUILD)/$(TARGET).pdf
+bib: $(BUILD)/$(TARGET).bbl
 
 settings/builddir.tex:
 	@mkdir $(BUILD)
 	@echo "\\\newcommand\\\builddir{\detokenize{$(BUILD)}}" > $@
-#	@for c in {parameterized-systems,verification,monotonic-abstraction,view-abstraction,shape-analysis}; do mkdir -p $(BUILD)/chapters/$${c}; done
 
 # =============================================================================
 # Cleaning
@@ -60,7 +60,7 @@ cleantilde:
 	@find . -type f -iname '*~' -exec  rm {} \;
 
 clean: cleantilde
-	@rm -f $(BUILD)/main.*
+	@rm -f $(BUILD)/$(TARGET).*
 
 cleanall: cleantilde
 	@rm -rf $(BUILD)
