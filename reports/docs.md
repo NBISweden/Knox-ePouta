@@ -267,7 +267,7 @@ is redirected to the security group chain.
 	...
 
 The security group chain gathered all incoming and outgoing traffic
-from the VMs. Surprisingly, that chain now forks and redirect the
+from the VMs. Surprisingly, that chain now forks and redirects the
 traffic to an _incoming_ or another _outgoing_ chain. If those latter
 chains do not filter the traffic, the packets are then accepted.
 
@@ -291,7 +291,8 @@ the traffic).
 	-A neutron-linuxbri-ob83935a5-3 -p udp -m udp --sport 68 -m udp --dport 67 -j RETURN
 	-A neutron-linuxbri-ob83935a5-3 -j neutron-linuxbri-sb83935a5-3
 
-Otherwise, it jumps to a _source chain_.
+Otherwise, it jumps to a _source chain_ (which name starts with
+_neutron-linuxbri-_**s**).
 
 	[compute-node] # iptables -S neutron-linuxbri-sb83935a5-3
 	-N neutron-linuxbri-sb83935a5-3
@@ -340,10 +341,11 @@ drops that traffic.
 	-A neutron-linuxbri-sg-fallback -j DROP
 
 Finally, we observe that the openstack security rules, which we added
-in neutron, end up in the _incoming chain_. The DHCP traffic is
-allowed, along with `ping` and tcp traffic (on all ports), from the IP
-range `10.101.0.0/16`. Some specific neutron commands can allow other
-network ranges, and this is where the rules would appear. 
+in neutron, end up in the _incoming chain_ (which name starts with
+_neutron-linuxbri-_**i**). The DHCP traffic is allowed, along with
+`ping` and tcp traffic (on all ports), from the IP range
+`10.101.0.0/16`. Some specific neutron commands can allow other
+network ranges, and this is where the rules would appear.
 
 	[compute-node] # iptables -S neutron-linuxbri-ib83935a5-3
 	-N neutron-linuxbri-ib83935a5-3
@@ -363,8 +365,8 @@ In case the above ping and tcp rules were absent, the traffic is then
 accepted if it comes from another VM on the network.  This is
 implemented with IPset. 
 
-	[compute-node] # ipset list NIPv4ef2c878c-caf7-4c69-b6a5-
-	Name: NIPv4ef2c878c-caf7-4c69-b6a5-
+	[compute-node] # ipset list NIP<...>
+	Name: NIP<...>
 	Type: hash:net
 	Revision: 4
 	Header: family inet hashsize 1024 maxelem 65536
