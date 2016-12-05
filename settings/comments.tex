@@ -1,45 +1,3 @@
-\ifcomments %% =====================================================
-
-\setlength{\fboxsep}{2pt}
-
-\newdimen\len
-\len=\marginparwidth
-\advance\len by -\marginparsep
-\advance\len by -\marginparsep
-%\advance\len by -\marginparsep
-
-\newcounter{notec}
-\newcommand{\mynote}[1]{%
-  \stepcounter{notec}%
-  {$^{\footnotesize\textcolor{red}\bf (\arabic{notec})}$}%
-  \leavevmode%
-  \marginpar[\fbox{\parbox{\len}{$^{\footnotesize\textcolor{red}\bf (\arabic{notec})}$ \footnotesize\raggedleft #1}}]%
-  {\fbox{\parbox{\len}{$^{\footnotesize\textcolor{red}\bf (\arabic{notec})}$ \footnotesize\raggedright #1}}}%
-}%
-
-%% Local note, as footnote
-\newcommand{\lnote}[1]{\footnote{#1}}
-
-%% Thesis Keywords (included in the index)
-\usepackage{marginfix}
-%\usepackage[noadjust]{marginnote}
-\newcommand*{\KW}[1]{\leavevmode%
-{%\mbox{}
-\marginpar[\fbox{\parbox[b]{\len}{\raggedleft\footnotesize #1}}]{\fbox{\parbox[b]{\len}{\raggedright\footnotesize #1}}}%
-%\marginnote[\fbox{\parbox[b]{\len}{\raggedleft\footnotesize #1}}]{\fbox{\parbox[b]{\len}{\raggedright\footnotesize #1}}}[0pt]%
-%\index{KEYWORDS!#1}
-}%
-%\ignorespaces%
-}
-
-\else %% ==========================================================
-
-\newcommand{\mynote}[1]{}
-\newcommand{\lnote}[1]{}
-\newcommand*{\KW}[1]{}
-
-\fi %% ============================================================
-
 \ifunderprogress
 
 \mdfdefinestyle{CommentFrame}{%
@@ -74,5 +32,3 @@
 \newcommand*{\sfsg}{\sofarsogood\endinput}
 \newcommand*{\cutafter}{\endinput}
 %\newcommand*{\cutpage}{\noindent\makebox[\linewidth]{\rule{\paperwidth}{2pt}}}
-
-

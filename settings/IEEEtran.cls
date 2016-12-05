@@ -235,7 +235,6 @@
 \underprogressfalse
 \DeclareOption{underprogress}{ \underprogresstrue }
 
-
 % class option conditionals
 \newif\ifCLASSOPTIONonecolumn       \CLASSOPTIONonecolumnfalse
 \newif\ifCLASSOPTIONtwocolumn       \CLASSOPTIONtwocolumntrue

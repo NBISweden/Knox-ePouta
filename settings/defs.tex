@@ -10,35 +10,6 @@
 \input{settings/builddir.tex}
 \input{settings/comments.tex}
 
-\newcommand{\tikzinput}[2][]{%
-  \ifnotikz%
-  \let\myparam\empty%
-  \ifunderprogress\eappto\myparam{draft,}\fi%
-  \ifstrempty{#1}{}{\eappto\myparam{width=#1}}%
-  \expandafter\includegraphics\expandafter[\myparam]{\builddir/#2}%
-  \else%
-  \ifstrempty{#1}{\input{#2}}{\resizebox{#1}{!}{\input{#2}}}%
-  \fi%
-}%
-
-\newcommand{\tikzinputcenter}[1]{\smallskip{\noindent\centering \tikzinput{#1}\par}\smallskip}
-
-\newcommand{\listinginput}[1]{
-  \ifthenelse{\equal{#1}{force}}%
-  {\lstinputlisting[style=custom]{#1}}%
-  {%
-    \ifunderprogress
-       \ifnolistings
-          \fbox{\parbox[t][3cm][c]{0.9\linewidth}{\centering\detokenize{#1}}}
-       \else
-           \lstinputlisting[style=custom]{#1}
-       \fi
-    \else
-       \lstinputlisting[style=custom]{#1}
-    \fi
-  }%
-}
-
 %% ---------------------------------------------
 \newenvironment{statement}{\begin{quote}\raggedleft}{\end{quote}}
 

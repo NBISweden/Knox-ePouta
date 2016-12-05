@@ -1,13 +1,5 @@
 SOURCES := $(wildcard settings/*.tex) settings/*.cls main.tex \
-	   $(wildcard misc/*.tex) \
-	   $(wildcard chapters/verification/*.tex) \
-	   $(wildcard chapters/parameterized-systems/*.tex) \
-	   $(wildcard chapters/monotonic-abstraction/*.tex) \
-	   $(wildcard chapters/view-abstraction/*.tex) \
-           $(wildcard chapters/shape-analysis/*.tex) \
-	   $(wildcard img/*.tex) \
-           $(wildcard experiments/*.tex) $(wildcard experiments/code/*.txt)
-#	   misc/references.bib \
+	   $(wildcard sections/*.tex) $(wildcard img/*.tex) sections/references.bib
 
 ERROR ?= no 
 ifeq ($(ERROR),yes)
