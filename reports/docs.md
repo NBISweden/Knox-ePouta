@@ -302,13 +302,14 @@ Otherwise, it jumps to a _source chain_.
 
 The source chain filters out traffic that is not the proper pair of IP
 and MAC address related to that VM. This is important since a VM
-cannot then simply add a network or an interface and connected through
-it. If the hypothetical scenario where that VM creates a bridge, the
+cannot then simply add a network or an interface and connect through
+it. In the hypothetical scenario where that VM creates a bridge, the
 MAC address of the bridge might flicker between the ones from the
 added interfaces. Moreover, in another scenario where the VM network
 is augmented with another local network, say `192.168.0.0/24`, the
 traffic would be filtered by the source chain. This is relevant in
-case we implemented on openstack installation in VMs (such as Mosler).
+case we want to implement on openstack installation inside VMs (such
+as Mosler, or the so-called _Triple-O_, Openstack on Openstack).
 
 Back to the outgoing chain, after checking the allowed IP/MAC pair
 (which can be updated through some neutron commands), it checks for
@@ -376,10 +377,11 @@ implemented with IPset.
 	10.101.128.101
 	10.101.128.103
 
-Notice here that the set contains the IP of
-the machines that were booted on Knox, and not ePouta. We would have
-to update the IPset, or update the plugin itself to automatically
-include the other VMs across borders.
+Notice here that the set contains the IP of the machines that were
+booted on Knox, and not ePouta. We would have to update the IPset, or
+update the plugin itself to automatically include the other VMs across
+borders. It was not necessary since we had the 'All tcp ports' rule
+already in place.
 
 
 # Remarks
