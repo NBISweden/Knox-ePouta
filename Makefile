@@ -1,6 +1,6 @@
 TARGET := main
 SOURCES := $(wildcard settings/*.tex) settings/*.cls $(TARGET).tex \
-	   $(wildcard sections/*.tex) $(wildcard img/*.tex) sections/references.bib
+	   $(wildcard sections/*.tex) sections/references.bib $(wildcard img/*.tex)
 
 ERROR ?= no 
 ifeq ($(ERROR),yes)
@@ -11,10 +11,8 @@ FLAGS?=-interaction=batchmode
 REDIRECT?= > /dev/null
 endif
 
-export TEXMFVAR = settings
 LATEX := pdflatex --shell-escape
 BIBTEX := bibtex -terse
-MAKEINDEX := makeindex -q
 CURRDIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 BUILD := $(CURRDIR)_build
 
@@ -35,7 +33,7 @@ force:
 	@echo "Compiling $(TARGET).tex [forcing]"
 	@$(LATEX) $(FLAGS) -output-directory=$(BUILD) $(TARGET).tex $(REDIRECT)
 
-final: $(TARGET).tex settings/builddir.tex $(SOURCES) bib index
+final: $(TARGET).tex settings/builddir.tex $(SOURCES) bib
 	@echo "Second compilation"
 	@$(LATEX) $(FLAGS) -output-directory=$(BUILD) $< $(REDIRECT)
 	@echo "Final compilation"
@@ -50,7 +48,7 @@ $(BUILD)/$(TARGET).aux: $(BUILD)/$(TARGET).pdf
 bib: $(BUILD)/$(TARGET).bbl
 
 settings/builddir.tex:
-	@mkdir $(BUILD)
+	@mkdir -p $(BUILD)
 	@echo "\\\newcommand\\\builddir{\detokenize{$(BUILD)}}" > $@
 
 # =============================================================================
