@@ -4,4 +4,372 @@
 \label{section:experiments}
 %% ====================================================================
 
-We got good results apparently.
+\section{Tryggve Report on the Knox-ePouta
+connection}\label{tryggve-report-on-the-knox-epouta-connection}
+
+This document describes, given the \href{./docs.md}{network settings} of
+the Knox-Epouta connection, how we tested the limitations of a system,
+in case some of the compute nodes are distributed accross the nordic
+countries.
+
+We sat up a test project that runs on Knox (in Sweden), and uses
+Epouta's virtual machines (VMs in Finland) to extend the list of compute
+nodes.
+
+The two workflows we tested already run on \texttt{milou} at Uppmax, and
+therefore use \texttt{slurm}. We instantiated 3 compute nodes on Knox
+and 3 in Epouta. After we installed all the dependencies for those
+workflows on the compute nodes (tricky task), we distributed the compute
+nodes in slurm partitions as follows.
+
+\begin{longtable}[]{@{}lccl@{}}
+\toprule
+Partition & \#nodes in Knox & \#nodes in Epouta & Notes\tabularnewline
+\midrule
+\endhead
+\begin{minipage}[t]{0.24\columnwidth}\raggedright\strut
+knox\strut
+\end{minipage} & \begin{minipage}[t]{0.24\columnwidth}\centering\strut
+3\strut
+\end{minipage} & \begin{minipage}[t]{0.24\columnwidth}\centering\strut
+0\strut
+\end{minipage} & \begin{minipage}[t]{0.24\columnwidth}\raggedright\strut
+\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.24\columnwidth}\raggedright\strut
+knox2-epouta1\strut
+\end{minipage} & \begin{minipage}[t]{0.24\columnwidth}\centering\strut
+2\strut
+\end{minipage} & \begin{minipage}[t]{0.24\columnwidth}\centering\strut
+1\strut
+\end{minipage} & \begin{minipage}[t]{0.24\columnwidth}\raggedright\strut
+\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.24\columnwidth}\raggedright\strut
+knox1-epouta2\strut
+\end{minipage} & \begin{minipage}[t]{0.24\columnwidth}\centering\strut
+1\strut
+\end{minipage} & \begin{minipage}[t]{0.24\columnwidth}\centering\strut
+2\strut
+\end{minipage} & \begin{minipage}[t]{0.24\columnwidth}\raggedright\strut
+\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.24\columnwidth}\raggedright\strut
+epouta\strut
+\end{minipage} & \begin{minipage}[t]{0.24\columnwidth}\centering\strut
+0\strut
+\end{minipage} & \begin{minipage}[t]{0.24\columnwidth}\centering\strut
+3\strut
+\end{minipage} & \begin{minipage}[t]{0.24\columnwidth}\raggedright\strut
+\strut
+\end{minipage}\tabularnewline
+epouta1-knox2 * & 1 & 2 & epouta nodes first in the slurm
+listing\tabularnewline
+epouta2-knox1 * & 2 & 1 & epouta nodes first in the slurm
+listing\tabularnewline
+\bottomrule
+\end{longtable}
+
+Moreover, when a task from the workflow only requires one node, we were
+interested in finding out if the first node on the slurm partition
+matters (marked with * in the above table).
+
+\section{Cancer Analysis Workflow}\label{cancer-analysis-workflow}
+
+The first test is the \href{https://github.com/SciLifeLab/CAW}{Cancer
+Analysis Workflow} from SciLifeLab. We wanted to test a realistic
+workload, which works on sensitive data. However, the small sample we
+used is on non-sensitive data. This test is used as a placeholder for
+other workflow working on sensitive data, as in Mosler.
+
+The workflow runs using nextflow. We ran it on a small non-sensitive
+data sample, and recorded the elapsed time, for each partition.
+
+\texttt{nextflow\ run\ main.nf\ -c\ \textless{}slurm\_partition\textgreater{}.config\ -\/-sample\ \textless{}sample.tsv\textgreater{}}
+
+The results are as follows:
+
+\begin{longtable}[]{@{}ll@{}}
+\toprule
+Partition & Elapsed Time\tabularnewline
+\midrule
+\endhead
+knox & \href{results/CAW/timeline/knox.html}{23m 58s}\tabularnewline
+knox2-epouta1 & \href{results/CAW/timeline/knox2-epouta1.html}{23m
+27s}\tabularnewline
+knox1-epouta2 & \href{results/CAW/timeline/knox1-epouta2.html}{22m
+55s}\tabularnewline
+epouta & \href{results/CAW/timeline/epouta.html}{15m 32s}
+~\leftpointingfinger\tabularnewline
+epouta1-knox2 & \href{results/CAW/timeline/epouta1-knox2.html}{17m
+28s}\tabularnewline
+epouta2-knox1 & \href{results/CAW/timeline/epouta2-knox1.html}{15m
+27s}\tabularnewline
+\bottomrule
+\end{longtable}
+
+\begin{quote}
+Conclusion: Since we know that the node in Epouta are technically
+superior to the ones in Knox (ie, better hardware), we can observe that
+the epouta-knox connection does not influence much the results and that
+the network file system (NFS) seems to hold the load
+\end{quote}
+
+\section{Whole Genome Sequencing Structural Variation
+Pipeline}\label{whole-genome-sequencing-structural-variation-pipeline}
+
+Following the same procedure as the previous experiment, using the same
+partitions, we ran the
+\href{https://github.com/NBISweden/wgs-structvar}{Whole Genome
+Sequencing Structural Variation Pipeline} (WGS) from
+\href{http://www.nbis.se}{NBIS}. It requires a \texttt{bam} file, and we
+ran the \texttt{manta} step on it, using again \texttt{nextflow}.
+
+\texttt{nextflow\ run\ main.nf\ -\/-bam\ \textless{}bamfile.bam\textgreater{}\ -\/-steps\ manta}
+
+The results are as follows:
+
+\begin{longtable}[]{@{}ll@{}}
+\toprule
+Partition & Elapsed Time\tabularnewline
+\midrule
+\endhead
+knox & \href{results/CAW/timeline/knox.html}{8m 40s}\tabularnewline
+knox2-epouta1 & \href{results/CAW/timeline/knox2-epouta1.html}{9m
+43s}\tabularnewline
+knox1-epouta2 & \href{results/CAW/timeline/knox1-epouta2.html}{9m
+42s}\tabularnewline
+epouta & \href{results/CAW/timeline/epouta.html}{10m 14s}
+~\leftpointingfinger\tabularnewline
+epouta1-knox2 & \href{results/CAW/timeline/epouta1-knox2.html}{11m 11s}
+~\leftpointingfinger\tabularnewline
+epouta2-knox1 & \href{results/CAW/timeline/epouta2-knox1.html}{11m 13s}
+~\leftpointingfinger\tabularnewline
+\bottomrule
+\end{longtable}
+
+\begin{quote}
+Conclusion: As better hardware, we expected the pipeline to run slightly
+faster on Epouta than it does on Knox. We can observe something a bit
+different: It is slightly slower when Epouta nodes are involved.
+However, the difference is not significant. The network file system
+(NFS) seems to still hold the load.
+\end{quote}
+
+\section{NFS stress test}\label{nfs-stress-test}
+
+We suspected the network file system (NFS) to be a bottleneck in the
+previous workflows, since they require a lot of disk access (and
+comparatively not so much compute power). So we stress-tested NFS by
+writing files from the compute nodes onto an NFS-shared location, using
+\href{https://www.pdc.kth.se/~pek/sob}{sob}.
+
+We used the following tests
+
+\begin{longtable}[]{@{}rl@{}}
+\toprule
+\begin{minipage}[b]{0.07\columnwidth}\raggedleft\strut
+\#\strut
+\end{minipage} & \begin{minipage}[b]{0.15\columnwidth}\raggedright\strut
+Test\strut
+\end{minipage}\tabularnewline
+\midrule
+\endhead
+\begin{minipage}[t]{0.07\columnwidth}\raggedleft\strut
+1\strut
+\end{minipage} & \begin{minipage}[t]{0.15\columnwidth}\raggedright\strut
+Write a 24GB file in chunks of 8MB. Basic test of write I/O bandwidth.
+For this kind of test it is important that the file is substantially
+larger than the main memory of the machine. If the file is 2GB and main
+memory is 1GB then up to 50\% of the file could be cached by the
+operating system and the reported write bandwidth would be much higher
+than what the disk+filesystem could actually provide. \textbf{Command:}
+\texttt{sob\ -rw\ -b\ 8m\ -s\ 10g}\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.07\columnwidth}\raggedleft\strut
+2\strut
+\end{minipage} & \begin{minipage}[t]{0.15\columnwidth}\raggedright\strut
+Writing 500 files of 1 MB, spread out in 10 directories
+\textbf{Command:}
+\texttt{sob\ -w\ -b\ 64k\ -s\ 1m\ -n\ 500\ -o\ 50}\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.07\columnwidth}\raggedleft\strut
+3\strut
+\end{minipage} & \begin{minipage}[t]{0.15\columnwidth}\raggedright\strut
+Write 50 128MB files (6.4GB) with a block size of 64kB, then read random
+files among these 5000 times. A good way to test random access and mask
+buffer cache effects (provided the sum size of all the files is much
+larger than main memory). \textbf{Command:}
+\texttt{sob\ -w\ -R\ 5000\ -n\ 50\ -s\ 128m\ -b\ 64k}\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.07\columnwidth}\raggedleft\strut
+4\strut
+\end{minipage} & \begin{minipage}[t]{0.15\columnwidth}\raggedright\strut
+Read and write 1 file of 1 GB. Is it cached in mem? \textbf{Command:}
+\texttt{sob\ -rw\ -b\ 128k\ -s\ 1g}\strut
+\end{minipage}\tabularnewline
+\bottomrule
+\end{longtable}
+
+We ran those tests using
+\href{../experiments/profiles/supernode/files/run-SOB.sh}{a script that
+simply connects via \texttt{ssh}} to the VMs (in the specified order)
+and runs a \texttt{sob} command.
+
+We get the following results:
+
+\begin{longtable}[]{@{}rlll@{}}
+\toprule
+\begin{minipage}[b]{0.07\columnwidth}\raggedleft\strut
+Test\strut
+\end{minipage} & \begin{minipage}[b]{0.14\columnwidth}\raggedright\strut
+\texttt{epouta3}\strut
+\end{minipage} & \begin{minipage}[b]{0.14\columnwidth}\raggedright\strut
+\texttt{epouta2}\strut
+\end{minipage} & \begin{minipage}[b]{0.14\columnwidth}\raggedright\strut
+\texttt{epouta1}\strut
+\end{minipage}\tabularnewline
+\midrule
+\endhead
+\begin{minipage}[t]{0.07\columnwidth}\raggedleft\strut
+1\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright\strut
+Write: 527s (19.429 MB/s)Read: 217s (47.104 MB/s)\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright\strut
+Write: 399s (25.660 MB/s)Read: 300s (34.103 MB/s)\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright\strut
+Write: 363s (28.231 MB/s)Read: 287s (35.631 MB/s)\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.07\columnwidth}\raggedleft\strut
+2\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright\strut
+Write: 79s (6.296 MB/s)\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright\strut
+Write: 72s (6.912 MB/s)\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright\strut
+Write: 75s (6.661 MB/s)\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.07\columnwidth}\raggedleft\strut
+3\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright\strut
+Write: 267s (23.973 MB/s)\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright\strut
+Write: 259s (24.752 MB/s)\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright\strut
+Write: 267s (23.963 MB/s)\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.07\columnwidth}\raggedleft\strut
+4\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright\strut
+Write: 31s (33.389 MB/s)Read: 0.4s (2583.793 MB/s)\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright\strut
+Write: 38s (26.868 MB/s)Read: 0.3 s (3702.660 MB/s)\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright\strut
+Write: 34s (29.761 MB/s)Read: 0.3s (4053.569 MB/s)\strut
+\end{minipage}\tabularnewline
+\bottomrule
+\end{longtable}
+
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+
+\begin{longtable}[]{@{}rlll@{}}
+\toprule
+Test & \texttt{knox1} & \texttt{epouta1} &
+\texttt{epouta2}\tabularnewline
+\midrule
+\endhead
+\bottomrule
+\end{longtable}
+
+\section{Testing the 1GB-link}\label{testing-the-1gb-link}
+
+Finally, we test the network link between the VMs, and especially the
+link between the VMs in Epouta and the ones on Knox.
+
+The first test consists in opening 10 connections between
+\texttt{epouta1} and \texttt{knox1} and holding them during 60 seconds.
+One machine acts as the server, and the other one connects to it, as a
+sender as well as a receiver. We used \texttt{iperf} with the following
+commands:
+
+\begin{verbatim}
+[knox1]$ iperf3 -4 -s # the server
+[epouta1]$ iperf3 -4 -c knox1 -P 10 -t 60 # the 10 connections
+\end{verbatim}
+
+The results are surprising: We get near the physical link speed! After
+summing the different connections, we reached \texttt{941\ Mbits/sec} as
+sender and \texttt{937\ Mbits/sec} as receiver. To compare, running the
+same test between \texttt{knox2} and \texttt{knox1}, we get
+\texttt{942\ Mbits/sec} as sender and \texttt{938\ Mbits/sec} as
+receiver.
+
+The last test was to connect \texttt{epouta1} to \texttt{knox1},
+\texttt{epouta2} to \texttt{knox2} and \texttt{epouta3} to
+\texttt{knox3}, using a similar \texttt{iperf} test as above.
+
+\begin{verbatim}
+[knox_i_]$ iperf3 -4 -s # a sever
+[epouta_i_]$ iperf3 -4 -c knox_i_ -t 60 # a connection
+\end{verbatim}
+
+\begin{longtable}[]{@{}rll@{}}
+\toprule
+Bandwidth & Sender & Receiver\tabularnewline
+\midrule
+\endhead
+epouta1 \textless{}-\textgreater{} knox1 & 275 Mbits/sec & 272
+Mbits/sec\tabularnewline
+epouta2 \textless{}-\textgreater{} knox2 & 281 Mbits/sec & 278
+Mbits/sec\tabularnewline
+epouta3 \textless{}-\textgreater{} knox3 & 452 Mbits/sec & 447
+Mbits/sec\tabularnewline
+\bottomrule
+\end{longtable}
+
+So a total of 1008 Mbits/sec as sender and 997 Mbits/sec as receiver.
+
+Note that we get similar speed between \texttt{knox1} and
+\texttt{knox2}, which happen to be scheduled on different physical nodes
+in Knox.
+
+\section{Conclusions}\label{conclusions}
+
+\begin{itemize}
+\item
+  The use of NFS is not necessarily a bottleneck: if the workflows do
+  not write big files, it should hold the load.
+\item
+  The VMs' network is smoothly at near link-speed.
+\item
+  The first compute node on the slurm partition appears to \emph{not}
+  matter!
+\end{itemize}
+
+\begin{quote}
+In other words, whether computations are scheduled in Finland or Sweden
+does \emph{not} seem to matter.
+\end{quote}
+
+\section{Suggestions for Future Work}\label{suggestions-for-future-work}
+
+\begin{itemize}
+\item
+  Tweak NFS to gain even further speed
+\item
+  Tweak the TCP settings in the Kernel
+\item
+  Scale up the solution to \textbf{many-many-many} nodes in Epouta and
+  some nodes in Knox, to see how much the link can be shared.
+\item
+  Improve disk accesses:
+
+  \begin{itemize}
+  \item
+    Use object storage or
+  \item
+    Use a cinder volume and not a ephemeral disk (ie the default libvirt
+    file).
+  \end{itemize}
+\end{itemize}
+

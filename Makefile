@@ -1,6 +1,7 @@
 TARGET := main
 SOURCES := $(wildcard settings/*.tex) settings/*.cls $(TARGET).tex \
-	   $(wildcard sections/*.tex) sections/references.bib $(wildcard img/*.tex)
+	   $(wildcard sections/*.tex) sections/references.bib $(wildcard img/*.tex) \
+	   $(wildcard scripts/*.sh)
 
 ERROR ?= no 
 ifeq ($(ERROR),yes)
