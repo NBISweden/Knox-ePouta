@@ -1,0 +1,29 @@
+% \beginpgfgraphicnamed{overview}
+\begin{tikzpicture}
+  
+  %\draw[help lines] (0,0) grid (3,2);
+
+  %..controls +(-135:50mm) and +(-90:100mm) .. (5,0)
+  \draw[auto,swap,rounded corners, bend right,every node/.style={vm}] (0,0) to
+  node[pos=0]               (vm1-epouta)  {VM$_1$\nodepart{two}10.101.0.21}
+  node[pos=0.35]            (vm2-epouta)  {VM$_2$\nodepart{two}10.101.0.22}
+  node[pos=0.65]            (vm3-epouta)  {VM$_3$\nodepart{two}10.101.0.23}
+  node[pos=0.95]            (dhcp-epouta) {DHCP\nodepart{two}10.101.0.3}
+  ++(-4,-5) to
+  node[pos=0.25,below]      (router)      {Router\nodepart{two}10.101.0.1}
+  node[pos=0.55,below]      (dhcp-knox)   {DHCP\nodepart{two}10.101.128.0}
+  node[pos=0.75]            (supernode)   {Supernode\nodepart{two}10.101.128.100}
+  ++(8,0) to
+  node[pos=0.2]             (storage)     {Storage\nodepart{two}10.101.128.104}
+  node[pos=1]               (vm1-knox)    {VM$_1$\nodepart{two}10.101.128.101}
+  node[pos=0.7]             (vm2-knox)    {VM$_2$\nodepart{two}10.101.128.102}
+  node[pos=0.4,above right] (vm3-knox)    {VM$_3$\nodepart{two}10.101.128.103}
+  ++(0,4);
+
+  \path (vm1-epouta) -- (vm2-knox) coordinate[midway](a);
+  \path (dhcp-epouta) -- (router) coordinate[midway](b);
+
+  \draw[decorate] (a) to[bend left=15] (b);
+
+\end{tikzpicture}
+% \endpgfgraphicnamed

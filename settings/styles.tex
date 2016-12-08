@@ -7,6 +7,23 @@
 
 \tikzset{background rectangle/.style={rounded corners=1ex,draw=gray!5,thick,fill=gray!10,double}} % inner sep=1pt,bottom color=red!20,top color=white
 
+%------------------------------------------
+
+\tikzset{vm/.style={%
+rounded corners=0.5ex,thin,inner xsep=2pt,inner ysep=1ex,%
+rectangle split,rectangle split parts=2,%
+every two node part/.style={font=\tiny},%
+node distance=2ex,%
+text width=14ex,align=center,%
+top color=blue!30,bottom color=blue!30,middle color=blue!10}}
+
+%------------------------------------------
+%% Non atomic
+\tikzset{looplabel/.style={scale=0.7,inner xsep=2pt,draw=gray!10,fill=white,rounded corners=2pt,anchor=center}}
+ 
+
+%------------------------------------------
+
 \tikzset{enumbullet/.style={draw,circle,double,inner sep=1pt}}
 \tikzset{challenge/.style={draw,circle,double,scale=0.75,inner sep=1pt}}
 \tikzset{subchallenge/.style={circle,fill=white,scale=0.6,inner sep=0.5pt,draw=black,very thin}}
@@ -15,75 +32,6 @@
 \tikzset{process/.style={circle,minimum width=2ex,inner sep=1pt,draw=blue!50,fill=blue!20,thick}}
 \tikzset{mylabel/.style={inner xsep=2pt,draw=gray!10,fill=white,double,rounded corners=2pt,anchor=center}}
 \tikzset{separation/.style={white,semithick}}
-
-%------------------------------------------
-%\tikzset{state/.style={circle,minimum size=3.2ex,inner sep=0pt,scale=0.75}}
-\tikzset{state/.style={rectangle,rounded corners=0.5ex,minimum height=2ex,minimum size=3.2ex,inner sep=0pt,scale=0.75}}
-\tikzset{word/.style={rectangle,rounded corners=0.5ex,thin,inner sep=0pt,draw=blue!50,fill=blue!50}}%inner xsep=1pt,inner ysep=1pt
-
-% \tikzset{state-w/.style={fill=white}}
-% \tikzset{word-w/.style={draw=black,fill=black}}
-% \tikzset{state-b/.style={fill=red!50}}
-% \tikzset{word-b/.style={}}
-% \tikzset{state-n/.style={fill=blue!20}}
-% \tikzset{word-n/.style={}}
-% \tikzset{state-i/.style={fill=green!20}}
-% \tikzset{word-i/.style={}}
-% \tikzset{state-witness/.style={fill=green!20!orange}}
-% \tikzset{word-witness/.style={}}
-
-\tikzset{state-w/.style={top color=blue!30,bottom color=blue!30,middle color=blue!10,}}
-\tikzset{word-w/.style={thin,fill=blue!30,draw=blue!10,}}
-
-\tikzset{state-n/.style={top color=blue!30,bottom color=blue!30,middle color=blue!10,}}
-\tikzset{word-n/.style={thin,fill=blue!50,draw=blue!10,}}
-
-\tikzset{state-i/.style={top color=green!20,bottom color=green!20,middle color=green!10,}}
-\tikzset{word-i/.style={thin,fill=green!20,draw=green!30,}}
-
-\tikzset{state-b/.style={top color=red!50,bottom color=red!50,middle color=red!20,}}
-\tikzset{word-b/.style={thin,fill=red!50,draw=red!60,}}
-
-\tikzset{state-witness/.style={top color=green!20!orange,bottom color=green!20!orange,middle color=green!20!orange!10,}}
-\tikzset{word-witness/.style={thin,fill=green!20!orange,draw=green!20!orange!50,}}
-
-\tikzset{state--/.style={draw=none,fill=none}}
-\tikzset{word--/.style={draw=none,fill=none}}
-
-% \tikzset{word/.style={matrix of nodes,outer sep=0pt,inner ysep=1pt,inner xsep=1pt,rounded corners=2pt,
-%                       thin,fill=blue!30,draw=blue!10,
-%                       column sep=1pt,
-%                       nodes={state-#1,rectangle,rounded corners=0pt,inner sep=1pt,outer sep=0pt,anchor=base,text height=1.5ex,%
-%                              top color=blue!30,bottom color=blue!30,middle color=blue!10,
-%                              %outer color=gray!80,inner color=gray!20,shading=radial,
-%                              }%
-%                       }}
-% \tikzset{invisible/.style={rectangle,draw=none,outer sep=0pt,inner sep=0pt,fill=none,text width=0pt,text height=0pt,minimum height=0pt}}
-%\tikzset{word/.style={matrix of nodes,outer sep=0pt,inner sep=0pt,column sep=-2pt,nodes={outer sep=0pt,anchor=base,state,state-#1}}}
-
-  
-%\tikzfading[name=f, top color=transparent!100, bottom color=transparent!0, middle color=transparent!80]
-\tikzset{conf/.style={shading=axis,top color=gray!10,bottom color=gray!10,middle color=gray!50,shading angle=90,inner ysep=1pt}}
-% \tikzset{view/.style={%draw,thin,rounded corners=2pt,inner xsep=2pt,
-%                       shading=axis,top color=white,bottom color=white,middle color=gray!50,inner ysep=1pt}}%shading angle=90,
-\tikzset{view/.style={word, draw=blue!50,double=gray!10,thin,inner xsep=0.4pt,%
-                            shading=axis,top color=gray!10,bottom color=gray!10,middle color=gray!25,}}
-
-%------------------------------------------
-%% Petri Nets
-\tikzset{every place/.style={draw=blue,fill=blue!20,thick}}
-\tikzset{shared/.style={draw=green,fill=green!30!gray,thick}}
-\tikzset{every transition/.style={draw=red,fill=red!20,thick,minimum width=10mm,minimum height=1mm}}
-\tikzset{dottedrectangle/.style={rounded corners,draw,dotted,inner sep=1ex}}
-
-
-%------------------------------------------
-%% Non atomic
-\tikzset{looplabel/.style={scale=0.7,inner xsep=2pt,draw=gray!10,fill=white,rounded corners=2pt,anchor=center}}
- 
-
-%------------------------------------------
-%% View Abstraction - Contexts
 
 \tikzset{context/.style={rectangle,minimum width=3.2ex,minimum height=3.2ex,inner sep=0pt,fill=none,draw=black,thin,scale=0.6,anchor=center,fill=yellow!20!white}}
 \tikzset{project/.style={draw,shorten >=1pt,>=stealth',very thin,blue!70!red}}
