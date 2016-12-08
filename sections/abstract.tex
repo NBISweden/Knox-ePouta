@@ -1,3 +1,21 @@
-We present how we extended the resources of a cloud
-system, using another cloud in another country.
+When a compute cluster runs at full capacity, all the newly scheduled
+jobs have to wait. In case this happens often, it is necessary to
+scale up the infrastructure for more computations and more data
+transfers.
+%
+One approach is to buy more hardware, but it might be an expensive
+solution.
+%
+As part of the \href{https://wiki.neic.no/wiki/Tryggve}{Tryggve
+project}, we focused on an alternative approach, where we ask other
+clusters, if they have available resources which we could
+\emph{``borrow for a while''}.
+%
+We present here how we extended cloud resources across borders, and
+whether there is a penalizing latency.
+%
+We stress-tested network and disk accesses. We further tested the
+setup using two realistic workflows, with a surprising outcome:
+computations hardly notice whether they are performed in one country
+or another.
 %
