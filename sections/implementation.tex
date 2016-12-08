@@ -1,43 +1,8 @@
 %% ====================================================================
-\section{Implementation}
+\section{Implementation using Openstack}
 \label{section:implementation}
 
-
-This section describes in great details how we connected a set of
-virtual machines (VMs) running on Knox, a cloud cluster in Sweden, to
-another set of VMs running on ePouta, a cloud cluster in Finland. The
-two clusters are managed by
-\href{http://docs.openstack.org/liberty/install-guide-ubuntu/}{Openstack
-  Liberty}.
-
-We start with the low-level component. There is a 1GB/s fiber-link
-between Knox and ePouta with a dedicated network. This means that the
-link might be shared, but only the VMs on that network can communicate
-through it. This security is provided by VLAN encapsulation. In our
-case, the VLAN tag is 1203.
-
-We use the following range of IPs: \ip{10.101.0.0/16} for network
-communication between the VMs. We split the address range in two
-disjoint parts. For that, we use the third number of the
-\ip{10.101.0.0/16} CIDR. The VMs in ePouta will have an IP where the
-third number starts in binary notation with a \texttt{0}, while, for the
-VMs in Knox, the third number will start with a \texttt{1}. The
-exception is the virtual router.
-
-The network settings use the following components:
-\begin{itemize}
-\item a Virtual Router on Knox (with IP: \ip{10.101.0.1/16})
-\item a DHCP server on Knox (with IP: \ip{10.101.128.0/16})
-\item a DHCP server on ePouta (with IP: \ip{10.101.0.3/16})
-\item the Neutron linuxbridges plugin (on Knox) with VLAN capabilities
-\item a set of VMs on ePouta (with IPs from \ip{10.101.0.4/16} to
-  \ip{10.101.127.255/16})
-\item a set of VMs on Knox (with IPs from \ip{10.101.128.1/16} to
-  \ip{10.101.128.254/16})
-\end{itemize}
-
-The DHCP server on Knox (resp. ePouta) provides network information for
-the VMs on Knox (resp. ePouta).
+\cutafter
 
 It is necessary to adjust the network settings in ePouta accordingly.
 

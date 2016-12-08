@@ -3,6 +3,109 @@
 \label{section:method}
 %% ====================================================================
 
-This is how we do it...
+\cutafter
 
-- Montell Jordan...
+This section describes in great details how we connected a set of
+virtual machines (VMs) running on Knox, a cloud cluster in Sweden, to
+another set of VMs running on ePouta, a cloud cluster in Finland. The
+two clusters are managed by
+\href{http://docs.openstack.org/liberty/install-guide-ubuntu/}{Openstack
+  Liberty}.
+
+We start with the low-level component. There is a 1GB/s fiber-link
+between Knox and ePouta with a dedicated network. This means that the
+link might be shared, but only the VMs on that network can communicate
+through it. This security is provided by VLAN encapsulation. In our
+case, the VLAN tag is 1203.
+
+We use the following range of IPs: \ip{10.101.0.0/16} for network
+communication between the VMs. We split the address range in two
+disjoint parts. For that, we use the third number of the
+\ip{10.101.0.0/16} CIDR. The VMs in ePouta will have an IP where the
+third number starts in binary notation with a \texttt{0}, while, for the
+VMs in Knox, the third number will start with a \texttt{1}. The
+exception is the virtual router.
+
+The network settings use the following components:
+\begin{itemize}
+\item a Virtual Router on Knox (with IP: \ip{10.101.0.1/16})
+\item a DHCP server on Knox (with IP: \ip{10.101.128.0/16})
+\item a DHCP server on ePouta (with IP: \ip{10.101.0.3/16})
+\item the Neutron linuxbridges plugin (on Knox) with VLAN capabilities
+\item a set of VMs on ePouta (with IPs from \ip{10.101.0.4/16} to
+  \ip{10.101.127.255/16})
+\item a set of VMs on Knox (with IPs from \ip{10.101.128.1/16} to
+  \ip{10.101.128.254/16})
+\end{itemize}
+
+The DHCP server on Knox (resp. ePouta) provides network information for
+the VMs on Knox (resp. ePouta).
+
+\cutafter
+
+
+In order to test the connection between countries, 
+we set up a dedicated network, \ie the link
+is shared by other machines, but no other machine are connected to
+that network.
+
+Between Knox and ePouta, we set up a dedicated network, \ie the link
+is shared by other machines, but no other machine are connected to
+that network.
+
+we ran two
+realistic workflows and stress-tested the disc access and the network
+link.
+%
+The outcome was surprising: we did not detect any significant slowdown
+when using resources from either clusters, \ie computations do not
+notice whether they are performed in Finland or in Sweden.
+%
+This is a very positive outcome as it is now possible to carry on with
+workflows dealing with sensitive data.
+
+
+
+We present in Section~\ref{section:method} a general overview of our
+method
+
+
+
+
+In order to test the connection between countries, we built a
+temporary cloud cluster in Sweden, called Knox, and connected it to
+the resources of ePouta, a secure cloud cluster in Finland, via a
+fiber-link with a capacity of 1GB/s.
+
+Between Knox and ePouta, we set up a dedicated network, \ie the link
+is shared by other machines, but no other machine are connected to
+that network.
+
+We were interested in running realistic workflows. We choose to run
+the \href{https://github.com/SciLifeLab/CAW}{Cancer Analysis Workflow}
+(CAW) from SciLifeLab and the
+\href{https://github.com/NBISweden/wgs-structvar}{Whole Genome
+Sequencing Structural Variation Pipeline} (WGS) from
+\href{http://www.nbis.se}{NBIS} as a first step. The results were
+surprising: we did not detect any significant slowdown when using
+resources from either clusters.
+
+We suspected that disk access or even the network itself would be a
+bottleneck in this setup. So, as a second step, we stress-tested both
+aspects and noticed even more surprising results: the disk accesses
+are not slower at all, and the link can be used almost to 100\%!
+
+In other words, computations and tests do not notice whether they are
+performed in Finland or in Sweden. Computations were actually even
+faster running in Finland, since the hardware in ePouta is better than
+the one in Knox. It is probably possible to fine-tune the settings to
+get even further performance and a seamless connection. This is a very
+positive outcome as we can now carry on with workflows dealing with
+sensitive data. You can refer the
+\href{https://github.com/NBISweden/Knox-ePouta}{NBIS GitHub
+repository} for further information, or see
+\href{https://NBISweden.github.io/Knox-ePouta/informal/}{an informal
+presentation}.
+
+
+\input{img/overview}
