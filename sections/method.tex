@@ -25,14 +25,14 @@ our case, the extra cluster is located in another country.
   \label{figure:overview}
 \end{figure}
 
-We built a temporary cluster in Sweden, which we refer to as Knox, and
-used the ePouta cluster~\cite{epouta} in Finland to extend a project
-running on Knox. As a first step, we isolated the project from any
-other project, but did not encrypt the communication, \ie the
-environment manipulated non-sensitive data.
+We build a temporary cluster in Sweden, which we refer to as Knox, and
+use the ePouta cluster~\cite{epouta} in Finland to extend a project
+running on Knox. As a first step, we isolate the project from any
+other project, but do not encrypt the communications, \ie the
+environment manipulates non-sensitive data.
 %
 The VMs infrastructure is shaped as in
-Figure~\ref{figure:overview}. We booted on Knox:
+Figure~\ref{figure:overview}. We boot on Knox:
 \begin{itemize}
 \item a Virtual Router,
 \item a DHCP server, providing network settings to the Knox VMs,
@@ -40,13 +40,13 @@ Figure~\ref{figure:overview}. We booted on Knox:
 \item a storage node
 \item a \emph{supernode} where we connect and run the tests
 \end{itemize}
-On ePouta, we booted:
+On ePouta, we boot:
 \begin{itemize}
 \item a DHCP server, providing network settings to the ePouta VMs,
 \item 3 VMs for computation
 \end{itemize}
 
-We connected the two clusters with a 1GB/s fiber-link. We provide a
+We connect the two clusters with a 1GB/s fiber-link. We provide a
 local network between the VMs, which can communicate across borders
 transparently.
 %
@@ -57,11 +57,11 @@ This isolation is provided by VLAN encapsulation.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-We were interested in running realistic workflows on the extended
-cluster, and see whether we could notice a significant slowdown when
-computations are scheduled on VMs across borders.
+We aim at running realistic workflows on the extended cluster, and see
+whether we can notice a significant slowdown when computations are
+scheduled on VMs across borders.
 %
-We chose to run the \href{https://github.com/SciLifeLab/CAW}{Cancer
+We choose to run the \href{https://github.com/SciLifeLab/CAW}{Cancer
   Analysis Workflow} (CAW)~\cite{caw} from SciLifeLab and the
 \href{https://github.com/NBISweden/wgs-structvar}{Whole Genome
   Sequencing Structural Variation Pipeline} (WGS)~\cite{caw} from
@@ -71,36 +71,37 @@ CAW is a pipeline for variant calling of tumor data and WGS is a
 pipeline for predicting and annotating structural variations in the
 human genome.
 %
-Yet, we only used non-sensitive data, here in the first step.
+Yet, we only use non-sensitive data, here in the first step.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Moreover, we suspected that disk access and even the network itself
-would be a bottleneck in this setup. So, we ran some further tests to
-stress both aspects.
+Moreover, in this approach, where computations might be scheduled in
+Finland, while the data has to reside in Sweden, we suspect that disk
+access and even the network itself would be a bottleneck. So, we run
+some further tests to stress both aspects.
 %
-We used the program SOB~\cite{sob} to stress the filesystem, by
-reading and writing an arbitrary number of files in different chunk
-size. SOB also outputs useful performance numbers.
+We use the program SOB~\cite{sob} to stress the filesystem, by reading
+and writing an arbitrary number of files in different chunk size. SOB
+also outputs useful performance numbers.
 %
-In order to test the network, we used iPerf3~\cite{iperf}, a tool for
+In order to test the network, we use iPerf3~\cite{iperf}, a tool for
 active measurements of the maximum achievable bandwidth on IP
 networks.
 %
-We instantiated a data communication between two VMs, one on Knox and
-one on ePouta.
-%
-We then repeated that same test over three pairs of VMs.
-%
-For each test, the tool reports the bandwidth, loss, and several other
+For each run, the tool reports the bandwidth, loss, and several other
 parameters related to how well the link was used.
+%
+We instantiate a data communication between two VMs, one on Knox and
+one on ePouta and test the connection.
+%
+We then repeat three times the same test in parallel over
+pairwise-connected VMs.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 After running the tests, described in
-Section~\ref{section:experiments}, we noticed no significant slowdown
-on the computations for the pipelines and the stress-tests revealed
-that (i)~disk~access was not slower and (ii)~the~link was almost fully
-used.
+Section~\ref{section:experiments}, we notice no significant slowdown
+on the computations for the pipelines and the stress-tests reveal that
+(i)~disk~access is not slower and (ii)~the~link is almost fully used.
 %
 Computations and tests do not notice whether they are performed in
 Finland or in Sweden.
@@ -109,9 +110,8 @@ In other words, this is a very positive outcome where data traffic and
 computations are carried out as if the extended VMs were all located
 in the same country.
 %
-Computations were actually running
-even faster in Finland, since the hardware in ePouta is better than
-the one in Knox.
+Computations are actually running slightly faster in Finland, since
+the hardware in ePouta is better than the one in Knox.
 %
 It is probably possible to fine-tune kernel settings
 to get even further performance and a seamless connection.

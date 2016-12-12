@@ -2,9 +2,6 @@
 \input{settings/builddir.tex}
 %\input{settings/comments.tex}
 
-\newcommand{\ie}{i.e.\ }
-\newcommand{\eg}{e.g.\ }
-
 %% ---------------------------------------------
 %% Framing the lists
 % \usepackage[framemethod=TikZ]{mdframed}
@@ -14,8 +11,6 @@
 %     backgroundcolor=white}
 
 %% ---------------------------------------------
-\newenvironment{statement}{\begin{quote}\raggedleft}{\end{quote}}
-
 \newcommand{\codeblock}[1]{%
 %\begin{mdframed}[style=DazFrame]%
 \begingroup\VerbatimInput[numbers=none]{scripts/#1}\endgroup%
@@ -30,18 +25,27 @@
 \setlist[enumerate]{align=right,leftmargin=*,widest*=4}
 %\setlist[itemize]{labelindent=0pt,align=right,leftmargin=*}
 
+\newcommand{\resulttitle}[3]{Test & \multicolumn{2}{|l||}{\texttt{#1}}&\multicolumn{2}{l||}{\texttt{#2}}& \multicolumn{2}{l|}{\texttt{#3}} \\\hhline{*{7}{=}}}
+\makeatletter
+\newcommand{\mytrim}[1]{\trim@post@space{#1}}
+\makeatother
+\newcommand{\resulttest}[8]{#1&\mytrim{#2}s&{\scriptsize (\mytrim{#3} MB/s)}&\mytrim{#4}s&{\scriptsize (\mytrim{#5} MB/s)}&\mytrim{#6}s&{\scriptsize (\mytrim{#7} MB/s)}\\#8}
 
-\newenvironment{challenges}{%
-  \renewcommand{\labelenumi}{\theenumi}%
-  \renewcommand{\theenumi}{\ifnotikz\Alph{enumi}\else\protect\tikz[baseline=(n.base)]{\protect\path node[challenge](n){\Alph{enumi}};}\fi}%
-  % \smallskip\hrule\smallskip%
-  \begin{mdframed}[style=DazFrame]%
-    % \begin{enumerate}[leftmargin=0pt]
-    \begin{enumerate}%
-    }{\end{enumerate}%
-    % \smallskip\hrule\smallskip
-  \end{mdframed}%
+\newcommand{\resultpartition}[7]{%
+\noindent\begin{center}
+\begin{tabular}{|r||r|l||r|l||r|l|}\hhline{*{7}{=}}
+\resulttitle#1
+\resulttest#2
+\resulttest#3
+\resulttest#4
+\resulttest#5
+\resulttest#6
+\resulttest#7
+\hhline{*{7}{=}}
+\end{tabular}
+\end{center}%
 }
+
 
 %% ---------------------------------------------
 %% Wrapfigures
@@ -55,156 +59,8 @@
 %% ---------------------------------------------
 
 \newcommand{\leftpointingfinger}{\ding{43}}
-
 \newcommand{\ip}[1]{\texttt{#1}}
 
-%% ---------------------------------------------
-%% Math stuff
-%% ---------------------------------------------
-
-\newcommand{\set}[1]{\{#1\}}
-\newcommand*{\setcomp}[2]{\{{#1}\mathrel{}\mid\mathrel{}#2\}}
-
-\newcommand{\nat}{\ensuremath{\mathbb N}}
-\newcommand{\reals}{\ensuremath{\mathbb R}}
-\newcommand{\sizeof}[1]{|#1|}
-\newcommand{\union}{\cup}
-\newcommand{\Union}{\bigcup}
-%\newcommand{\minsetunion}{\sqcup}
-\newcommand{\range}[2]{\llbracket{#1}{,}{#2}\rrbracket} %% {,} otherwise I get some spacing after the ','
-
-% \newcommand{\updateby}[2]{\ensuremath{\left[#1\leftarrow#2\right]}}
-
-%% ---------------------------------------------
-%% Parameterized systems
-%% ---------------------------------------------
-
-\newcommand{\parsys}{\ensuremath{\mathcal P}}
-\newcommand{\locs}{\ensuremath{Q}}
-\newcommand{\rules}{\ensuremath{\Delta}}
-
-\newcommand{\witnesses}{S}
-\newcommand{\quantrule}[5]{ \mathbf{if}\ {#3}~j\,{#4}\,i:\,{#5}\ \mathbf{then}\ {#1}\trans{#2}}
-\newcommand{\quantify}{\mathbb Q}
-
-\newcommand{\confs}{\ensuremath{\mathcal C}}
-\newcommand{\trans}{\ensuremath{\rightarrow}}
-\newcommand{\transof}[1]{\stackrel{#1}{\trans}}
-\newcommand{\transys}{\ensuremath{\mathcal T}}
-
-\newcommand{\src}{\mathtt{src}}
-\newcommand{\dst}{\mathtt{dst}}
-
-\newcommand{\Bad}{\ensuremath{\mathcal{B}}}
-\newcommand{\minbad}{\ensuremath{\Bad_{min}}}
-\newcommand{\Reach}{\ensuremath{\mathcal{R}}}
-\newcommand{\Inits}{\ensuremath{\mathcal{I}}}
-
-%\newcommand{\domain}{\ensuremath{\mathcal{D}}}
-\newcommand{\entails}{\preccurlyeq}
-%\newcommand{\preorder}{\leqslant}%\vartriangleleft
-
-\newcommand{\upcl}[1]{\ensuremath{\mathopen{\uparrow}{#1}}} %% Upward-Closure
-\newcommand{\downcl}[1]{\ensuremath{\mathopen{\downarrow}{#1}}} %% Downward-Closure
-% \newcommand{\upcl}[1]{\ensuremath{{#1}^\cup}} %% Upward-Closure
-% \newcommand{\downcl}[1]{\ensuremath{{#1}^\cap}} %% Downward-Closure
-% \newcommand{\upcl}[1]{\ensuremath{\lfloor{#1}\rfloor}} %% Upward-Closure
-% \newcommand{\downcl}[1]{\ensuremath{\lceil{#1}\rceil}} %% Downward-Closure
-
-%\newcommand{\gen}[1]{min(#1)}
-\newcommand{\gen}[1]{gen(#1)}
-%\newcommand{\compl}[1]{\neg{#1}}
-\newcommand{\compl}[1]{\overline{#1}}
-
-\newcommand{\forrule}[5]{\ensuremath{\mathbf{if~foreach}\ j\mathrel{#1}i: {#2} \ \mathbf{then}\ {#3}\trans{#4}\ \mathbf{else}\ {#3}\trans{#5}}}
-
-%\newcommand{\placeholder}{\bot}
-\newcommand{\placeholder}{\bullet}
-
-\newcommand{\rel}{\ensuremath{\mathcal R}}
-\newcommand{\distance}[1]{\ensuremath{\|#1\|}}
-
-%% ---------------------------------------------
-%% View abstraction
-%% ---------------------------------------------
-\newcommand{\dcl}[1]{\ensuremath{\lceil{#1}\rceil}} %% Downward-Closure
-
-\newcommand{\subword}{\sqsubseteq}
-
-\newcommand{\Abs}{\alpha} 
-\newcommand{\Conc}{\gamma}
-
-\newcommand{\Absof}[1]{\Abs_{#1}}
-\newcommand{\Concof}[1]{\Conc_{#1}}
-\newcommand{\Concoflim}[2]{\oint_{#1}^{#2}}
-
-\newcommand {\views}{\mathcal{V}}
-\newcommand {\viewsof}[1]{\views_{#1}}
-
-\newcommand {\proj}[2]{\Pi_{#1}(#2)}
-
-\newcommand {\post}{\mathit{post}}
-\newcommand {\spost}{\mathit{spost}}
-\newcommand {\apost}[1]{{\mathit{Apost}}_#1}
-\newcommand {\sdelta}{\delta^\#}
-
-\newcommand{\entailedby}{\succcurlyeq}
-\newcommand{\minsetof}[1]{\lfloor #1 \rfloor}
-\newcommand{\minunion}{\sqcup}
-
-\newcommand{\base}{\mathtt{base}}
-\newcommand{\ctx}{\mathtt{ctx}}
-
-% \usepackage{wasysym}
-% \newcommand{\aConcoflim}[2]{\ensuremath{\mathbin{\ooalign{\hspace{.2ex}\raisebox{.15ex}{\scalebox{.7}{\wasylozenge}}\cr$\int$\cr}}_{#1}^{#2}}}
-%\newcommand{\aConcoflim}[2]{\ensuremath{\mathbin{\ooalign{\hspace{.2ex}\raisebox{.15ex}{\scalebox{.6}{$\square$}}\cr$\int_{#1}^{#2}$\cr}}}}
-\newcommand{\aConcoflim}[2]{\sqint_{#1}^{#2}}
-\newcommand{\isbad}{\ensuremath{\mathtt{bad}}}
-
-\newcommand{\tick}{\checkmark}
-\newcommand{\unticked}{\rho}%\xi \chi
-\renewcommand{\next}{\mathit{next}}
-
-\newcommand{\makehighgroup}[4][]{
-  \draw[blue!70!red,#1] (#2.north west) ++(0,1mm) -- +(0,1mm) -- ([yshift=2mm]#3.north east) coordinate[midway](n#4) -- +(0,-1mm);
-}
-\newcommand{\makelowgroup}[4][]{
-  \draw[#1] (#2.south west) ++(0,-1mm) -- +(0,-0.5mm) -- ([yshift=-1.5mm]#3.south east) coordinate[midway](p#4) -- +(0,0.5mm);
-}
-%% ---------------------------------------------
-%% Proofs
-%% ---------------------------------------------
-\newcommand{\strue}{\ensuremath{\mathtt{true}}}
-\newcommand{\sfalse}{\ensuremath{\mathtt{false}}}
-\newcommand{\Unsafe}{\ensuremath{\mathtt{Unsafe}}}
-\newcommand{\Safe}{\ensuremath{\mathtt{Safe}}}
-
-\newcommand{\pos}{\ensuremath{\mathbb{P}}}
-%\newcommand{\viewof}[2]{\ensuremath{\mathit{view_{#2}(#1)}}}
-\newcommand{\viewof}[2]{\ensuremath{\mathit{view(#1,#2)}}}
-
-%% ---------------------------------------------
-%% Trees
-%% ---------------------------------------------
-\newcommand{\subtree}{\preceq}
-\newcommand{\node}{v}
-\newcommand{\nodes}{N}
-\newcommand{\tree}{t}
-\newcommand{\embed}{e}
-\newcommand{\img}{\iota}
-
-%% ---------------------------------------------
-%% Rings
-%% ---------------------------------------------
-\newcommand{\csubword}{\trianglelefteq}
-
-%% ---------------------------------------------
-%% Experiments
-%% ---------------------------------------------
-\newcommand{\adc}{\ensuremath{\forall_\exists}}
-\newcommand{\cmark}{\ding{51}}%
-\newcommand{\xmark}{\ding{55}}%
-
-
-
+\newcommand{\ie}{i.e.\ }
+\newcommand{\eg}{e.g.\ }
 

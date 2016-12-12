@@ -1,7 +1,7 @@
 TARGET := main
 SOURCES := $(wildcard settings/*.tex) settings/*.cls $(TARGET).tex \
-	   $(wildcard sections/*.tex) sections/references.bib $(wildcard img/*.tex) \
-	   $(wildcard scripts/*.sh)
+	   $(wildcard sections/*.tex) misc/references.bib $(wildcard img/*.tex) \
+	   $(wildcard scripts/*.sh) $(wildcard misc/*.tex)
 
 ERROR ?= no 
 ifeq ($(ERROR),yes)
@@ -42,7 +42,7 @@ final: $(TARGET).tex settings/builddir.tex $(SOURCES) bib
 
 ## ==== Bibtex ==================================================
 # Must use the TEXMFOUTPUT variable or change the openout_any=a in the texmf.cnf settings file
-$(BUILD)/$(TARGET).bbl: sections/references.bib $(BUILD)/$(TARGET).aux
+$(BUILD)/$(TARGET).bbl: misc/references.bib $(BUILD)/$(TARGET).aux
 	@echo "Compiling the bibliography"
 	@export TEXMFOUTPUT=$(BUILD); $(BIBTEX) $(BUILD)/$(TARGET) || true
 $(BUILD)/$(TARGET).aux: $(BUILD)/$(TARGET).pdf

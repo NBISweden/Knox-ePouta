@@ -11,6 +11,9 @@ The set of VMs stretches across Sweden and Finland. The VMs are
 connected to a dedicated network and communicate transparently with
 each other.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Realistic Pipelines}
+\label{section:experiments:pipelines}
 
 The two workflows we tested, CAW~\cite{caw} and WGS~\cite{wgs}, use
 \texttt{slurm}~\cite{slurm} to schedule and manage the different jobs
@@ -18,23 +21,23 @@ across the available compute nodes.
 %
 Slurm can use partitions in order to group nodes into logical
 (possibly overlapping) sets, where priorities and other contraints are
-adjusted.
+specified.
 %
-We instantiated 3 compute nodes on Knox and 3 in ePouta. After we
-installed all the necessary dependencies for those workflows on the
-compute nodes and the supernode, we distributed the compute nodes in
-slurm partitions as in Table~\ref{experiments:slurm:partitions}.
+After installing all the necessary dependencies for these workflows on
+the compute nodes and on the supernode, we distribute the compute
+nodes in slurm partitions as in
+Table~\ref{experiments:slurm:partitions}.
 %
-Moreover, when a task from the workflow only requires one node, we were
+Moreover, when a task from a workflow only requires one node, we are
 interested in finding out if the first node on the slurm partition
-matters (marked with * in the above table).
+matters (marked with * in Table~\ref{experiments:slurm:partitions}).
 
 \begin{table}[ht]%[!b]
 \caption{Slurm Partitions}
 \label{experiments:slurm:partitions}
 \centering
 \begin{tabular}{|r||c|c|l|}\hhline{*{3}{=}}
-Partition       & \#nodes in Knox & \#nodes in ePouta \\\hhline{*{3}{=}}
+Partition       & \#nodes on Knox & \#nodes on ePouta \\\hhline{*{3}{=}}
 knox            & 3               & 0                 \\
 knox2-epouta1   & 2               & 1                 \\
 knox1-epouta2   & 1               & 2                 \\
@@ -45,75 +48,49 @@ epouta2-knox1 * & 2               & 1                 \\\hhline{*{3}{=}}
 \end{tabular}
 \end{table}
 
+Both CAW~\cite{caw} and WGS~\cite{wgs} run using \codeline{nextflow}.
+%
+We report in Table~\ref{experiments:CAW+WGS} the elapsed time, for
+each partition, when we experimented with a small non-sensitive data
+sample.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Cancer Analysis Workflow}
-\label{section:experiments:CAW}
-
-The \href{https://github.com/SciLifeLab/CAW}{Cancer Analysis Workflow}
-from SciLifeLab~\cite{caw} runs using \codeline{nextflow}. We ran it on a small
-non-sensitive data sample, and recorded the elapsed time, for each
-partition.
-
-\codeblock{caw.run.sh}
-
-The results are as follows:
+\codeblock{caw-wgs.run.sh}
 
 \begin{table}[ht]%[!b]
-\caption{CAW results per partition}
-\label{experiments:CAW}
+\caption{Results per partition for CAW (left) and WGS (right)}
+\label{experiments:CAW+WGS}
+\begin{minipage}{0.5\linewidth}
 \centering
-\begin{tabular}{|l|l|}\hhline{*{2}{=}}
-Partition     & Elapsed Time \\\hhline{*{2}{=}}
-knox          & 23m 58s \\
-knox2-epouta1 & 23m 27s \\
-knox1-epouta2 & 22m 55s \\
-epouta        & 15m 32s~\leftpointingfinger\\
-epouta1-knox2 & 17m 28s \\
-epouta2-knox1 & 15m 27s \\\hhline{*{2}{=}}
+\begin{tabular}{|l|rr|}\hhline{*{3}{=}}
+Partition     & \multicolumn{2}{r|}{Elapsed Time}\\\hhline{*{3}{=}}
+knox          & & 23m 58s \\
+knox2-epouta1 & & 23m 27s \\
+knox1-epouta2 & & 22m 55s \\
+epouta        & \leftpointingfinger & 15m 32s \\
+epouta1-knox2 & & 17m 28s \\
+epouta2-knox1 & & 15m 27s \\\hhline{*{3}{=}}
 \end{tabular}
+\end{minipage}%
+%
+\begin{minipage}{0.5\linewidth}
+\centering
+\begin{tabular}{|l|rr|}\hhline{*{3}{=}}
+Partition     & \multicolumn{2}{r|}{Elapsed Time}\\\hhline{*{3}{=}}
+knox          & & 8m 40s \\
+knox2-epouta1 & & 9m 43s \\
+knox1-epouta2 & & 9m 42s \\
+epouta        & \leftpointingfinger & 10m 14s\\
+epouta1-knox2 & \leftpointingfinger & 11m 11s \\
+epouta2-knox1 & \leftpointingfinger & 11m 13s \\\hhline{*{3}{=}}
+\end{tabular}
+\end{minipage}
 \end{table}
 
-\begin{quote}
-Conclusion: Since we know that the node in Epouta are technically
-superior to the ones in Knox (\ie better hardware), we can observe that
-the epouta-knox connection does not influence much the results and that
-the network file system (NFS) seems to hold the load
-\end{quote}
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Whole Genome Sequencing Structural Variation
-Pipeline}
-\label{section:experiments:WGS}
-
-Following the same procedure as the previous experiment, using the
-same partitions, we ran the
-\href{https://github.com/NBISweden/wgs-structvar}{Whole Genome
-  Sequencing Structural Variation Pipeline} (WGS) from
-\href{http://www.nbis.se}{NBIS}~\cite{wgs}. It requires a
-\codeline{bam} file, and we ran the \codeline{manta} step on it, using
-again \codeline{nextflow}.
-
-\codeblock{wgs.run.sh}
-
-The results are as follows:
-
-\begin{table}[ht]%[!b]
-\caption{WGS results per partition}
-\label{experiments:WGS}
-\centering
-\begin{tabular}{|l|l|}\hhline{*{2}{=}}
-Partition     & Elapsed Time \\\hhline{*{2}{=}}
-knox          & 8m 40s \\
-knox2-epouta1 & 9m 43s \\
-knox1-epouta2 & 9m 42s \\
-epouta        & 10m 14s~\leftpointingfinger\\
-epouta1-knox2 & 11m 11s~\leftpointingfinger\\
-epouta2-knox1 & 11m 13s~\leftpointingfinger\\\hhline{*{2}{=}}
-\end{tabular}
-\end{table}
+Since we know that the node in ePouta are technically superior to the
+ones in Knox (\ie better hardware), we can observe that the
+epouta-knox connection across borders does not influence much the
+computations. Moreover, the first compute node on the slurm partition
+appears to \emph{not} matter.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{NFS stress test}
@@ -121,7 +98,7 @@ epouta2-knox1 & 11m 13s~\leftpointingfinger\\\hhline{*{2}{=}}
 
 We suspected the network file system (NFS) to be a bottleneck in the
 previous workflows, since they require a lot of disk access (and
-comparatively not so much compute power). So we stress-tested NFS by
+comparatively not so much computing power). So we stress-tested NFS by
 writing files from the compute nodes onto an NFS-shared location --the
 storage node-- using
 \href{https://www.pdc.kth.se/~pek/sob}{SOB}~\cite{sob}.
@@ -130,7 +107,8 @@ We used the following tests:
 
 \begin{enumerate}
 %
-\item Write a 24GB file in chunks of 8MB. Basic test of write I/O bandwidth.
+\item \label{experiments:SOB:test:big}%
+Write a 24GB file in chunks of 8MB. Basic test of write I/O bandwidth.
 For this kind of test it is important that the file is substantially
 larger than the main memory of the machine. If the file is 2GB and main
 memory is 1GB then up to 50\% of the file could be cached by the
@@ -150,7 +128,8 @@ larger than main memory).
 %
 \\\textbf{Command:}\ \codeline{sob\ -w\ -R\ 5000\ -n\ 50\ -s\ 128m\ -b\ 64k}
 %
-\item Read and write 1 file of 1 GB (Checking whether the file is cached in memory).
+\item  \label{experiments:SOB:test:cache}%
+ Read and write 1 file of 1 GB (Checking whether the file is cached in memory).
 %
 \\textbf{Command:}\ \codeline{sob\ -rw\ -b\ 128k\ -s\ 1g}
 %
@@ -160,62 +139,37 @@ We wrote a script which, given a set of VMs, connects via \texttt{ssh}
 to the VMs (in the specified order) and runs a \texttt{sob} test on
 each VM in parallel.
 %
-It is worth mentioning that we limited the NFS caching mechanism, by
-unmounting and remounting the NFS share before each test.
+It is worth mentioning that we limited the effect of the NFS caching
+mechanism, by unmounting and remounting the NFS share before each
+test.
 %
-We got the following results:
+We report in Table~\ref{experiments:SOB:tests} the writing times for
+each test and each VM of the chosen set. The sets correspond to the
+four first partitions from
+Table~\ref{experiments:slurm:partitions}. For
+test~\ref{experiments:SOB:test:big} and
+\ref{experiments:SOB:test:cache}, the second line represents the
+reading time. In parenthesis, we indicate the bandwidth (rounded to
+the closest first decimal).
 
-% \begin{longtable}[]{@{}rlll@{}}
-% \toprule
-% \begin{minipage}[b]{0.07\columnwidth}\raggedleft\strut
-% Test\strut
-% \end{minipage} & \begin{minipage}[b]{0.14\columnwidth}\raggedright\strut
-% \texttt{epouta3}\strut
-% \end{minipage} & \begin{minipage}[b]{0.14\columnwidth}\raggedright\strut
-% \texttt{epouta2}\strut
-% \end{minipage} & \begin{minipage}[b]{0.14\columnwidth}\raggedright\strut
-% \texttt{epouta1}\strut
-% \end{minipage}\tabularnewline
-% \midrule
-% \endhead
-% \begin{minipage}[t]{0.07\columnwidth}\raggedleft\strut
-% 1\strut
-% \end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright\strut
-% Write: 527s (19.429 MB/s)Read: 217s (47.104 MB/s)\strut
-% \end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright\strut
-% Write: 399s (25.660 MB/s)Read: 300s (34.103 MB/s)\strut
-% \end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright\strut
-% Write: 363s (28.231 MB/s)Read: 287s (35.631 MB/s)\strut
-% \end{minipage}\tabularnewline
-% \begin{minipage}[t]{0.07\columnwidth}\raggedleft\strut
-% 2\strut
-% \end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright\strut
-% Write: 79s (6.296 MB/s)\strut
-% \end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright\strut
-% Write: 72s (6.912 MB/s)\strut
-% \end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright\strut
-% Write: 75s (6.661 MB/s)\strut
-% \end{minipage}\tabularnewline
-% \begin{minipage}[t]{0.07\columnwidth}\raggedleft\strut
-% 3\strut
-% \end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright\strut
-% Write: 267s (23.973 MB/s)\strut
-% \end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright\strut
-% Write: 259s (24.752 MB/s)\strut
-% \end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright\strut
-% Write: 267s (23.963 MB/s)\strut
-% \end{minipage}\tabularnewline
-% \begin{minipage}[t]{0.07\columnwidth}\raggedleft\strut
-% 4\strut
-% \end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright\strut
-% Write: 31s (33.389 MB/s)Read: 0.4s (2583.793 MB/s)\strut
-% \end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright\strut
-% Write: 38s (26.868 MB/s)Read: 0.3 s (3702.660 MB/s)\strut
-% \end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright\strut
-% Write: 34s (29.761 MB/s)Read: 0.3s (4053.569 MB/s)\strut
-% \end{minipage}\tabularnewline
-% \bottomrule
-% \end{longtable}
+\begin{table}[ht]%[!b]
+\caption{SOB tests running on \{ePouta3, ePouta2, ePouta1\}}
+\label{experiments:SOB:tests}
+\resultpartition%
+{{ePouta3}{ePouta2}{epouta1}}%
+{{ 1 }{ 527 }{ 19.4   }{ 399 }{ 25.7   }{ 363 }{ 28.2   }{      }}%
+{{   }{ 217 }{ 47.1   }{ 300 }{ 34.1   }{ 287 }{ 35.6   }{\hline}}%
+{{ 2 }{  79 }{ 6.3    }{  72 }{ 6.9    }{  75 }{ 6.7    }{\hline}}%
+{{ 3 }{ 267 }{ 24.0   }{ 259 }{ 24.8   }{ 267 }{ 24.0   }{\hline}}%
+{{ 4 }{  31 }{ 33.4   }{  38 }{ 26.9   }{  34 }{ 29.8   }{      }}%
+{{   }{ 0.4 }{ 2583.8 }{ 0.3 }{ 3702.7 }{ 0.3 }{ 4053.6 }{      }}
+\end{table}
+
+For clarity, we only report the results for one set/partition. The
+others are found in the appendix\ref{appendix:SOB}. These tests reveal
+that the use of NFS is not necessarily a bottleneck: if the workflows
+do not write big files, the system should hold the load, whether
+computations are in Sweden or in Finland.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Testing the 1GB-link}
@@ -238,55 +192,40 @@ same test between \texttt{knox2} and \texttt{knox1}, we get
 \texttt{942\ Mbits/sec} as sender and \texttt{938\ Mbits/sec} as
 receiver.
 
-The last test was to connect \texttt{epouta1} to \texttt{knox1},
-\texttt{epouta2} to \texttt{knox2} and \texttt{epouta3} to
-\texttt{knox3}, using a similar \texttt{iperf} test as above.
+The last test is to make three connections, pairwise between one node
+from Knox and one from ePouta, and run similar iPerf commands as
+above.
 
-\codeblock{iperf-ke3.sh}
-
+\begin{center}
 \begin{tabular}{|r||l|l|}\hhline{*{3}{=}}
 Connection          & Sender         & Receiver\\\hhline{*{3}{=}}
 epouta1 $<->$ knox1 & 275 Mbits/sec  & 272 Mbits/sec\\
 epouta2 $<->$ knox2 & 281 Mbits/sec  & 278 Mbits/sec\\
 epouta3 $<->$ knox3 & 452 Mbits/sec  & 447 Mbits/sec\\\hhline{*{3}{=}}
-              Total & 1008 Mbits/sec & 997 Mbits/sec\\
+\multicolumn{1}{r}{Total} & \multicolumn{1}{l}{1008 Mbits/sec} & \multicolumn{1}{l}{997 Mbits/sec}\\
 \end{tabular}
+\end{center}
 
 We get similar speed between \texttt{knox1} and \texttt{knox2}, which
 happened to be scheduled on different physical nodes in Knox.
+%
+In conclusion, the VMs' network is smoothly scaling at near
+link-speed.
 
-\subsection{Conclusions}
-\label{experiments:conclusions}
 
-\begin{itemize}
-\item The use of NFS is not necessarily a bottleneck: if the workflows
-  do not write big files, it should hold the load.
-\item The VMs' network is smoothly scaling at near link-speed.
-\item The first compute node on the slurm partition appears to
-  \emph{not} matter!
-\end{itemize}
-
-\cutafter
-
-\section{Suggestions for Future Work}\label{suggestions-for-future-work}
-
-\begin{itemize}
-\item
-  Tweak NFS to gain even further speed
-\item
-  Tweak the TCP settings in the Kernel
-\item
-  Scale up the solution to \textbf{many-many-many} nodes in Epouta and
-  some nodes in Knox, to see how much the link can be shared.
-\item
-  Improve disk accesses:
-
-  \begin{itemize}
-  \item
-    Use object storage or
-  \item
-    Use a cinder volume and not a ephemeral disk (\ie the default libvirt
-    file).
-  \end{itemize}
-\end{itemize}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\paragraph{Suggestions for Future Work.}%
+\label{section:suggestions:future:work}
+%
+It is probably possible to tweak the NFS settings, or the TCP settings
+in the kernel, to gain even further speed.
+%
+It would be interesting to scale up the solution to
+\textbf{many-many-many} nodes in ePouta and some nodes in Knox, to see
+how much the link can be shared.
+%
+Finally, it is worth updating the slurm and nfs solution with other
+tools, to improve disk access, such as (i)~the use object storage or
+(ii)~the use a separate disk volume attached to the storage VM, rather
+than an ephemeral disk on file (\ie the default in \texttt{libvirt}).
 

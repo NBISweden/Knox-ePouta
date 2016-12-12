@@ -25,7 +25,7 @@ a4paper]{article}
 
 %% -------------------------------------
 \maketitle
-\input{sections/abstract}
+\input{misc/abstract}
 %% -------------------------------------
 \input{sections/introduction}
 \input{sections/method}
@@ -36,7 +36,11 @@ a4paper]{article}
 \nocite{*} % Remove this for your own citations
 \bibliographystyle{plain}
 %\bibliographystyle{unsrt}
-\bibliography{sections/references}
+\bibliography{misc/references}
+
+%% -------------------------------------
+\vfill\eject\appendix 
+\input{misc/appendix.tex}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \end{document}
