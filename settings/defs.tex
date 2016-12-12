@@ -3,6 +3,7 @@
 %\input{settings/comments.tex}
 
 \newcommand{\ie}{i.e.\ }
+\newcommand{\eg}{e.g.\ }
 
 %% ---------------------------------------------
 %% Framing the lists
@@ -20,7 +21,7 @@
 \begingroup\VerbatimInput[numbers=none]{scripts/#1}\endgroup%
 %\end{mdframed}%
 }
-
+\newcommand{\codeline}[1]{\texttt{#1}}
 
 %% Settings for enumerations and item lists
 \setlist{noitemsep}

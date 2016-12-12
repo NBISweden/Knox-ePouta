@@ -3,109 +3,125 @@
 \label{section:method}
 %% ====================================================================
 
-\cutafter
+The Mosler secure computing environment~\cite{mosler} enables
+scientists to carry out research on \emph{sensitive data}, \eg
+personal data relating to health.
+%
+For each project on the system, a set of virtual machines (VM) is
+booted, which the users access via a secured connection. All
+communication is encrypted.
 
-This section describes in great details how we connected a set of
-virtual machines (VMs) running on Knox, a cloud cluster in Sweden, to
-another set of VMs running on ePouta, a cloud cluster in Finland. The
-two clusters are managed by
-\href{http://docs.openstack.org/liberty/install-guide-ubuntu/}{Openstack
-  Liberty}.
+When a VM is started, it ``books'' predefined CPU resources and disk
+space and when all the hardware cores are booked, we say that the
+cloud cluster is full. In such a case, we are interested in extending
+the set of VMs with external ones running in another cluster, and in
+our case, the extra cluster is located in another country.
 
-We start with the low-level component. There is a 1GB/s fiber-link
-between Knox and ePouta with a dedicated network. This means that the
-link might be shared, but only the VMs on that network can communicate
-through it. This security is provided by VLAN encapsulation. In our
-case, the VLAN tag is 1203.
+\begin{figure}
+  \centering
+  \tikz\draw circle(3cm);
+  %\input{img/overview}
+  \caption{Overview of the project resources}
+  \label{figure:overview}
+\end{figure}
 
-We use the following range of IPs: \ip{10.101.0.0/16} for network
-communication between the VMs. We split the address range in two
-disjoint parts. For that, we use the third number of the
-\ip{10.101.0.0/16} CIDR. The VMs in ePouta will have an IP where the
-third number starts in binary notation with a \texttt{0}, while, for the
-VMs in Knox, the third number will start with a \texttt{1}. The
-exception is the virtual router.
-
-The network settings use the following components:
+We built a temporary cluster in Sweden, which we refer to as Knox, and
+used the ePouta cluster~\cite{epouta} in Finland to extend a project
+running on Knox. As a first step, we isolated the project from any
+other project, but did not encrypt the communication, \ie the
+environment manipulated non-sensitive data.
+%
+The VMs infrastructure is shaped as in
+Figure~\ref{figure:overview}. We booted on Knox:
 \begin{itemize}
-\item a Virtual Router on Knox (with IP: \ip{10.101.0.1/16})
-\item a DHCP server on Knox (with IP: \ip{10.101.128.0/16})
-\item a DHCP server on ePouta (with IP: \ip{10.101.0.3/16})
-\item the Neutron linuxbridges plugin (on Knox) with VLAN capabilities
-\item a set of VMs on ePouta (with IPs from \ip{10.101.0.4/16} to
-  \ip{10.101.127.255/16})
-\item a set of VMs on Knox (with IPs from \ip{10.101.128.1/16} to
-  \ip{10.101.128.254/16})
+\item a Virtual Router,
+\item a DHCP server, providing network settings to the Knox VMs,
+\item 3 VMs for computation
+\item a storage node
+\item a \emph{supernode} where we connect and run the tests
+\end{itemize}
+On ePouta, we booted:
+\begin{itemize}
+\item a DHCP server, providing network settings to the ePouta VMs,
+\item 3 VMs for computation
 \end{itemize}
 
-The DHCP server on Knox (resp. ePouta) provides network information for
-the VMs on Knox (resp. ePouta).
-
-\cutafter
-
-
-In order to test the connection between countries, 
-we set up a dedicated network, \ie the link
-is shared by other machines, but no other machine are connected to
-that network.
-
-Between Knox and ePouta, we set up a dedicated network, \ie the link
-is shared by other machines, but no other machine are connected to
-that network.
-
-we ran two
-realistic workflows and stress-tested the disc access and the network
-link.
+We connected the two clusters with a 1GB/s fiber-link. We provide a
+local network between the VMs, which can communicate across borders
+transparently.
 %
-The outcome was surprising: we did not detect any significant slowdown
-when using resources from either clusters, \ie computations do not
-notice whether they are performed in Finland or in Sweden.
+Note that the link might be shared by other projects, but VMs from
+other projects cannot reach the above-mentioned VMs.
 %
-This is a very positive outcome as it is now possible to carry on with
-workflows dealing with sensitive data.
+This isolation is provided by VLAN encapsulation.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-We present in Section~\ref{section:method} a general overview of our
-method
-
-
-
-
-In order to test the connection between countries, we built a
-temporary cloud cluster in Sweden, called Knox, and connected it to
-the resources of ePouta, a secure cloud cluster in Finland, via a
-fiber-link with a capacity of 1GB/s.
-
-Between Knox and ePouta, we set up a dedicated network, \ie the link
-is shared by other machines, but no other machine are connected to
-that network.
-
-We were interested in running realistic workflows. We choose to run
-the \href{https://github.com/SciLifeLab/CAW}{Cancer Analysis Workflow}
-(CAW) from SciLifeLab and the
+We were interested in running realistic workflows on the extended
+cluster, and see whether we could notice a significant slowdown when
+computations are scheduled on VMs across borders.
+%
+We chose to run the \href{https://github.com/SciLifeLab/CAW}{Cancer
+  Analysis Workflow} (CAW)~\cite{caw} from SciLifeLab and the
 \href{https://github.com/NBISweden/wgs-structvar}{Whole Genome
-Sequencing Structural Variation Pipeline} (WGS) from
-\href{http://www.nbis.se}{NBIS} as a first step. The results were
-surprising: we did not detect any significant slowdown when using
-resources from either clusters.
+  Sequencing Structural Variation Pipeline} (WGS)~\cite{caw} from
+\href{http://www.nbis.se}{NBIS}.
+%
+CAW is a pipeline for variant calling of tumor data and WGS is a
+pipeline for predicting and annotating structural variations in the
+human genome.
+%
+Yet, we only used non-sensitive data, here in the first step.
 
-We suspected that disk access or even the network itself would be a
-bottleneck in this setup. So, as a second step, we stress-tested both
-aspects and noticed even more surprising results: the disk accesses
-are not slower at all, and the link can be used almost to 100\%!
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Moreover, we suspected that disk access and even the network itself
+would be a bottleneck in this setup. So, we ran some further tests to
+stress both aspects.
+%
+We used the program SOB~\cite{sob} to stress the filesystem, by
+reading and writing an arbitrary number of files in different chunk
+size. SOB also outputs useful performance numbers.
+%
+In order to test the network, we used iPerf3~\cite{iperf}, a tool for
+active measurements of the maximum achievable bandwidth on IP
+networks.
+%
+We instantiated a data communication between two VMs, one on Knox and
+one on ePouta.
+%
+We then repeated that same test over three pairs of VMs.
+%
+For each test, the tool reports the bandwidth, loss, and several other
+parameters related to how well the link was used.
 
-In other words, computations and tests do not notice whether they are
-performed in Finland or in Sweden. Computations were actually even
-faster running in Finland, since the hardware in ePouta is better than
-the one in Knox. It is probably possible to fine-tune the settings to
-get even further performance and a seamless connection. This is a very
-positive outcome as we can now carry on with workflows dealing with
-sensitive data. You can refer the
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+After running the tests, described in
+Section~\ref{section:experiments}, we noticed no significant slowdown
+on the computations for the pipelines and the stress-tests revealed
+that (i)~disk~access was not slower and (ii)~the~link was almost fully
+used.
+%
+Computations and tests do not notice whether they are performed in
+Finland or in Sweden.
+%
+In other words, this is a very positive outcome where data traffic and
+computations are carried out as if the extended VMs were all located
+in the same country.
+%
+Computations were actually running
+even faster in Finland, since the hardware in ePouta is better than
+the one in Knox.
+%
+It is probably possible to fine-tune kernel settings
+to get even further performance and a seamless connection.
+%
+The remaining step dealing with sensitive data can thus be ignored.
+%
+You can refer to the
 \href{https://github.com/NBISweden/Knox-ePouta}{NBIS GitHub
-repository} for further information, or see
-\href{https://NBISweden.github.io/Knox-ePouta/informal/}{an informal
-presentation}.
-
-
-\input{img/overview}
+  repository}~\cite{nbis-knox-epouta} for the source code, in order to
+reproduce the setup and re-run the tests.
+%
+It is worth noting that the link capacity must be adjusted in case the
+number of VMs communicating through the link increases.
