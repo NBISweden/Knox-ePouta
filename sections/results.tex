@@ -30,7 +30,9 @@ Table~\ref{experiments:slurm:partitions}.
 %
 Moreover, when a task from a workflow only requires one node, we are
 interested in finding out if the first node on the slurm partition
-matters (marked with * in Table~\ref{experiments:slurm:partitions}).
+matters: we therefore added two more paritions, marked with * in
+Table~\ref{experiments:slurm:partitions}, where the ePouta nodes are
+effectively given a~higher priority.
 
 \begin{table}[ht]%[!b]
 \caption{Slurm Partitions}
@@ -44,7 +46,7 @@ knox1-epouta2   & 1               & 2                 \\
 epouta          & 0               & 3                 \\\hline
 epouta1-knox2 * & 1               & 2                 \\
 epouta2-knox1 * & 2               & 1                 \\\hhline{*{3}{=}}
-\multicolumn{3}{l}{\scriptsize * epouta nodes first in the slurm partition}\\
+\multicolumn{3}{l}{\scriptsize * ePouta nodes have higher priority than Knox nodes}\\
 \end{tabular}
 \end{table}
 
@@ -166,10 +168,11 @@ the closest first decimal).
 \end{table}
 
 For clarity, we only report the results for one set/partition. The
-others are found in the appendix\ref{appendix:SOB}. These tests reveal
-that the use of NFS is not necessarily a bottleneck: if the workflows
-do not write big files, the system should hold the load, whether
-computations are in Sweden or in Finland.
+others are found in the appendix~\ref{appendix:SOB}. These tests
+reveal that the use of NFS is not necessarily a bottleneck: if the
+workflows do not write big files, the system should hold the load,
+whether computations are performed in Sweden or in Finland, with data
+in Sweden.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Testing the 1GB-link}
@@ -211,21 +214,3 @@ happened to be scheduled on different physical nodes in Knox.
 %
 In conclusion, the VMs' network is smoothly scaling at near
 link-speed.
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\paragraph{Suggestions for Future Work.}%
-\label{section:suggestions:future:work}
-%
-It is probably possible to tweak the NFS settings, or the TCP settings
-in the kernel, to gain even further speed.
-%
-It would be interesting to scale up the solution to
-\textbf{many-many-many} nodes in ePouta and some nodes in Knox, to see
-how much the link can be shared.
-%
-Finally, it is worth updating the slurm and nfs solution with other
-tools, to improve disk access, such as (i)~the use object storage or
-(ii)~the use a separate disk volume attached to the storage VM, rather
-than an ephemeral disk on file (\ie the default in \texttt{libvirt}).
-
