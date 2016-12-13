@@ -4,11 +4,17 @@
 
 %% ---------------------------------------------
 %% Framing the lists
-% \usepackage[framemethod=TikZ]{mdframed}
-% \mdfdefinestyle{DazFrame}{%
-%     linecolor=gray!10!white,outerlinewidth=1pt,roundcorner=1ex,
-%     innertopmargin=1ex,innerrightmargin=2ex,innerbottommargin=1ex,innerleftmargin=1ex,
-%     backgroundcolor=white}
+\usepackage[framemethod=TikZ]{mdframed}
+\mdfdefinestyle{DazFrame}{%
+    linecolor=gray!10!white,outerlinewidth=1pt,roundcorner=1ex,
+    innertopmargin=1ex,innerrightmargin=2ex,innerbottommargin=1ex,innerleftmargin=1ex,
+    backgroundcolor=white}
+
+\newenvironment{tests}{%
+  \renewcommand{\theenumi}{\protect\tikz[baseline=(n.base)]{\protect\node[enumbullet](n){\arabic{enumi}};}}
+  \renewcommand{\labelenumi}{\theenumi}
+  \begin{mdframed}[style=DazFrame]%
+  \begin{enumerate}}{\end{enumerate}\end{mdframed}}
 
 %% ---------------------------------------------
 \newcommand{\codeblock}[1]{%
@@ -18,6 +24,7 @@
 }
 \newcommand{\codeline}[1]{\texttt{#1}}
 
+
 %% Settings for enumerations and item lists
 \setlist{noitemsep}
 \setlist[enumerate,1]{itemsep=1ex}
@@ -25,23 +32,26 @@
 \setlist[enumerate]{align=right,leftmargin=*,widest*=4}
 %\setlist[itemize]{labelindent=0pt,align=right,leftmargin=*}
 
-\newcommand{\resulttitle}[3]{Test & \multicolumn{2}{|l||}{\texttt{#1}}&\multicolumn{2}{l||}{\texttt{#2}}& \multicolumn{2}{l|}{\texttt{#3}} \\\hhline{*{7}{=}}}
 \makeatletter
 \newcommand{\mytrim}[1]{\trim@post@space{#1}}
 \makeatother
-\newcommand{\resulttest}[8]{#1&\mytrim{#2}s&{\scriptsize (\mytrim{#3} MB/s)}&\mytrim{#4}s&{\scriptsize (\mytrim{#5} MB/s)}&\mytrim{#6}s&{\scriptsize (\mytrim{#7} MB/s)}\\#8}
+
+\newcommand{\resulttitle}[3]{%
+\multicolumn{1}{c}{} & \multicolumn{2}{c}{\texttt{#1}}&\multicolumn{2}{c}{\texttt{#2}}& \multicolumn{2}{c}{\texttt{#3}}%
+}
+\newcommand{\resulttest}[6]{\mytrim{#1}s&{\scriptsize \mytrim{#2} MB/s}&\mytrim{#3}s&{\scriptsize \mytrim{#4} MB/s}&\mytrim{#5}s&{\scriptsize \mytrim{#6} MB/s}}
 
 \newcommand{\resultpartition}[7]{%
 \noindent\begin{center}
-\begin{tabular}{|r||r|l||r|l||r|l|}\hhline{*{7}{=}}
-\resulttitle#1
-\resulttest#2
-\resulttest#3
-\resulttest#4
-\resulttest#5
-\resulttest#6
-\resulttest#7
-\hhline{*{7}{=}}
+\begin{tabular}{r|rl||rl||rl|}
+\resulttitle#1                                                    \\\hhline{~--||--||--}
+\multirow{2}{*}{\ref{experiments:SOB:test:big}}   & \resulttest#2 \\
+                                                  & \resulttest#3 \\\hhline{~==::==::==}
+                \ref{experiments:SOB:test:dir}    & \resulttest#4 \\\hhline{~==::==::==}
+              \ref{experiments:SOB:test:random}   & \resulttest#5 \\\hhline{~==::==::==}
+\multirow{2}{*}{\ref{experiments:SOB:test:cache}} & \resulttest#6 \\
+                                                  & \resulttest#7 \\\hhline{~--||--||--}
+\multicolumn{1}{c}{} & \multicolumn{1}{r}{\tiny Time} & \multicolumn{1}{l}{\tiny Bandwidth} & \multicolumn{1}{r}{\tiny Time} & \multicolumn{1}{l}{\tiny Bandwidth} & \multicolumn{1}{r}{\tiny Time} & \multicolumn{1}{l}{\tiny Bandwidth} \\
 \end{tabular}
 \end{center}%
 }
@@ -59,6 +69,9 @@
 %% ---------------------------------------------
 
 \newcommand{\leftpointingfinger}{\ding{43}}
+\newcommand{\vmconnect}{\ensuremath{\rightleftharpoons}}
+
+
 \newcommand{\ip}[1]{\texttt{#1}}
 
 \newcommand{\ie}{i.e.\ }

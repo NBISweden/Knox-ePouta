@@ -4,7 +4,7 @@
 %% ====================================================================
 
 This section describes the tests we ran in order to test the
-limitations of the Knox-ePouta connection, as described in
+limitations of the Knox-ePouta connection presented in
 Section~\ref{section:method}.
 %
 The set of VMs stretches across Sweden and Finland. The VMs are
@@ -15,9 +15,11 @@ each other.
 \subsection{Realistic Pipelines}
 \label{section:experiments:pipelines}
 
-The two workflows we tested, CAW~\cite{caw} and WGS~\cite{wgs}, use
-\texttt{slurm}~\cite{slurm} to schedule and manage the different jobs
-across the available compute nodes.
+The two workflows we tested, %
+% CAW~\cite{caw} and WGS~\cite{wgs},
+CAW and WGS, %
+use \texttt{slurm}~\cite{slurm} to schedule and manage the different
+jobs across the available compute nodes.
 %
 Slurm can use partitions in order to group nodes into logical
 (possibly overlapping) sets, where priorities and other contraints are
@@ -50,11 +52,13 @@ epouta2-knox1 * & 2               & 1                 \\\hhline{*{3}{=}}
 \end{tabular}
 \end{table}
 
-Both CAW~\cite{caw} and WGS~\cite{wgs} run using \codeline{nextflow}.
+%Both CAW~\cite{caw} and WGS~\cite{wgs} %
+CAW and WGS %
+run using \codeline{nextflow}~\cite{nextflow}.
 %
-We report in Table~\ref{experiments:CAW+WGS} the elapsed time, for
-each partition, when we experimented with a small non-sensitive data
-sample.
+We report the elapsed time for each partition in
+Table~\ref{experiments:CAW+WGS} when we experimented with a small
+non-sensitive data sample.
 
 \codeblock{caw-wgs.run.sh}
 
@@ -107,35 +111,39 @@ storage node-- using
 %
 We used the following tests:
 
-\begin{enumerate}
+\begin{tests}
 %
-\item \label{experiments:SOB:test:big}%
-Write a 24GB file in chunks of 8MB. Basic test of write I/O bandwidth.
-For this kind of test it is important that the file is substantially
-larger than the main memory of the machine. If the file is 2GB and main
-memory is 1GB then up to 50\% of the file could be cached by the
-operating system and the reported write bandwidth would be much higher
-than what the disk+filesystem could actually provide.
-%
-\\\textbf{Command:}\ \codeline{sob\ -rw\ -b\ 8m\ -s\ 10g}
-%
-\item Writing 500 files of 1MB, spread out in 10 directories
-%
-\\\textbf{Command:}\ \codeline{sob\ -w\ -b\ 64k\ -s\ 1m\ -n\ 500\ -o\ 50}
-%
-\item Write 50 128MB files (6.4GB) with a block size of 64kB, then read random
-files among these 5000 times. A good way to test random access and mask
-buffer cache effects (provided the sum size of all the files is much
-larger than main memory).
-%
-\\\textbf{Command:}\ \codeline{sob\ -w\ -R\ 5000\ -n\ 50\ -s\ 128m\ -b\ 64k}
-%
-\item  \label{experiments:SOB:test:cache}%
- Read and write 1 file of 1 GB (Checking whether the file is cached in memory).
-%
-\\textbf{Command:}\ \codeline{sob\ -rw\ -b\ 128k\ -s\ 1g}
-%
-\end{enumerate}
+\item\label{experiments:SOB:test:big}%
+  Write a 10GB file in chunks of 8MB. Basic test of write I/O
+  bandwidth.  For this kind of test it is important that the file is
+  substantially larger than the main memory of the machine. If the
+  file is 2GB and main memory is 1GB then up to 50\% of the file could
+  be cached by the operating system and the reported write bandwidth
+  would be much higher than what the disk+filesystem could actually
+  provide.
+  % 
+  \\\textbf{Command:}\ \codeline{sob\ -rw\ -b\ 8m\ -s\ 10g}
+  % 
+\item\label{experiments:SOB:test:dir}%
+  Writing 500 files of 1MB, spread out in 10 directories
+  % 
+  \\\textbf{Command:}\ \codeline{sob\ -w\ -b\ 64k\ -s\ 1m\ -n\ 500\ -o\ 50}
+  % 
+\item\label{experiments:SOB:test:random}%
+  Write 50 files, of 128MB each (\ie a total of 6.4GB), with a block
+  size of 64kB, then read 5000 times some files randomly picked. This
+  is a good way to test random access and mask buffer cache effects
+  (provided the sum size of all the files is much larger than main
+  memory).
+  % 
+  \\\textbf{Command:}\ \codeline{sob\ -w\ -R\ 5000\ -n\ 50\ -s\ 128m\ -b\ 64k}
+  % 
+\item\label{experiments:SOB:test:cache}%
+  Read and write 1 file of 1 GB (Checking whether the file is cached in memory).
+  % 
+  \\\textbf{Command:}\ \codeline{sob\ -rw\ -b\ 128k\ -s\ 1g}
+  % 
+\end{tests}
 
 We wrote a script which, given a set of VMs, connects via \texttt{ssh}
 to the VMs (in the specified order) and runs a \texttt{sob} test on
@@ -146,28 +154,44 @@ mechanism, by unmounting and remounting the NFS share before each
 test.
 %
 We report in Table~\ref{experiments:SOB:tests} the writing times for
-each test and each VM of the chosen set. The sets correspond to the
-four first partitions from
-Table~\ref{experiments:slurm:partitions}. For
-test~\ref{experiments:SOB:test:big} and
+each test and each VM of the chosen set.
+%
+The VM names are \codeline{knox$_i$} (resp.\ epouta$_i$) if it was
+booted on Knox (resp.\ ePouta), where $i\in\{1,2,3\}$.
+%
+The sets correspond roughly to the four first partitions from
+Table~\ref{experiments:slurm:partitions}.
+%
+For test~\ref{experiments:SOB:test:big} and
 \ref{experiments:SOB:test:cache}, the second line represents the
-reading time. In parenthesis, we indicate the bandwidth (rounded to
-the closest first decimal).
+reading time.
+%
+The numbers in MB/s indicate the bandwidth (rounded to the closest
+first decimal).
 
 \begin{table}[ht]%[!b]
-\caption{SOB tests running on \{ePouta3, ePouta2, ePouta1\}}
+\caption{SOB tests running on two different sets}
 \label{experiments:SOB:tests}
 \resultpartition%
 {{ePouta3}{ePouta2}{epouta1}}%
-{{ 1 }{ 527 }{ 19.4   }{ 399 }{ 25.7   }{ 363 }{ 28.2   }{      }}%
-{{   }{ 217 }{ 47.1   }{ 300 }{ 34.1   }{ 287 }{ 35.6   }{\hline}}%
-{{ 2 }{  79 }{ 6.3    }{  72 }{ 6.9    }{  75 }{ 6.7    }{\hline}}%
-{{ 3 }{ 267 }{ 24.0   }{ 259 }{ 24.8   }{ 267 }{ 24.0   }{\hline}}%
-{{ 4 }{  31 }{ 33.4   }{  38 }{ 26.9   }{  34 }{ 29.8   }{      }}%
-{{   }{ 0.4 }{ 2583.8 }{ 0.3 }{ 3702.7 }{ 0.3 }{ 4053.6 }{      }}
+{{ 527 }{ 19.4   }{ 399 }{ 25.7   }{ 363 }{ 28.2   }}%
+{{ 217 }{ 47.1   }{ 300 }{ 34.1   }{ 287 }{ 35.6   }}%
+{{  79 }{ 6.3    }{  72 }{ 6.9    }{  75 }{ 6.7    }}%
+{{ 267 }{ 24.0   }{ 259 }{ 24.8   }{ 267 }{ 24.0   }}%
+{{  31 }{ 33.4   }{  38 }{ 26.9   }{  34 }{ 29.8   }}%
+{{ 0.4 }{ 2583.8 }{ 0.3 }{ 3702.7 }{ 0.3 }{ 4053.6 }}
+
+\resultpartition%
+{{knox1}{knox2}{knox3}}%
+{{ 212 }{ 48.4   }{ 487 }{ 21.0   }{ 492 }{ 20.8   }}%
+{{ 166 }{ 61.8   }{ 219 }{ 46.7   }{ 208 }{ 49.3   }}%
+{{  55 }{ 9.0    }{  60 }{ 8.4    }{  60 }{ 8.3    }}%
+{{ 204 }{ 31.3   }{ 237 }{ 27.0   }{ 243 }{ 26.4   }}%
+{{  26 }{ 33.7   }{  39 }{ 26.3   }{  37 }{ 27.8   }}%
+{{ 0.3 }{ 3330.5 }{ 0.3 }{ 3379.5 }{ 0.3 }{ 3703.7 }}
 \end{table}
 
-For clarity, we only report the results for one set/partition. The
+For clarity, we only report the results for two sets/partitions. The
 others are found in the appendix~\ref{appendix:SOB}. These tests
 reveal that the use of NFS is not necessarily a bottleneck: if the
 workflows do not write big files, the system should hold the load,
@@ -200,12 +224,12 @@ from Knox and one from ePouta, and run similar iPerf commands as
 above.
 
 \begin{center}
-\begin{tabular}{|r||l|l|}\hhline{*{3}{=}}
-Connection          & Sender         & Receiver\\\hhline{*{3}{=}}
-epouta1 $<->$ knox1 & 275 Mbits/sec  & 272 Mbits/sec\\
-epouta2 $<->$ knox2 & 281 Mbits/sec  & 278 Mbits/sec\\
-epouta3 $<->$ knox3 & 452 Mbits/sec  & 447 Mbits/sec\\\hhline{*{3}{=}}
-\multicolumn{1}{r}{Total} & \multicolumn{1}{l}{1008 Mbits/sec} & \multicolumn{1}{l}{997 Mbits/sec}\\
+\begin{tabular}{|r||c||c|}\hhline{~||-||-}
+\multicolumn{1}{c|}{Connection} & Sender         & Receiver\\\hhline{-::=::=}
+epouta1 \vmconnect\ knox1 & 275 Mbits/sec  & 272 Mbits/sec\\
+epouta2 \vmconnect\ knox2 & 281 Mbits/sec  & 278 Mbits/sec\\
+epouta3 \vmconnect\ knox3 & 452 Mbits/sec  & 447 Mbits/sec\\\hhline{-::=::=}
+\multicolumn{1}{r|}{Total} & 1008 Mbits/sec & 997 Mbits/sec\\\hhline{~::-::-}
 \end{tabular}
 \end{center}
 

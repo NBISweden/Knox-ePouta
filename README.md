@@ -7,3 +7,5 @@ the [Tryggve project](https://wiki.neic.no/wiki/Tryggve) and performed
 by [NBIS](http://www.nbis.se).
 
 Type `make` and look for the newly created `_build/main.pdf` file.
+
+Type `make final` to get the PDF file with cross-references.
