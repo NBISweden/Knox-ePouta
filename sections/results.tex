@@ -20,7 +20,7 @@ The two workflows we tested, CAW~\cite{caw} and WGS~\cite{wgs}, use
 across the available compute nodes.
 %
 Slurm can use partitions in order to group nodes into logical
-(possibly overlapping) sets, where priorities and other contraints are
+(possibly overlapping) sets, where priorities and other constraints are
 specified.
 %
 After installing all the necessary dependencies for these workflows on
@@ -90,7 +90,7 @@ epouta2-knox1 & \leftpointingfinger & 11m 13s \\\hhline{*{3}{=}}
 
 Since we know that the node in ePouta are technically superior to the
 ones in Knox (\ie better hardware), we can observe that the
-epouta-knox connection across borders does not influence much the
+ePouta-Knox connection across borders does not influence much the
 computations. Moreover, the first compute node on the slurm partition
 appears to \emph{not} matter.
 
@@ -110,7 +110,7 @@ We used the following tests:
 \begin{enumerate}
 %
 \item \label{experiments:SOB:test:big}%
-Write a 24GB file in chunks of 8MB. Basic test of write I/O bandwidth.
+Write a 10GB file in chunks of 8MB. Basic test of write I/O bandwidth.
 For this kind of test it is important that the file is substantially
 larger than the main memory of the machine. If the file is 2GB and main
 memory is 1GB then up to 50\% of the file could be cached by the

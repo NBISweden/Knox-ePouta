@@ -5,14 +5,13 @@
 
 The Mosler secure computing environment~\cite{mosler} enables
 scientists to carry out research on \emph{sensitive data}, \eg
-personal data relating to health.
+personal data relating to individuals' health.
 %
-For each project on the system, a set of virtual machines (VM) is
-booted, which the users access via a secured connection. All
-communication is encrypted.
+For each project in the Mosler environment, a set of virtual machines (VM) is
+created, which the users access via a secured and encrypted connection.
 
-When a VM is started, it ``books'' predefined CPU resources and disk
-space and when all the hardware cores are booked, we say that the
+When a VM is started, it ``books'' predefined resources, such as CPU and disk
+space, and when all the hardware cores are booked, we say that the
 cloud cluster is full. In such a case, we are interested in extending
 the set of VMs with external ones running in another cluster, and in
 our case, the extra cluster is located in another country.
@@ -46,8 +45,8 @@ On ePouta, we boot:
 \item 3 VMs for computation
 \end{itemize}
 
-We connect the two clusters with a 1GB/s fiber-link. We provide a
-local network between the VMs, which can communicate across borders
+We connect the two clusters with a 1GB/s fiber-link and provide a
+local network between the VMs, which can communicate across the Swedish--Finnish border
 transparently.
 %
 Note that the link might be shared by other projects, but VMs from

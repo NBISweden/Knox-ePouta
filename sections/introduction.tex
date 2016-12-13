@@ -2,18 +2,18 @@
 \section{Introduction}
 \label{section:intro}
 
-When a cluster runs at full capacity, all the newly scheduled jobs
-have to wait. In case this happens often, it is necessary to scale up
-the infrastructure for more computations and more data transfers. To
+When a computational cluster runs at full capacity, any additional jobs will
+have to wait. If this happens often, it may be necessary to scale up
+the infrastructure to cope with the additional requirements on computations and rate of data transfers. To
 this end, it is of course possible to buy more hardware, \ie more
 compute nodes, more disks and more network switches. However, this
 might be an expensive solution.
 
 The \href{https://wiki.neic.no/wiki/Tryggve}{Tryggve
-  project}~\cite{tryggve} focuses therefore on an alternative
-approach, where the cloud resources of other countries are solicited.
+  project}~\cite{tryggve} focuses on an alternative
+approach, where the cloud resources of collaborators in other countries are solicited.
 %
-If they could be \emph{``borrowed for a while''}, we extend the local
+If the resources could be \emph{``borrowed for a while''}, we extend the local
 computational power with such extra nodes residing in other countries.
 %
 An immediate technical challenge with such a solution is whether a
@@ -23,18 +23,18 @@ happen in one country, while the data are located in another country,
 and it would require high bandwidth for data transfers.
 
 Initially, we are interested in running \emph{data-sensitive}
-analysis using compute resources that stretch across borders.
+analysis using compute resources that stretch across national borders.
 %
 As a first step, we instantiate a few compute nodes in one country,
 Sweden, and a few other nodes in another country, Finland. We
-connect them transparently to the same network such that they are
+connect them transparently to the same virtual network so that they are
 the only nodes communicating over that network, for security. We then
 perform tests to stress network and disc accesses, and run two
-realistic workflows over non-sensitive data.
+realistic workflows on non-sensitive data.
 
 Since our method yields no significant slowdown in that step, we
 can simplify the problem and ignore the next steps related to
-experiments over sensitive data.
+experiments utilizing sensitive data.
 %
 Note that there is another issue related to the transfer of sensitive
 data between countries. This legal matter is an ongoing work within
