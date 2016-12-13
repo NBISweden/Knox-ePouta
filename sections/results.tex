@@ -40,14 +40,14 @@ effectively given a~higher priority.
 \caption{Slurm Partitions}
 \label{experiments:slurm:partitions}
 \centering
-\begin{tabular}{|r||c|c|l|}\hhline{*{3}{=}}
-Partition       & \#nodes on Knox & \#nodes on ePouta \\\hhline{*{3}{=}}
+\begin{tabular}{|r||c||c|}\hhline{-||-||-}
+Partition       & \#nodes on Knox & \#nodes on ePouta \\\hhline{=::=::=}
 knox            & 3               & 0                 \\
 knox2-epouta1   & 2               & 1                 \\
 knox1-epouta2   & 1               & 2                 \\
-epouta          & 0               & 3                 \\\hline
+epouta          & 0               & 3                 \\\hhline{-||-||-}
 epouta1-knox2 * & 1               & 2                 \\
-epouta2-knox1 * & 2               & 1                 \\\hhline{*{3}{=}}
+epouta2-knox1 * & 2               & 1                 \\\hhline{-||-||-}
 \multicolumn{3}{l}{\scriptsize * ePouta nodes have higher priority than Knox nodes}\\
 \end{tabular}
 \end{table}
@@ -67,14 +67,14 @@ non-sensitive data sample.
 \label{experiments:CAW+WGS}
 \begin{minipage}{0.5\linewidth}
 \centering
-\begin{tabular}{|l|rr|}\hhline{*{3}{=}}
-Partition     & \multicolumn{2}{r|}{Elapsed Time}\\\hhline{*{3}{=}}
+\begin{tabular}{|l|rr|}\hhline{===}
+Partition     & \multicolumn{2}{r|}{Elapsed Time}\\\hhline{===}
 knox          & & 23m 58s \\
 knox2-epouta1 & & 23m 27s \\
 knox1-epouta2 & & 22m 55s \\
 epouta        & \leftpointingfinger & 15m 32s \\
 epouta1-knox2 & & 17m 28s \\
-epouta2-knox1 & & 15m 27s \\\hhline{*{3}{=}}
+epouta2-knox1 & & 15m 27s \\\hhline{===}
 \end{tabular}
 \end{minipage}%
 %
@@ -213,10 +213,10 @@ with the following commands:
 \codeblock{iperf-ke1.sh}
 
 The results are surprising: We get near the physical link speed! After
-summing the different connections, we reached \texttt{941\ Mbits/sec} as
-sender and \texttt{937\ Mbits/sec} as receiver. To compare, running the
+summing the different connections, we reached \texttt{941\ Mb/s} as
+sender and \texttt{937\ Mb/s} as receiver. To compare, running the
 same test between \texttt{knox2} and \texttt{knox1}, we get
-\texttt{942\ Mbits/sec} as sender and \texttt{938\ Mbits/sec} as
+\texttt{942\ Mb/s} as sender and \texttt{938\ Mb/s} as
 receiver.
 
 The last test is to make three connections, pairwise between one node
@@ -225,11 +225,11 @@ above.
 
 \begin{center}
 \begin{tabular}{|r||c||c|}\hhline{~||-||-}
-\multicolumn{1}{c|}{Connection} & Sender         & Receiver\\\hhline{-::=::=}
-epouta1 \vmconnect\ knox1 & 275 Mbits/sec  & 272 Mbits/sec\\
-epouta2 \vmconnect\ knox2 & 281 Mbits/sec  & 278 Mbits/sec\\
-epouta3 \vmconnect\ knox3 & 452 Mbits/sec  & 447 Mbits/sec\\\hhline{-::=::=}
-\multicolumn{1}{r|}{Total} & 1008 Mbits/sec & 997 Mbits/sec\\\hhline{~::-::-}
+\multicolumn{1}{c||}{Connection} & Sender         & Receiver\\\hhline{=::=::=}
+epouta1 \vmconnect\ knox1 & 275 Mb/s  & 272 Mb/s\\
+epouta2 \vmconnect\ knox2 & 281 Mb/s  & 278 Mb/s\\
+epouta3 \vmconnect\ knox3 & 452 Mb/s  & 447 Mb/s\\\hhline{=::=::=}
+\multicolumn{1}{r||}{Total} & {\scriptsize 1008 Mb/s} & {\scriptsize 997 Mbits/s}\\\hhline{~||-||-}
 \end{tabular}
 \end{center}
 
