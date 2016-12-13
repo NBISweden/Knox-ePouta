@@ -5,10 +5,11 @@
 
 The Mosler secure computing environment~\cite{mosler} enables
 scientists to carry out research on \emph{sensitive data}, \eg
-personal data relating to individuals' health.
+personal data related to individuals' health.
 %
-For each project in the Mosler environment, a set of virtual machines (VM) is
-created, which the users access via a secured and encrypted connection.
+For each project in the Mosler environment, a set of virtual machines (VMs) is
+booted, which the users access via a secured connection. All
+communication is encrypted.
 
 When a VM is started, it ``books'' predefined resources, such as CPU and disk
 space, and when all the hardware cores are booked, we say that the
@@ -16,9 +17,9 @@ cloud cluster is full. In such a case, we are interested in extending
 the set of VMs with external ones running in another cluster, and in
 our case, the extra cluster is located in another country.
 
-\begin{figure}
+\begin{figure}[b]
   \centering
-  \tikz\draw circle(3cm);
+  \tikz\draw circle(2cm) node{wow...impressive!};
   %\input{img/overview}
   \caption{Overview of the project resources}
   \label{figure:overview}
@@ -35,14 +36,14 @@ Figure~\ref{figure:overview}. We boot on Knox:
 \begin{itemize}
 \item a Virtual Router,
 \item a DHCP server, providing network settings to the Knox VMs,
-\item 3 VMs for computation
+\item 3 VMs for computations
 \item a storage node
 \item a \emph{supernode} where we connect and run the tests
 \end{itemize}
 On ePouta, we boot:
 \begin{itemize}
 \item a DHCP server, providing network settings to the ePouta VMs,
-\item 3 VMs for computation
+\item 3 VMs for computations
 \end{itemize}
 
 We connect the two clusters with a 1GB/s fiber-link and provide a
@@ -61,10 +62,12 @@ whether we can notice a significant slowdown when computations are
 scheduled on VMs across borders.
 %
 We choose to run the \href{https://github.com/SciLifeLab/CAW}{Cancer
-  Analysis Workflow} (CAW)~\cite{caw} from SciLifeLab and the
+  Analysis Workflow}~\cite{caw} from SciLifeLab and the
 \href{https://github.com/NBISweden/wgs-structvar}{Whole Genome
-  Sequencing Structural Variation Pipeline} (WGS)~\cite{caw} from
+  Sequencing Structural Variation Pipeline}~\cite{caw} from
 \href{http://www.nbis.se}{NBIS}.
+%
+We denote them here CAW and WGS, respectively.
 %
 CAW is a pipeline for variant calling of tumor data and WGS is a
 pipeline for predicting and annotating structural variations in the
@@ -73,14 +76,15 @@ human genome.
 Yet, we only use non-sensitive data, here in the first step.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Moreover, in this approach, where computations might be scheduled in
-Finland, while the data has to reside in Sweden, we suspect that disk
-access and even the network itself would be a bottleneck. So, we run
-some further tests to stress both aspects.
+Moreover, in this approach, where the computations might be scheduled
+in Finland, while the data have to reside in Sweden, we suspect that
+disk access and even the network itself would be a bottleneck. So, we
+run some further tests to stress both aspects.
 %
 We use the program SOB~\cite{sob} to stress the filesystem, by reading
-and writing an arbitrary number of files in different chunk size. SOB
-also outputs useful performance numbers.
+and writing an arbitrary number of files in different chunk sizes.
+%
+SOB also outputs useful performance numbers.
 %
 In order to test the network, we use iPerf3~\cite{iperf}, a tool for
 active measurements of the maximum achievable bandwidth on IP
@@ -92,15 +96,16 @@ parameters related to how well the link was used.
 We instantiate a data communication between two VMs, one on Knox and
 one on ePouta and test the connection.
 %
-We then repeat three times the same test in parallel over
+We then repeat the same test with three connections in parallel over
 pairwise-connected VMs.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 After running the tests, described in
 Section~\ref{section:experiments}, we notice no significant slowdown
-on the computations for the pipelines and the stress-tests reveal that
-(i)~disk~access is not slower and (ii)~the~link is almost fully used.
+on the computations for the pipelines, and the stress-tests reveal
+that (i)~disk~access is not slower and (ii)~the~link is almost fully
+used.
 %
 Computations and tests do not notice whether they are performed in
 Finland or in Sweden.
