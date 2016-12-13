@@ -18,7 +18,7 @@ each other.
 The two workflows we tested, %
 % CAW~\cite{caw} and WGS~\cite{wgs},
 CAW and WGS, %
-use \texttt{slurm}~\cite{slurm} to schedule and manage the different
+use Slurm~\cite{slurm} to schedule and manage the different
 jobs across the available compute nodes.
 %
 Slurm can use partitions in order to group nodes into logical
@@ -54,7 +54,7 @@ epouta2-knox1 * & 2               & 1                 \\\hhline{*{3}{=}}
 
 %Both CAW~\cite{caw} and WGS~\cite{wgs} %
 CAW and WGS %
-run using \codeline{nextflow}~\cite{nextflow}.
+run using Nextflow~\cite{nextflow}.
 %
 We report the elapsed time for each partition in
 Table~\ref{experiments:CAW+WGS} when we experimented with a small
@@ -146,7 +146,7 @@ We used the following tests:
 \end{tests}
 
 We wrote a script which, given a set of VMs, connects via \texttt{ssh}
-to the VMs (in the specified order) and runs a \texttt{sob} test on
+to the VMs (in the specified order) and runs a SOB test on
 each VM in parallel.
 %
 It is worth mentioning that we limited the effect of the NFS caching
@@ -156,7 +156,7 @@ test.
 We report in Table~\ref{experiments:SOB:tests} the writing times for
 each test and each VM of the chosen set.
 %
-The VM names are \codeline{knox$_i$} (resp.\ epouta$_i$) if it was
+The VM names are \codeline{knox$_i$} (resp.~\codeline{epouta$_i$}) if it was
 booted on Knox (resp.\ ePouta), where $i\in\{1,2,3\}$.
 %
 The sets correspond roughly to the four first partitions from
@@ -213,10 +213,10 @@ with the following commands:
 \codeblock{iperf-ke1.sh}
 
 The results are surprising: We get near the physical link speed! After
-summing the different connections, we reached \texttt{941\ Mbits/sec} as
-sender and \texttt{937\ Mbits/sec} as receiver. To compare, running the
+summing the different connections, we reached 941~Mbits/sec as
+sender and 937~Mbits/sec as receiver. To compare, running the
 same test between \texttt{knox2} and \texttt{knox1}, we get
-\texttt{942\ Mbits/sec} as sender and \texttt{938\ Mbits/sec} as
+942~Mbits/sec as sender and 938~Mbits/sec as
 receiver.
 
 The last test is to make three connections, pairwise between one node
