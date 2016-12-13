@@ -37,8 +37,6 @@ Table~\ref{experiments:slurm:partitions}, where the ePouta nodes are
 effectively given a~higher priority.
 
 \begin{table}[ht]%[!b]
-\caption{Slurm Partitions}
-\label{experiments:slurm:partitions}
 \centering
 \begin{tabular}{|r||c||c|}\hhline{-||-||-}
 Partition       & \#nodes on Knox & \#nodes on ePouta \\\hhline{=::=::=}
@@ -50,6 +48,8 @@ epouta1-knox2 * & 1               & 2                 \\
 epouta2-knox1 * & 2               & 1                 \\\hhline{-||-||-}
 \multicolumn{3}{l}{\scriptsize * ePouta nodes have higher priority than Knox nodes}\\
 \end{tabular}
+\caption{Slurm Partitions}
+\label{experiments:slurm:partitions}
 \end{table}
 
 %Both CAW~\cite{caw} and WGS~\cite{wgs} %
@@ -63,8 +63,6 @@ non-sensitive data sample.
 \codeblock{caw-wgs.run.sh}
 
 \begin{table}[ht]%[!b]
-\caption{Results per partition for CAW (left) and WGS (right)}
-\label{experiments:CAW+WGS}
 \begin{minipage}{0.5\linewidth}
 \centering
 \begin{tabular}{|l|rr|}\hhline{===}
@@ -90,6 +88,8 @@ epouta1-knox2 & \leftpointingfinger & 11m 11s \\
 epouta2-knox1 & \leftpointingfinger & 11m 13s \\\hhline{*{3}{=}}
 \end{tabular}
 \end{minipage}
+\caption{Results per partition for CAW (left) and WGS (right)}
+\label{experiments:CAW+WGS}
 \end{table}
 
 Since we know that the node in ePouta are technically superior to the
@@ -169,9 +169,7 @@ reading time.
 The numbers in MB/s indicate the bandwidth (rounded to the closest
 first decimal).
 
-\begin{table}[ht]%[!b]
-\caption{SOB tests running on two different sets}
-\label{experiments:SOB:tests}
+\begin{table}[!ht]%[!b]
 \resultpartition%
 {{ePouta3}{ePouta2}{epouta1}}%
 {{ 527 }{ 19.4   }{ 399 }{ 25.7   }{ 363 }{ 28.2   }}%
@@ -180,7 +178,7 @@ first decimal).
 {{ 267 }{ 24.0   }{ 259 }{ 24.8   }{ 267 }{ 24.0   }}%
 {{  31 }{ 33.4   }{  38 }{ 26.9   }{  34 }{ 29.8   }}%
 {{ 0.4 }{ 2583.8 }{ 0.3 }{ 3702.7 }{ 0.3 }{ 4053.6 }}
-
+%
 \resultpartition%
 {{knox1}{knox2}{knox3}}%
 {{ 212 }{ 48.4   }{ 487 }{ 21.0   }{ 492 }{ 20.8   }}%
@@ -189,6 +187,9 @@ first decimal).
 {{ 204 }{ 31.3   }{ 237 }{ 27.0   }{ 243 }{ 26.4   }}%
 {{  26 }{ 33.7   }{  39 }{ 26.3   }{  37 }{ 27.8   }}%
 {{ 0.3 }{ 3330.5 }{ 0.3 }{ 3379.5 }{ 0.3 }{ 3703.7 }}
+%
+\caption{SOB tests running on two different sets}
+\label{experiments:SOB:tests}
 \end{table}
 
 For clarity, we only report the results for two sets/partitions. The
@@ -219,10 +220,11 @@ between \texttt{knox2} and \texttt{knox1}, we get 942~Mbits/sec as
 sender and 938~Mbits/sec as receiver.
 
 The last test is to make three connections, pairwise between one node
-from Knox and one from ePouta, and run similar iPerf commands as
-above.
+from Knox and one from ePouta, and run similar iPerf commands as above
+(See Table~\ref{experiments:iperf:tests}).
 
-\begin{center}
+\begin{table}[!b]
+\centering
 \begin{tabular}{|r||c||c|}\hhline{~||-||-}
 \multicolumn{1}{c||}{Connection} & Sender         & Receiver\\\hhline{=::=::=}
 epouta1 \vmconnect\ knox1 & 275 Mbits/sec  & 272 Mbits/sec\\
@@ -230,7 +232,9 @@ epouta2 \vmconnect\ knox2 & 281 Mbits/sec  & 278 Mbits/sec\\
 epouta3 \vmconnect\ knox3 & 452 Mbits/sec  & 447 Mbits/sec\\\hhline{=::=::=}
 \multicolumn{1}{r||}{Total} & {\scriptsize 1008 Mbits/sec} & {\scriptsize 997 Mbits/s}\\\hhline{~||-||-}
 \end{tabular}
-\end{center}
+\caption{iPerf tests across borders}
+\label{experiments:iperf:tests}
+\end{table}
 
 We get similar speed between \texttt{knox1} and \texttt{knox2}, which
 happened to be scheduled on different physical nodes in Knox.
