@@ -2,15 +2,20 @@
 \section{Conclusion and Future Work}
 \label{section:conclusion}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Summary...
+\vspace{1cm}
+
 %
 It is probably possible to tweak the NFS settings, or the TCP settings
 in the kernel, to gain even further speed.
 %
 It would be interesting to scale up the solution to
 \textbf{many-many-many} nodes in ePouta and some nodes in Knox, to see
-how much the link can be shared.
+%how much the link can be shared.
+at which point the communication link gets saturated.
 %
-Finally, it is worth updating the slurm and nfs solution with other
+Finally, it is worth updating the Slurm and NFS solution with other
 tools, to improve disk access, such as (i)~the use object storage or
 (ii)~the use a separate disk volume attached to the storage VM, rather
 than an ephemeral disk on file (\ie the default in \texttt{libvirt}).

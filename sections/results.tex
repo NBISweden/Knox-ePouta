@@ -18,12 +18,12 @@ each other.
 The two workflows we tested, %
 % CAW~\cite{caw} and WGS~\cite{wgs},
 CAW and WGS, %
-use \texttt{slurm}~\cite{slurm} to schedule and manage the different
-jobs across the available compute nodes.
+use Slurm~\cite{slurm} to schedule and manage the different jobs
+across the available compute nodes.
 %
 Slurm can use partitions in order to group nodes into logical
-(possibly overlapping) sets, where priorities and other contraints are
-specified.
+(possibly overlapping) sets, where priorities and other constraints
+are specified.
 %
 After installing all the necessary dependencies for these workflows on
 the compute nodes and on the supernode, we distribute the compute
@@ -54,7 +54,7 @@ epouta2-knox1 * & 2               & 1                 \\\hhline{-||-||-}
 
 %Both CAW~\cite{caw} and WGS~\cite{wgs} %
 CAW and WGS %
-run using \codeline{nextflow}~\cite{nextflow}.
+run using Nextflow~\cite{nextflow}.
 %
 We report the elapsed time for each partition in
 Table~\ref{experiments:CAW+WGS} when we experimented with a small
@@ -94,7 +94,7 @@ epouta2-knox1 & \leftpointingfinger & 11m 13s \\\hhline{*{3}{=}}
 
 Since we know that the node in ePouta are technically superior to the
 ones in Knox (\ie better hardware), we can observe that the
-epouta-knox connection across borders does not influence much the
+Knox-ePouta connection across borders does not influence much the
 computations. Moreover, the first compute node on the slurm partition
 appears to \emph{not} matter.
 
@@ -146,8 +146,8 @@ We used the following tests:
 \end{tests}
 
 We wrote a script which, given a set of VMs, connects via \texttt{ssh}
-to the VMs (in the specified order) and runs a \texttt{sob} test on
-each VM in parallel.
+to the VMs (in the specified order) and runs a SOB test on each VM in
+parallel.
 %
 It is worth mentioning that we limited the effect of the NFS caching
 mechanism, by unmounting and remounting the NFS share before each
@@ -156,8 +156,8 @@ test.
 We report in Table~\ref{experiments:SOB:tests} the writing times for
 each test and each VM of the chosen set.
 %
-The VM names are \codeline{knox$_i$} (resp.\ epouta$_i$) if it was
-booted on Knox (resp.\ ePouta), where $i\in\{1,2,3\}$.
+The VM names are \codeline{knox$_i$} (resp.\ \codeline{epouta$_i$}) if
+it was booted on Knox (resp.\ ePouta), where $i\in\{1,2,3\}$.
 %
 The sets correspond roughly to the four first partitions from
 Table~\ref{experiments:slurm:partitions}.
@@ -213,11 +213,10 @@ with the following commands:
 \codeblock{iperf-ke1.sh}
 
 The results are surprising: We get near the physical link speed! After
-summing the different connections, we reached \texttt{941\ Mb/s} as
-sender and \texttt{937\ Mb/s} as receiver. To compare, running the
-same test between \texttt{knox2} and \texttt{knox1}, we get
-\texttt{942\ Mb/s} as sender and \texttt{938\ Mb/s} as
-receiver.
+summing the different connections, we reached 941~Mbits/sec as sender
+and 937~Mbits/sec as receiver. To compare, running the same test
+between \texttt{knox2} and \texttt{knox1}, we get 942~Mbits/sec as
+sender and 938~Mbits/sec as receiver.
 
 The last test is to make three connections, pairwise between one node
 from Knox and one from ePouta, and run similar iPerf commands as
@@ -226,10 +225,10 @@ above.
 \begin{center}
 \begin{tabular}{|r||c||c|}\hhline{~||-||-}
 \multicolumn{1}{c||}{Connection} & Sender         & Receiver\\\hhline{=::=::=}
-epouta1 \vmconnect\ knox1 & 275 Mb/s  & 272 Mb/s\\
-epouta2 \vmconnect\ knox2 & 281 Mb/s  & 278 Mb/s\\
-epouta3 \vmconnect\ knox3 & 452 Mb/s  & 447 Mb/s\\\hhline{=::=::=}
-\multicolumn{1}{r||}{Total} & {\scriptsize 1008 Mb/s} & {\scriptsize 997 Mbits/s}\\\hhline{~||-||-}
+epouta1 \vmconnect\ knox1 & 275 Mbits/sec  & 272 Mbits/sec\\
+epouta2 \vmconnect\ knox2 & 281 Mbits/sec  & 278 Mbits/sec\\
+epouta3 \vmconnect\ knox3 & 452 Mbits/sec  & 447 Mbits/sec\\\hhline{=::=::=}
+\multicolumn{1}{r||}{Total} & {\scriptsize 1008 Mbits/sec} & {\scriptsize 997 Mbits/s}\\\hhline{~||-||-}
 \end{tabular}
 \end{center}
 

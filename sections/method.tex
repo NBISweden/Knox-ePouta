@@ -4,18 +4,19 @@
 %% ====================================================================
 
 The Mosler secure computing environment~\cite{mosler} enables
-scientists to carry out research on \emph{sensitive data}, \eg
-personal data related to health.
+scientists to carry out research on \emph{sensitive data}, \eg data
+related to personal health.
 %
-For each project on the system, a set of virtual machines (VMs) is
-booted, which the users access via a secured connection. All
-communication is encrypted.
+For each project in Mosler, a set of virtual machines (VMs) is
+created, which the users access via a secured encrypted connection.
+% All communication is encrypted.
 
-When a VM is started, it ``books'' predefined CPU resources and disk
-space and when all the hardware cores are booked, we say that the
-cloud cluster is full. In such a case, we are interested in extending
-the set of VMs with external ones running in another cluster, and in
-our case, the extra cluster is located in another country.
+When a VM is started, it ``books'' predefined resources, such as CPU
+cores and disk space, and when all the hardware cores are booked, we
+say that the cloud cluster is full. In such a case, we are interested
+in extending the set of VMs with external ones running in another
+cluster, and in our case, the extra cluster is located in another
+country.
 
 \begin{figure}[b]
   \centering
@@ -46,9 +47,9 @@ On ePouta, we boot:
 \item 3 VMs for computations
 \end{itemize}
 
-We connect the two clusters with a 1Gb/s fiber-link. We provide a
-local network between the VMs, which can communicate across borders
-transparently.
+We connect the two clusters with a 1Gb/s fiber-link and provide a
+local network between the VMs, which can communicate across the
+Swedish--Finnish border transparently.
 %
 Note that the link might be shared by other projects, but VMs from
 other projects cannot reach the above-mentioned VMs.
@@ -76,10 +77,10 @@ human genome.
 Yet, we only use non-sensitive data, here in the first step.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Moreover, in this approach, where the computations might be scheduled
-in Finland, while the data have to reside in Sweden, we suspect that
-disk access and even the network itself would be a bottleneck. So, we
-run some further tests to stress both aspects.
+Moreover, with this approach, where the computations might be
+scheduled in Finland, while the data have to reside in Sweden, we
+suspect that disk access and even the network itself would be a
+bottleneck. So, we run some further tests to stress both aspects.
 %
 We use the program SOB~\cite{sob} to stress the filesystem, by reading
 and writing an arbitrary number of files in different chunk sizes.

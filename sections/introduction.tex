@@ -10,35 +10,38 @@ compute nodes, more disks and more network switches. However, this
 might be an expensive solution.
 
 The \href{https://wiki.neic.no/wiki/Tryggve}{Tryggve
-  project}~\cite{tryggve} focuses therefore on an alternative
-approach, where the cloud resources of other countries are solicited.
+  project}~\cite{tryggve} focuses %therefore
+on an alternative approach, where the cloud resources of partners in
+other countries are solicited.
 %
-If they could be \emph{``borrowed for a while''}, we extend the local
-computational power with such extra nodes residing in other countries.
+If the resources could be \emph{``borrowed for a while''}, we extend
+the local computational power with such extra nodes residing in other
+countries.
 %
 An immediate technical challenge with such a solution is whether a
 connection across borders is even feasible, or if there is a
 penalizing latency. We can imagine the scenario where the computations
 happen in one country, while the data are located in another country,
-and that would require high bandwidth for data transfers.
+%and that
+which would require a high network bandwidth for data transfers.
 
-Initially, we are interested in running \emph{data-sensitive}
-analysis using compute resources that stretch across borders.
+Initially, we are interested in running \emph{data-sensitive} analysis
+using compute resources that stretch across national borders.
 %
 As a first step, we instantiate a few compute nodes in one country,
-Sweden, and a few other nodes in another country, Finland. We
-connect them transparently to the same network such that they are
-the only nodes communicating over that network, for security. We then
-perform tests to stress network and disc accesses, and run two
-realistic workflows over non-sensitive data.
+Sweden, and a few other nodes in another country, Finland. We connect
+them transparently to the same network such that they are the only
+nodes communicating over that network, for security. We then perform
+tests to stress network and disc accesses, and run two realistic
+workflows over real, yet non-sensitive, data.
 
 Since our method yields no significant slowdown in that step, we
 can simplify the problem and ignore the next steps related to
 experiments over sensitive data.
 %
-Note that there is another issue regarding the transfer of sensitive
-data between countries. This legal matter is an ongoing work within
-the Tryggve project, and left out of this paper.
+Note that there are also legal issues regarding the transfer of
+sensitive data between countries. This matter is an ongoing work
+within the Tryggve project, and left out of this paper.
 
 We present a general overview of our method in
 Section~\ref{section:method}, and the tests we performed in
