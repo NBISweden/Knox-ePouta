@@ -1,3 +1,3 @@
-[controller]$ ip netns
+$ ip netns # on knox controller
 qrouter-<...>
 qdhcp-<...>

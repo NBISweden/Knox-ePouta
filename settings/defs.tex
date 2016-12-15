@@ -10,7 +10,7 @@
     innertopmargin=1ex,innerrightmargin=2ex,innerbottommargin=1ex,innerleftmargin=1ex,
     backgroundcolor=white}
 
-\newenvironment{tests}{%
+\newenvironment{dazenumerate}{%
   \renewcommand{\theenumi}{\protect\tikz[baseline=(n.base)]{\protect\node[enumbullet](n){\arabic{enumi}};}}
   \renewcommand{\labelenumi}{\theenumi}
   \begin{mdframed}[style=DazFrame]%
@@ -24,6 +24,7 @@
 }
 \newcommand{\codeline}[1]{\texttt{#1}}
 
+\newcommand{\kw}[1]{\texttt{#1}}
 
 %% Settings for enumerations and item lists
 \setlist{noitemsep}
@@ -62,11 +63,17 @@
 %% ---------------------------------------------
 
 \newcommand{\leftpointingfinger}{\ding{43}}
-\newcommand{\vmconnect}{\ensuremath{\rightleftharpoons}}
-
-
-\newcommand{\ip}[1]{\texttt{#1}}
-
 \newcommand{\ie}{i.e.\ }
 \newcommand{\eg}{e.g.\ }
+\newcommand{\ip}[1]{\texttt{#1}}
+\newcommand{\uuid}{\textless{}...\textgreater{}}
+
+% \usepackage{amsfonts,amscd,amsmath,amsxtra}
+\usepackage{amssymb}
+%\usepackage{mathabx} 
+%\usepackage{stmaryrd}
+\newcommand{\vmconnect}{\ensuremath{\rightleftharpoons}}
+%\newcommand{\veth}{\ensuremath{\nleftrightarrow}}
+%\newcommand{\veth}{\ensuremath{\leftrightsquigarrow}}
+\newcommand{\veth}{\ensuremath{\mathrel{\ooalign{$\leftrightsquigarrow$\cr\hidewidth{\scriptsize|}\hidewidth\cr}}}}
 

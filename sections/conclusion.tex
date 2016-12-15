@@ -16,8 +16,18 @@ It would be interesting to scale up the solution to
 %how much the link can be shared.
 at which point the communication link gets saturated.
 %
-Finally, it is worth updating the Slurm and NFS solution with other
-tools, to improve disk access, such as (i)~the use object storage or
-(ii)~the use a separate disk volume attached to the storage VM, rather
-than an ephemeral disk on file (\ie the default in \texttt{libvirt}).
+Furthermore, it is worth updating the Slurm and NFS solution with
+other tools, to improve disk access, such as (i)~the use object
+storage or (ii)~the use a separate disk volume attached to the storage
+VM, rather than an ephemeral disk on file (\ie the default in
+\codeline{libvirt}).
+
+\paragraph{Remarks.}
+%
+Broadcast traffic is still forwarded to all interfaces on VLAN 1203
+and therefore to all VMs. An improvment would be to use OpenVSwitch to
+learn about MAC addresses and skip physical nodes that don't host any
+VMs on that project. That will improve East-West traffic. An
+alternative is to distribute the router using DVR (not available when
+using the Linux Bridge mechanism).
 

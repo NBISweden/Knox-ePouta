@@ -111,7 +111,7 @@ storage node-- using
 %
 We used the following tests:
 
-\begin{tests}
+\begin{dazenumerate}
 %
 \item\label{experiments:SOB:test:big}%
   Write a 10GB file in chunks of 8MB. Basic test of write I/O
@@ -143,7 +143,7 @@ We used the following tests:
   % 
   \\\textbf{Command:}\ \codeline{sob\ -rw\ -b\ 128k\ -s\ 1g}
   % 
-\end{tests}
+\end{dazenumerate}
 
 We wrote a script which, given a set of VMs, connects via \texttt{ssh}
 to the VMs (in the specified order) and runs a SOB test on each VM in
@@ -223,7 +223,7 @@ The last test is to make three connections, pairwise between one node
 from Knox and one from ePouta, and run similar iPerf commands as above
 (See Table~\ref{experiments:iperf:tests}).
 
-\begin{table}[!b]
+\begin{table}[hb]%!b
 \centering
 \begin{tabular}{|r||c||c|}\hhline{~||-||-}
 \multicolumn{1}{c||}{Connection} & Sender         & Receiver\\\hhline{=::=::=}

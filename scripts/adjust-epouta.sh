@@ -1,11 +1,6 @@
-[controller]$ source <ePouta.credentials>
+$ source <ePouta.credentials>
 
-[controller]$ neutron subnet-update UU-MOSLER-subnet \
-                      --allocation-pools type=dict list=true
-                      start=10.101.0.2,end=10.101.127.255 \
-                      --dns-nameserver 10.101.128.0
-
-[controller]$ neutron subnet-show UU-MOSLER-subnet
+$ neutron subnet-show epouta-subnet
 +-------------------+--------------------------------------------------+
 | Field             | Value                                            |
 +-------------------+--------------------------------------------------+
@@ -15,10 +10,10 @@
 | enable_dhcp       | True                                             |
 | gateway_ip        | 10.101.0.1                                       |
 | host_routes       |                                                  |
-| id                | ffffffff-gggg-hhhh-iiii-jjjjjjjjjjjj             |
+| id                | <...>                                            |
 | ip_version        | 4                                                |
-| name              | UU-MOSLER-subnet                                 |
-| network_id        | aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee             |
+| name              | <epouta-subnet>                                  |
+| network_id        | <...>                                            |
 | subnetpool_id     |                                                  |
-| tenant_id         | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa                 |
+| tenant_id         | <...>                                            |
 +-------------------+--------------------------------------------------+
