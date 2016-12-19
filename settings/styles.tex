@@ -10,12 +10,19 @@
 %------------------------------------------
 
 \tikzset{vm/.style={%
+drop shadow,%
 rounded corners=0.5ex,thin,inner xsep=2pt,inner ysep=1ex,%
 rectangle split,rectangle split parts=2,%
 every two node part/.style={font=\tiny},%
-node distance=2ex,%
-text width=14ex,align=center,%
+%draw,thin,%
+%node distance=2ex,%
+text width=12ex,align=center,%
 top color=blue!30,bottom color=blue!30,middle color=blue!10}}
+
+\tikzset{link/.style={fill=white,draw=black,double,inner xsep=4ex,rounded corners=1ex}}
+\tikzset{connector/.style={draw,circle,fill=white,inner sep=0pt,minimum size=3pt}}
+
+
 
 %------------------------------------------
 %% Non atomic

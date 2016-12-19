@@ -3,27 +3,79 @@
   
   %\draw[help lines] (0,0) grid (3,2);
 
-  %..controls +(-135:50mm) and +(-90:100mm) .. (5,0)
-  \draw[auto,swap,rounded corners, bend right,every node/.style={vm}] (0,0) to
-  node[pos=0]               (vm1-epouta)  {VM$_1$\nodepart{two}10.101.0.21}
-  node[pos=0.35]            (vm2-epouta)  {VM$_2$\nodepart{two}10.101.0.22}
-  node[pos=0.65]            (vm3-epouta)  {VM$_3$\nodepart{two}10.101.0.23}
-  node[pos=0.95]            (dhcp-epouta) {DHCP\nodepart{two}10.101.0.3}
-  ++(-4,-5) to
-  node[pos=0.25,below]      (router)      {Router\nodepart{two}10.101.0.1}
-  node[pos=0.55,below]      (dhcp-knox)   {DHCP\nodepart{two}10.101.128.0}
-  node[pos=0.75]            (supernode)   {Supernode\nodepart{two}10.101.128.100}
-  ++(8,0) to
-  node[pos=0.2]             (storage)     {Storage\nodepart{two}10.101.128.104}
-  node[pos=1]               (vm1-knox)    {VM$_1$\nodepart{two}10.101.128.101}
-  node[pos=0.7]             (vm2-knox)    {VM$_2$\nodepart{two}10.101.128.102}
-  node[pos=0.4,above right] (vm3-knox)    {VM$_3$\nodepart{two}10.101.128.103}
-  ++(0,4);
+  % %..controls +(-135:50mm) and +(-90:100mm) .. (5,0)
+  % \draw[auto,swap,rounded corners, bend right,every node/.style={vm}] (0,0) to
+  % node[pos=0]               (vm1-epouta)  {VM$_1$\nodepart{two}10.101.0.21}
+  % node[pos=0.35]            (vm2-epouta)  {VM$_2$\nodepart{two}10.101.0.22}
+  % node[pos=0.65]            (vm3-epouta)  {VM$_3$\nodepart{two}10.101.0.23}
+  % node[pos=0.95]            (dhcp-epouta) {DHCP\nodepart{two}10.101.0.3}
+  % ++(-4,-5) to
+  % node[pos=0.25,below]      (router)      {Router\nodepart{two}10.101.0.1}
+  % node[pos=0.55,below]      (dhcp-knox)   {DHCP\nodepart{two}10.101.128.0}
+  % node[pos=0.75]            (supernode)   {Supernode\nodepart{two}10.101.128.100}
+  % ++(8,0) to
+  % node[pos=0.2]             (storage)     {Storage\nodepart{two}10.101.128.104}
+  % node[pos=1]               (vm1-knox)    {VM$_1$\nodepart{two}10.101.128.101}
+  % node[pos=0.7]             (vm2-knox)    {VM$_2$\nodepart{two}10.101.128.102}
+  % node[pos=0.4,above right] (vm3-knox)    {VM$_3$\nodepart{two}10.101.128.103}
+  % ++(0,4);
 
-  \path (vm1-epouta) -- (vm2-knox) coordinate[midway](a);
-  \path (dhcp-epouta) -- (router) coordinate[midway](b);
+  % \path (vm1-epouta) -- (vm2-knox) coordinate[midway](a);
+  % \path (dhcp-epouta) -- (router) coordinate[midway](b);
 
-  \draw[decorate] (a) to[bend left=15] (b);
+  % \draw[decorate] (a) to[bend left=15] (b);
+
+
+  \draw[rounded corners,thick]%
+  (0,0) to[bend right=15]
+  coordinate[pos=0]    (vm1-epouta)
+  coordinate[pos=0.25] (vm2-epouta)
+  coordinate[pos=0.5]  (vm3-epouta)
+  coordinate[pos=0.75] (dhcp-epouta)
+  ++(-1.5,-5) to
+  node[pos=0.3,link] (link) {1 Gb/s}
+  coordinate[pos=0.7] (router)
+  coordinate[pos=0.87] (dhcp-knox)
+  ++(6,0) to[bend right=15]
+  coordinate[pos=0.01] (supernode)
+  coordinate[pos=0.25] (storage)
+  coordinate[pos=1]    (vm1-knox)
+  coordinate[pos=0.75] (vm2-knox)
+  coordinate[pos=0.5]  (vm3-knox)
+  ++(0.5,5);
+
+  \path[every pin/.style={vm},pin distance=2ex,every pin edge/.style={thick}]
+  % 
+  (vm1-epouta)  node[connector,pin=left:{VM$_1$\nodepart{two}10.101.0.21}] {}
+  (vm2-epouta)  node[connector,pin=left:{VM$_2$\nodepart{two}10.101.0.22}] {}
+  (vm3-epouta)  node[connector,pin=left:{VM$_3$\nodepart{two}10.101.0.23}] {}
+  (dhcp-epouta) node[connector,pin=left:{DHCP\nodepart{two}10.101.0.3}] {}
+  (router)      node[connector,pin=above:{Router\nodepart{two}10.101.0.1}] {}
+  (dhcp-knox)   node[connector,pin=below:{DHCP\nodepart{two}10.101.128.0}] {}
+  (supernode)   node[connector,pin=right:{Supernode\nodepart{two}10.101.128.100}] {}
+  (storage)     node[connector,pin=right:{Storage\nodepart{two}10.101.128.104}] {}
+  (vm1-knox)    node[connector,pin=right:{VM$_1$\nodepart{two}10.101.128.101}] {}
+  (vm2-knox)    node[connector,pin=right:{VM$_2$\nodepart{two}10.101.128.102}] {}
+  (vm3-knox)    node[connector,pin=right:{VM$_3$\nodepart{two}10.101.128.103}] {}
+  ;
+
+
+  \begin{scope}
+    \path[name path=border] (link) -- ++(60:65mm) node[above left=3ex,pos=0.7]{Finland} node[below right=3ex,pos=0.6]{Sweden};
+    \path [name path=limit] (vm1-epouta) -- (vm1-knox);
+    \path [name intersections={of=border and limit, by=x},] (link) -- (x);
+
+    \draw[line width=0.1pt,decorate,decoration={snake,segment length=6ex, amplitude=0.5ex}] (link) -- (x);
+
+    % \path (x) ++(left:2cm) coordinate(x');
+    % \path (x) ++(right:2cm) coordinate(x'');
+    % \path[fill=blue!20,path fading=west,draw,line width=0.1pt,decorate,decoration={snake,segment length=6ex, amplitude=0.5ex}]%
+    % (x') -- (x) -- (link.center) -- ++(left:2cm) -- cycle ;
+    % \path[fill=yellow!50,path fading=east,draw,line width=0.1pt,decorate,decoration={snake,segment length=6ex, amplitude=0.5ex}]%
+    % (x'') -- (x) -- (link.center) -- ++(right:2cm) -- cycle;
+    % % Drawing larger, so clipping the area
+    % %\path[clip,rounded corners=10pt] (-10,-70) rectangle (520,260);
+  \end{scope}
 
 \end{tikzpicture}
 % \endpgfgraphicnamed
