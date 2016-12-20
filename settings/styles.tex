@@ -10,17 +10,63 @@
 %------------------------------------------
 
 \tikzset{vm/.style={%
-drop shadow,%
-rounded corners=0.5ex,thin,inner xsep=2pt,inner ysep=1ex,%
-rectangle split,rectangle split parts=2,%
-every two node part/.style={font=\tiny},%
-%draw,thin,%
-%node distance=2ex,%
-text width=12ex,align=center,%
-top color=blue!30,bottom color=blue!30,middle color=blue!10}}
+drop shadow,
+rounded corners=0.5ex,thin,inner xsep=2pt,inner ysep=1ex,
+rectangle split,rectangle split parts=2,
+every two node part/.style={font=\tiny},
+text width=12ex,align=center,
+top color=blue!30,bottom color=blue!30,middle color=blue!10
+}}
 
-\tikzset{link/.style={fill=white,draw=black,double,inner xsep=4ex,rounded corners=1ex}}
+\tikzset{link/.style={%
+fill=white,
+draw=black,double,
+inner xsep=4ex,rounded corners=1ex
+}}
 \tikzset{connector/.style={draw,circle,fill=white,inner sep=0pt,minimum size=3pt}}
+
+\tikzset{nodename/.style={
+draw,double,fill=white,rounded corners=0.5ex,
+inner xsep=1ex,inner ysep=0.5ex,
+anchor=center
+}}
+
+\makeatletter
+\pgfdeclareshape{out-interface-shape}{
+  \inheritsavedanchors[from=rectangle] % this is nearly a rectangle
+  \inheritanchorborder[from=rectangle]
+  \inheritanchor[from=rectangle]{center}
+  \inheritanchor[from=rectangle]{north}
+  \inheritanchor[from=rectangle]{south}
+  \inheritanchor[from=rectangle]{west}
+  \inheritanchor[from=rectangle]{east}
+  \inheritanchor[from=rectangle]{south west}
+  \inheritanchor[from=rectangle]{south east}
+  \inheritanchor[from=rectangle]{north east}
+  \inheritanchor[from=rectangle]{north west}
+  \backgroundpath{% this is new
+    % store lower right in xa/ya and upper right in xb/yb
+    \southwest \pgf@xa=\pgf@x \pgf@ya=\pgf@y
+    \northeast \pgf@xb=\pgf@x \pgf@yb=\pgf@y
+    % construct main path
+    \pgfsetcornersarced{\pgfpoint{0.5ex}{0.5ex}}
+    \pgfpathmoveto{\pgfpoint{\pgf@xa}{\pgf@ya}}
+    \pgfpathlineto{\pgfpoint{\pgf@xa}{\pgf@yb}}
+    \pgfpathlineto{\pgfpoint{\pgf@xb}{\pgf@yb}}
+    \pgfsetcornersarced{\pgfpoint{0pt}{0pt}}
+    \pgfpathlineto{\pgfpoint{\pgf@xb}{\pgf@ya}}
+    \pgfpathclose
+ }
+}
+\makeatother
+
+\tikzset{vlan-interface/.style={ rounded corners=0.5ex,%draw,
+fill=blue!30,inner xsep=1ex,inner ysep=1ex,anchor=center,shape=rectangle,
+}}
+
+\tikzset{out-interface/.style={rounded corners=0.5ex,
+fill=blue!30,inner xsep=1ex,inner ysep=1ex,anchor=center,shape=out-interface-shape,
+}}
 
 
 

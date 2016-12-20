@@ -1,7 +1,23 @@
 % \beginpgfgraphicnamed{compute-node}
 \begin{tikzpicture}
   
-  \draw[help lines] (0,0) grid (3,2);
+  \draw[help lines] (-1,0) grid (7,-5);
+
+  \draw[rounded corners=2ex,line width=2pt]
+  (0,0) to[bend left=8] ++(-0.3,-5) to[bend left=5]
+  node[pos=0.25,sloped,out-interface,above=-1pt](em1){em1}
+  ++(5,0);
+
+  \draw[line width=2pt,line cap=butt,
+  %shorten <= -0.5\pgflinewidth,shorten >= 0.5\pgflinewidth,
+  rounded corners=0.5ex]
+  (em1.south west) -- (em1.north west) -- (em1.north east) -- (em1.south east);
+       
+
+  \scoped[on background layer]
+    \node[vlan-interface,above right=-0.2ex of em1.40,anchor=south west,scale=0.6](em1-1203){@1203};
+
+  \node[nodename,rotate=-5] at (5,-5) {Compute Node};
 
 \end{tikzpicture}
 % \endpgfgraphicnamed
