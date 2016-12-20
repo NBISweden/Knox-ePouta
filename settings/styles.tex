@@ -10,7 +10,8 @@
 %------------------------------------------
 
 \tikzset{vm/.style={%
-drop shadow,
+preaction={draw},% does only draw the contour, and not the separation
+%drop shadow,
 rounded corners=0.5ex,thin,inner xsep=2pt,inner ysep=1ex,
 rectangle split,rectangle split parts=2,
 every two node part/.style={font=\tiny},
@@ -68,25 +69,13 @@ fill=blue!30,inner xsep=1ex,inner ysep=1ex,anchor=center,shape=rectangle,
 fill=blue!30,inner xsep=1ex,inner ysep=1ex,anchor=center,shape=out-interface-shape,
 }}
 
+\tikzset{bridge/.style={
+preaction={draw,line width=5pt,black},
+draw,line width=2pt,white,
+}}
 
-
-%------------------------------------------
-%% Non atomic
-\tikzset{looplabel/.style={scale=0.7,inner xsep=2pt,draw=gray!10,fill=white,rounded corners=2pt,anchor=center}}
- 
-
-%------------------------------------------
-
-\tikzset{enumbullet/.style={draw,circle,double,inner sep=1pt}}
-\tikzset{challenge/.style={draw,circle,double,scale=0.75,inner sep=1pt}}
-\tikzset{subchallenge/.style={circle,fill=white,scale=0.6,inner sep=0.5pt,draw=black,very thin}}
-
-\tikzset{myedge/.style={draw,shorten >=1pt,>=stealth',semithick}}
-\tikzset{process/.style={circle,minimum width=2ex,inner sep=1pt,draw=blue!50,fill=blue!20,thick}}
-\tikzset{mylabel/.style={inner xsep=2pt,draw=gray!10,fill=white,double,rounded corners=2pt,anchor=center}}
-\tikzset{separation/.style={white,semithick}}
-
-\tikzset{context/.style={rectangle,minimum width=3.2ex,minimum height=3.2ex,inner sep=0pt,fill=none,draw=black,thin,scale=0.6,anchor=center,fill=yellow!20!white}}
-\tikzset{project/.style={draw,shorten >=1pt,>=stealth',very thin,blue!70!red}}
-\tikzset{context-matrix/.style={matrix of nodes,inner xsep=0pt,column sep=1.5pt,column 1/.style={anchor=base}}}
-%\tikzset{na-looplabel/.style={inner sep=2pt,draw=gray,fill=white,rounded corners=2pt,anchor=base,yshift=-2pt}}
+\tikzset{iptables/.style={
+draw=green!50!black, fill=green!30,
+cloud,cloud puffs=15,cloud puff arc=120,cloud ignores aspect,
+scale=0.5,
+}}

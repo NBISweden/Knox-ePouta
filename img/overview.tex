@@ -1,6 +1,6 @@
 % \beginpgfgraphicnamed{overview}
 \begin{tikzpicture}
-  
+  [vm/.append style={drop shadow}]  
   %\draw[help lines] (0,0) grid (3,2);
 
   \draw[rounded corners,thick]%
@@ -37,7 +37,7 @@
   ;
 
 
-  \path[name path=border] (link) -- ++(60:65mm) node[above left=3ex,pos=0.6]{Finland} node[below right=3ex,pos=0.6]{Sweden};
+  \path[name path=border] (link) -- ++(60:65mm) node[above left=3ex,pos=0.6](fin){Finland} node[below right=3ex,pos=0.6](swe){Sweden};
   \path [name path=limit] (vm1-epouta) -- (vm1-knox);
   \path [name intersections={of=border and limit, by=x},] (link) -- (x);
   

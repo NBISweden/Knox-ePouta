@@ -3,21 +3,53 @@
   
   \draw[help lines] (-1,0) grid (7,-5);
 
+  %% Compute Node
   \draw[rounded corners=2ex,line width=2pt]
   (0,0) to[bend left=8] ++(-0.3,-5) to[bend left=5]
   node[pos=0.25,sloped,out-interface,above=-1pt](em1){em1}
-  ++(5,0);
+  node[nodename,sloped,thin,pos=0.8] {Compute Node}
+  ++(7,0);
 
+  %% em1 interface
   \draw[line width=2pt,line cap=butt,
   %shorten <= -0.5\pgflinewidth,shorten >= 0.5\pgflinewidth,
   rounded corners=0.5ex]
   (em1.south west) -- (em1.north west) -- (em1.north east) -- (em1.south east);
        
+  %% em1.vlan1 vlan interface
+  \begin{pgfonlayer}{my background}
+    \node[vlan-interface,above left=-0.2ex of em1.40,anchor=south east,scale=0.6](em1-vlan1){@1203};
+    \node[vlan-interface,above right=-0.2ex of em1.10,anchor=south west,scale=0.6](em1-vlan2){@1408};
+  \end{pgfonlayer}
 
-  \scoped[on background layer]
-    \node[vlan-interface,above right=-0.2ex of em1.40,anchor=south west,scale=0.6](em1-1203){@1203};
+  %% bridges
+  \draw[bridge] (1,-3) -- coordinate[pos=0](b-vlan1-left) coordinate[pos=1](b-vlan1-right) +(right:2cm);
+  \draw[bridge] (3.5,-3.8) -- coordinate[pos=0](b-vlan2-left) coordinate[pos=1](b-vlan2-right) +(right:2cm);
 
-  \node[nodename,rotate=-5] at (5,-5) {Compute Node};
+  %% IPtables
+  \node[iptables] at (2.3,-3)   (iptables-vlan1) {IPtables};
+  \node[iptables] at (4.8,-3.8) (iptables-vlan2) {IPtables};
+ 
+  %% VMs
+  \node[vm] at (3.5,-1)  (vm2)  {VM\nodepart{two}10.101.128.104};
+  \node[vm] at (2,-1.5)  (vm1)  {VM\nodepart{two}10.101.128.103};
+  \node[vm] at (6,-2.5)  (vm1') {VM\nodepart{two}10.101.128.104};
+  
+  \begin{pgfonlayer}{background}
+    \filldraw[red,rounded corners=1ex, bend right]
+    (em1-vlan1.center) -- (em1-vlan1.north west) --
+    (b-vlan1-left) --
+    (vm1.south west) -- (vm1.north west) -- (vm2.north west) -- (vm2.north east) -- (vm2.south east) --
+    (b-vlan1-right) -- (em1-vlan1.north east) --
+    cycle;
+
+    \filldraw[blue,rounded corners=1ex, bend right]
+    (em1-vlan2.center) -- (em1-vlan2.north east) -- 
+    (b-vlan2-left) -- 
+    (vm1'.north west) -- (vm1'.north east) -- (vm1'.south east) -- 
+    (b-vlan2-right) -- (em1-vlan2.south east) -- 
+    cycle;
+  \end{pgfonlayer}
 
 \end{tikzpicture}
 % \endpgfgraphicnamed
