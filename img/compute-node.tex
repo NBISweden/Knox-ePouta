@@ -1,6 +1,7 @@
 % \beginpgfgraphicnamed{compute-node}
 \begin{tikzpicture}
-  
+  [connector/.append style={draw,scale=0.4}]
+
   \draw[help lines] (-1,0) grid (7,-5);
 
   %% Compute Node
@@ -9,6 +10,12 @@
   node[pos=0.25,sloped,out-interface,above=-1pt](em1){em1}
   node[nodename,sloped,thin,pos=0.8] {Compute Node}
   ++(7,0);
+
+  \scoped[on background layer]
+  \shade[top color=white,bottom color=yellow!20,shading angle=-45]
+  (0,0) to[bend left=8,rounded corners=2ex] ++(-0.3,-5) to[bend left=5]
+  ++(7,0) -- ++(0,5) -- cycle;
+
 
   %% em1 interface
   \draw[line width=2pt,line cap=butt,
@@ -23,33 +30,54 @@
   \end{pgfonlayer}
 
   %% bridges
-  \draw[bridge] (1,-3) -- coordinate[pos=0](b-vlan1-left) coordinate[pos=1](b-vlan1-right) +(right:2cm);
-  \draw[bridge] (3.5,-3.8) -- coordinate[pos=0](b-vlan2-left) coordinate[pos=1](b-vlan2-right) +(right:2cm);
+  \draw[bridge] (1,-3) -- +(right:2cm);
+  \draw[bridge] (3.5,-3.8) -- +(right:2cm);
+  \path (1,-3) -- 
+  node[connector,pos=.1](vlan1-ext){}
+  node[connector,pos=.8](vlan1-vm1){}
+  node[connector,pos=.9](vlan1-vm2){}
+  +(right:2cm);
+  \path (3.5,-3.8) --
+  node[connector,pos=.15](vlan2-ext){}
+  node[connector,pos=.85](vlan2-vm1){}
+  +(right:2cm);
 
   %% IPtables
-  \node[iptables] at (2.3,-3)   (iptables-vlan1) {IPtables};
-  \node[iptables] at (4.8,-3.8) (iptables-vlan2) {IPtables};
+  \node[iptables] at (1.9,-3)   (iptables-vlan1) {IPtables};
+  \node[iptables] at (4.5,-3.8) (iptables-vlan2) {IPtables};
  
   %% VMs
   \node[vm] at (3.5,-1)  (vm2)  {VM\nodepart{two}10.101.128.104};
   \node[vm] at (2,-1.5)  (vm1)  {VM\nodepart{two}10.101.128.103};
   \node[vm] at (6,-2.5)  (vm1') {VM\nodepart{two}10.101.128.104};
-  
-  \begin{pgfonlayer}{background}
-    \filldraw[red,rounded corners=1ex, bend right]
-    (em1-vlan1.center) -- (em1-vlan1.north west) --
-    (b-vlan1-left) --
-    (vm1.south west) -- (vm1.north west) -- (vm2.north west) -- (vm2.north east) -- (vm2.south east) --
-    (b-vlan1-right) -- (em1-vlan1.north east) --
-    cycle;
 
-    \filldraw[blue,rounded corners=1ex, bend right]
-    (em1-vlan2.center) -- (em1-vlan2.north east) -- 
-    (b-vlan2-left) -- 
-    (vm1'.north west) -- (vm1'.north east) -- (vm1'.south east) -- 
-    (b-vlan2-right) -- (em1-vlan2.south east) -- 
-    cycle;
-  \end{pgfonlayer}
+
+  \draw (em1-vlan1) to[out=90,in=-90] (vlan1-ext);
+  \draw (vlan1-vm1) to[out=90,in=-90] (vm1);
+  \draw (vlan1-vm2) to[out=90,in=-90] (vm2);
+  % \draw (vlan1-vm1) to[out=90,in=180] coordinate[pos=1](vlan1-tap1) +(45:5mm);
+  % \draw (vlan1-vm2) to[out=90,in=180] coordinate[pos=1](vlan1-tap2) +(45:5mm);
+  % \draw[densely dashed] (vlan1-tap1) to[out=90,in=-90] (vm1);
+  % \draw[densely dashed] (vlan1-tap2) to[out=90,in=-90] (vm2);
+
+  \draw (em1-vlan2) to[out=0,in=-90] (vlan2-ext);
+  \draw (vlan2-vm1) to[out=90,in=-90] (vm1');
+  
+  % \begin{pgfonlayer}{background}
+  %   \filldraw[red,rounded corners=1ex, bend right]
+  %   (em1-vlan1.center) -- (em1-vlan1.north west) --
+  %   (b-vlan1-left) --
+  %   (vm1.south west) -- (vm1.north west) -- (vm2.north west) -- (vm2.north east) -- (vm2.south east) --
+  %   (b-vlan1-right) -- (em1-vlan1.north east) --
+  %   cycle;
+
+  %   \filldraw[blue,rounded corners=1ex, bend right]
+  %   (em1-vlan2.center) -- (em1-vlan2.north east) -- 
+  %   (b-vlan2-left) -- 
+  %   (vm1'.north west) -- (vm1'.north east) -- (vm1'.south east) -- 
+  %   (b-vlan2-right) -- (em1-vlan2.south east) -- 
+  %   cycle;
+  % \end{pgfonlayer}
 
 \end{tikzpicture}
 % \endpgfgraphicnamed
