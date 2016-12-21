@@ -36,10 +36,13 @@
   node[connector,pos=.1](vlan1-ext){}
   node[connector,pos=.8](vlan1-vm1){}
   node[connector,pos=.9](vlan1-vm2){}
+  node[pos=1,anchor=north east,inner sep=0pt,yshift=-3pt,scale=0.5]{bridge1}
   +(right:2cm);
   \path (3.5,-3.8) --
   node[connector,pos=.15](vlan2-ext){}
   node[connector,pos=.85](vlan2-vm1){}
+  node[connector,pos=.93](vlan2-vm2){}
+  node[pos=1,anchor=north east,inner sep=0pt,yshift=-3pt,scale=0.5]{bridge2}
   +(right:2cm);
 
   %% IPtables
@@ -62,6 +65,7 @@
 
   \draw (em1-vlan2) to[out=0,in=-90] (vlan2-ext);
   \draw (vlan2-vm1) to[out=90,in=-90] (vm1');
+  \draw[densely dashed] (vlan2-vm2) to[out=90,in=-135] +(25:10mm);
   
   % \begin{pgfonlayer}{background}
   %   \filldraw[red,rounded corners=1ex, bend right]
