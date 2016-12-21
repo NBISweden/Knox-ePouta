@@ -37,7 +37,7 @@
   ;
 
 
-  \path[name path=border] (link) -- ++(60:65mm) node[above left=3ex,pos=0.6](fin){Finland} node[below right=3ex,pos=0.6](swe){Sweden};
+  \path[name path=border] (link) -- ++(60:65mm) node[left=4ex,pos=0.5](fin){Finland} node[right=6ex,pos=0.4](swe){Sweden};
   \path [name path=limit] (vm1-epouta) -- (vm1-knox);
   \path [name intersections={of=border and limit, by=x},] (link) -- (x);
   
@@ -55,6 +55,88 @@
     \shade[left color=yellow!50,right color=white,decorate,decoration={snake,segment length=6ex, amplitude=0.5ex}]%
     (link.center) -- (x) -- (x'') -- (link'') -- cycle;
   \end{pgfonlayer}
+
+
+
+  %% SWE Flag
+  \begin{scope}[shift={(swe.west)},scale=0.1]
+    %% Poteau
+    \draw[fill=black] (-.2,0) to [bend right] (.2,0) -- (.2,8) to [bend left] (-.2,8) -- cycle;
+    \draw[fill=black] (0,8) circle (.4) ;
+    \begin{scope}
+      %% Flag contour
+      \clip
+      (0.2,7.6)
+      .. controls +(60:20mm) and +(-160:60mm) ..
+      coordinate[pos=.55] (t1) coordinate[pos=.65] (t2)
+      (8,9)
+      to[out=-85 ,in=85]
+      coordinate[pos=.3] (r1) coordinate[pos=.45] (r2)
+      (7.5,4) 
+      .. controls +(-140:30mm) and +(20:30mm) .. 
+      coordinate[pos=.7] (b1) coordinate[pos=.6] (b2)
+      (.2,3)
+      to [out =85,in=-80]
+      coordinate[pos=.7] (l1) coordinate[pos=.5] (l2)
+      cycle;
+      %% Background
+      \path[fill=blue] 
+      (0.2,7.6)
+      .. controls +(60:20mm) and +(-160:60mm) ..
+      (8,9)
+      to[out=-85 ,in=85]
+      (7.5,4) 
+      .. controls +(-140:30mm) and +(20:30mm) .. 
+      (.2,3)
+      to [out =85,in=-80]
+      cycle;
+      %% Stripes
+      \path[fill=yellow] (l1) .. controls +(60:20mm) and +(-160:60mm) .. (r1) -- (r2) .. controls +(-160:60mm) and +(60:20mm) .. (l2) -- cycle;
+      \path[fill=yellow] (t1) to[in=85,out=-80] (b1) -- (b2) to[out=85,in=-80] (t2) -- cycle;
+    \end{scope}
+  \end{scope}
+
+
+  %% FIN Flag
+  \begin{scope}[shift={(fin.west)},scale=0.1]
+    %% Poteau
+    \draw[fill=black] (-.2,0) to [bend right] (.2,0) -- (.2,8) to [bend left] (-.2,8) -- cycle;
+    \draw[fill=black] (0,8) circle (.4) ;
+    \begin{scope}
+      %% Flag contour
+      \clip
+      (0.2,7.6)
+      .. controls +(60:20mm) and +(-160:60mm) ..
+      coordinate[pos=.55] (t1) coordinate[pos=.65] (t2)
+      (8,9)
+      to[out=-85 ,in=85]
+      coordinate[pos=.3] (r1) coordinate[pos=.45] (r2)
+      (7.5,4) 
+      .. controls +(-140:30mm) and +(20:30mm) .. 
+      coordinate[pos=.7] (b1) coordinate[pos=.6] (b2)
+      (.2,3)
+      to [out =85,in=-80]
+      coordinate[pos=.7] (l1) coordinate[pos=.5] (l2)
+      cycle;
+      %% Background
+      \path[fill=white] 
+      (0.2,7.6)
+      .. controls +(60:20mm) and +(-160:60mm) ..
+      (8,9)
+      to[out=-85 ,in=85]
+      (7.5,4) 
+      .. controls +(-140:30mm) and +(20:30mm) .. 
+      (.2,3)
+      to [out =85,in=-80]
+      cycle;
+      %% Stripes
+      \path[fill=blue] (l1) .. controls +(60:20mm) and +(-160:60mm) .. (r1) -- (r2) .. controls +(-160:60mm) and +(60:20mm) .. (l2) -- cycle;
+      \path[fill=blue] (t1) to[in=85,out=-80] (b1) -- (b2) to[out=85,in=-80] (t2) -- cycle;
+    \end{scope}
+  \end{scope}
+
+
+
 
 \end{tikzpicture}
 % \endpgfgraphicnamed
