@@ -39,21 +39,29 @@
 
   \path[name path=border] (link) -- ++(60:65mm) node[left=4ex,pos=0.5](fin){Finland} node[right=6ex,pos=0.4](swe){Sweden};
   \path [name path=limit] (vm1-epouta) -- (vm1-knox);
-  \path [name intersections={of=border and limit, by=x},] (link) -- (x);
+  \path [name intersections={of=border and limit, by=t},] (link) -- (t);
+
+  %% Extend a bit
+  \path (link) coordinate(b);
+  \path (b) ++(left:35mm) coordinate(b-l);
+  \path (b) ++(right:65mm) coordinate(b-r);
+  \path (t) ++(left:65mm) coordinate(t-l);
+  \path (t) ++(right:35mm) coordinate(t-r);
   
-  \path (link.center) ++(left:3cm) coordinate(link');
-  \path (link.center) ++(right:7cm) coordinate(link'');
-  \path (x) ++(left:6cm) coordinate(x');
-  \path (x) ++(right:4cm) coordinate(x'');
-  
+
+ 
   \begin{pgfonlayer}{my background}
-    \clip (-3,0) rectangle +(9,-5);
+     % \draw (-3,0) rectangle +(10,-5);
+     % \foreach \n in {t,t-l,t-r,b,b-l,b-r}{ \node[circle] at (\n){\n}; }
+    \clip (-3,0) rectangle +(10,-5);
 
-    \shade[right color=blue!20,left color=white,decorate,decoration={snake,segment length=6ex, amplitude=0.5ex}]%
-    (link.center) -- (x) -- (x') -- (link') -- cycle;
+    \shade[right color=blue!20,left color=white]%
+    (b) decorate[decoration={snake,segment length=6ex, amplitude=0.5ex}]{ -- (t) }
+    decorate[decoration=lineto] { -- (t-l) -- (b-l) -- cycle };
 
-    \shade[left color=yellow!50,right color=white,decorate,decoration={snake,segment length=6ex, amplitude=0.5ex}]%
-    (link.center) -- (x) -- (x'') -- (link'') -- cycle;
+    \shade[left color=yellow!50,right color=white]%
+    (b) decorate[decoration={snake,segment length=6ex, amplitude=0.5ex}]{ -- (t) }
+    decorate[decoration=lineto] { -- (t-r) -- (b-r) -- cycle };
   \end{pgfonlayer}
 
 
