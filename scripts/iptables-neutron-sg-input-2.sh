@@ -10,11 +10,11 @@
 			   -m udp --dport 68 \
 			   -j RETURN
 -A neutron-linuxbri-i@uuid -s 10.101.0.0/16 \
-                           -p icmp \
+                           @highlight{-p icmp} \
 			   -j RETURN
 -A neutron-linuxbri-i@uuid -s 10.101.0.0/16 \
                            -p tcp -m tcp \
-			   -m multiport --dports 1:65535 \
+			   @highlight{-m multiport --dports 1:65535} \
 			   -j RETURN
 -A neutron-linuxbri-i@uuid -m set --match-set NIP@uuid src \
                            -j RETURN
