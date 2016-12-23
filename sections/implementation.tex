@@ -245,26 +245,5 @@ DNS queries and either answers them from a small, local, cache or
 forwards them to a real, recursive, DNS server. Therefore, we make the
 VMs DNS queries point to \ip{10.101.128.0}.
 
-% \codeline{\$ source ePouta.credentials>}
-% \codeline{\$ neutron subnet-show epouta-subnet}
 \codeblock{epouta.sh}
-
-\begin{tabular}{|l|l|}
-\hline
-Field & Value \\
-\hline
- allocation\_pools  & \{"start": "\ip{10.101.0.2}", "end": "{10.101.127.255}"\} \\
- cidr              & \ip{10.101.0.0/16}                               \\
- dns\_nameservers   & \ip{10.101.128.0}                                     \\
- enable\_dhcp       & True                                             \\
- gateway\_ip        & \ip{10.101.0.1}                                       \\
- host\_routes       &                                                  \\
- id                & \uuid                                            \\
- ip\_version        & 4                                                \\
- name              & \param{epouta-subnet}              \\
- network\_id        & \uuid                                            \\
- subnetpool\_id     &                                                  \\
- tenant\_id         & \uuid                                            \\
-\hline
-\end{tabular}
 

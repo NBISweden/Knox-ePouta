@@ -58,9 +58,14 @@
 %\usepackage{verbatim}
 \usepackage{fancyvrb}
 
+%\newcommand*{\highlight}[1]{{\protect#1}}
+\newcommand*{\highlight}[1]{\textcolor{red}{#1}}
+\newcommand{\openbrace}{\{}
+\newcommand{\closebrace}{\}}
+
 \newcommand{\codeblock}[1]{%
 %\begin{mdframed}[style=DazFrame]%
-\begingroup\VerbatimInput[numbers=none]{scripts/#1}\endgroup%
+\begingroup\VerbatimInput[numbers=none,fontsize=\small,commentchar=!,commandchars=@\{\}]{scripts/#1}\endgroup%
 %\end{mdframed}%
 }
 \newcommand{\codeline}[1]{\texttt{#1}}

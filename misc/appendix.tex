@@ -67,45 +67,46 @@ the closest first decimal).%
 \section{Pitfalls and Caveats with Neutron Linux Bridges}
 \label{appendix:secgroups}
 
-Work under progress...
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\endinput %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\endinput %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Let us describe in greater details how the security rules are
-implemented. This is relevant to understand pitfalls in connecting the
-VMs from different clouds together.
+In this section, we describe how the security rules are
+implemented. This involves low-level details that are relevant to
+understand pitfalls in connecting the VMs from different clouds
+together.
 
-If we display the \texttt{FORWARD} chain, we see the openstack add a
-``relay'' chain, named \texttt{neutron-linuxbri-FORWARD}.
+When we display the \kw{FORWARD} chain, we see that openstack adds a
+``relay'' chain, named \kw{neutron-linuxbri-FORWARD}.
 
 \codeblock{iptables-forward.sh}
 
-All rules are now in that relay chain. If the traffic, whether inwards
-or outwards, goes through the VM interface, via the tap interfaces, it
-is redirected to the security group chain.
+All rules are in fact in that relay chain. If the traffic, whether
+inwards or outwards, goes through the VM interface, via the tap
+interfaces (\ie the interfaces in the root namespace connected to the
+bridges), it is redirected to the security group chain.
 
 \codeblock{iptables-forward-neutron.sh}
 
-The security group chain gathered all incoming and outgoing traffic
-from the VMs. Surprisingly, that chain now forks and redirects the
+The security group chain gathers rules about incoming and outgoing
+traffic from the VMs. Surprisingly, that chain forks and redirects the
 traffic to an \emph{incoming} or another \emph{outgoing} chain. If
 those latter chains do not filter the traffic, the packets are then
 accepted.
 
 \codeblock{iptables-sg-chain.sh}
 
-Let us now inspect the outgoing chain onto a particular VM (Note the
-name starting with \emph{neutron-linuxbri-\textbf{o}}). It starts by
-allowing traffic from the DHCP client (by returning to the previous
-chain, wich accepts the traffic).
+Let us now inspect the outgoing chain onto a particular VM. The name
+of such a chain starts with \emph{neutron-linuxbri-\textbf{o}}). The
+chain begins by allowing traffic from the DHCP client (by returning to
+the previous chain, which accepts the traffic).
 
 \codeblock{iptables-neutron-sg-input.sh}
 
-Otherwise, it jumps to a \emph{source chain} (which name starts with \emph{neutron-linuxbri-\textbf{s}}).
+Otherwise, it jumps to a \emph{source chain} (which name starts with
+\emph{neutron-linuxbri-\textbf{s}}).
 
 \codeblock{iptables-neutron-sg-source.sh}
 
@@ -118,7 +119,7 @@ added interfaces. Moreover, in another scenario where the VM network
 is augmented with another local network, say \ip{192.168.0.0/24}, the
 traffic would be filtered by the source chain. This is relevant in
 case we want to implement on openstack installation inside VMs (such
-as Mosler, or the so-called \emph{Triple-O}, Openstack on Openstack).
+as Mosler, or the so-called \emph{Triple-O}: Openstack on Openstack).
 
 Back to the outgoing chain, after checking the allowed IP/MAC pair
 (which can be updated through some neutron commands), it checks for
@@ -129,22 +130,22 @@ simply drops that traffic.
 \codeblock{iptables-neutron-sg-output.sh}
 
 Finally, we observe that the openstack security rules, which we added
-in neutron, end up in the \emph{incoming chain} (which name starts
+in Neutron, end up in the \emph{incoming chain} (which name starts
 with \emph{neutron-linuxbri-\textbf{i}}). The DHCP traffic is allowed,
-along with \texttt{ping} and tcp traffic (on all ports), from the IP
-range \ip{10.101.0.0/16}. Some specific neutron commands can allow
+along with \kw{ping} and \kw{tcp} traffic (on all ports), from the IP
+range \ip{10.101.0.0/16}. Some specific Neutron commands can allow
 other network ranges, and this is where the rules would appear.
 
 \codeblock{iptables-neutron-sg-input-2.sh}
 
-In case the above ping and tcp rules were absent, the traffic is then
-accepted if it comes from another VM on the network. This is
-implemented with IPset.
+In case the above \kw{ping} and \kw{tcp} rules were absent, the
+traffic is then accepted if it comes from another VM on the
+network. This is implemented with \emph{IPset}.
 
 \codeblock{iptables-neutron-ipset.sh}
 
 Notice here that the set contains the IP of the machines that were
 booted on Knox, and not ePouta. We would have to update the IPset, or
 update the plugin itself to automatically include the other VMs across
-borders. It was not necessary since we had the `All tcp ports' rule
-already in place.
+borders. It was not necessary since we had the ``All \kw{tcp} ports''
+rule already in place.

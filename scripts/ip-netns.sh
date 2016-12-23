@@ -1,3 +1,3 @@
 $ ip netns # on knox controller
-qrouter-<...>
-qdhcp-<...>
+qrouter-@uuid
+qdhcp-@uuid

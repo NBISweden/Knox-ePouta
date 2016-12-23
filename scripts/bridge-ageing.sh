@@ -1,1 +1,1 @@
-brctl setageing brq<...> 0
+brctl setageing brq@uuid 0

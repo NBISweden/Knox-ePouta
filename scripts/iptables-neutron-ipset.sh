@@ -1,5 +1,5 @@
-[compute-node] # ipset list NIP<...>
-Name: NIP<...>
+[compute-node] $ ipset list NIP@uuid
+Name: NIP@uuid
 Type: hash:net
 Revision: 4
 Header: family inet hashsize 1024 maxelem 65536
