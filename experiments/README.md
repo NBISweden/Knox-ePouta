@@ -14,6 +14,7 @@ a
 [more technical presentation](https://nbisweden.github.io/Knox-ePouta/).
 
 ## Requirements
+
 You first need to create a few files with the different cloud
 credentials. Copy the files `lib/settings/<cloud>.rc.sample` into
 `lib/settings/<cloud>.rc` and edit the relevant parameters. This will
@@ -24,12 +25,16 @@ often boil down to updating:
 	export OS_USERNAME=<username>
 	export OS_PASSWORD=<password>
 
-These settings will probably be given to you by your _openstack
-administrator_. Note that this user might need an admin role for the
-given tenant/project. This is the case for Knox, since we also provide
-scripts to set up the network infrastructure.
+The credentials are for the moment for `lib/settings/knox.rc` and
+`lib/settings/epouta.rc`. These settings will probably be given to you
+by your _openstack administrator_. Note that this user might need an
+admin role for the given tenant/project. This is the case for Knox,
+since we also provide scripts to set up the network infrastructure.
 
-The credentials are for the moment for `lib/settings/knox.rc` and `lib/settings/epouta.rc`.
+Moreover, define the SSH public keys that will be added to each VM
+(for easy access). Have a look at
+`lib/settings/authorized_keys.sample`, and create the file
+`lib/settings/authorized_keys`, similarly.
 
 The scripts define some variables (in [lib/settings/common.rc](lib/settings/common.rc))
 * `KE_HOME` (that current folder)
