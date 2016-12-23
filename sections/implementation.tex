@@ -152,18 +152,10 @@ creates a linux bridge per project.%
 On each compute node, a bridge is created (also per project), along
 with an interface with VLAN tag 1203. A veth pair's end is added to
 the bridge, while to other end is used by a VM, as its internal
-interface.
+interface. We illustrate it in
+Figure~\ref{figure:connectivity:compute:nodes}.
 
 \codeblock{bridge-cn.sh}
-
-\begin{figure}[ht]%!b
-  \centering
-  \input{img/compute-node}
-  \caption{Connectivity on the compute nodes. VLAN encapsulation
-    ensures that VMs from different projects do not ``see'' each
-    other, even when belonging to the same IP range.}
-  \label{figure:connectivity:compute:nodes}
-\end{figure}
 
 A kernel setting is used to force IPtables to filter traffic on the
 bridge. This is the way Openstack enforces security groups and in
@@ -174,6 +166,15 @@ It is relevant in our case, because this led to a slew of connection
 issues, whether in between VMs from the same cloud or across
 clouds. However, this part is only technical and is found in the
 Appendix~\ref{appendix:secgroups}.
+
+\begin{figure}[hb]%!b
+  \centering
+  \input{img/compute-node}
+  \caption{Connectivity on the compute nodes. VLAN encapsulation
+    ensures that VMs from different projects do not ``see'' each
+    other, even when belonging to the same IP range.}
+  \label{figure:connectivity:compute:nodes}
+\end{figure}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
