@@ -1,4 +1,5 @@
 % \beginpgfgraphicnamed{controller}
+
 \begin{tikzpicture}
   [connector/.append style={draw,scale=0.4}]
 
@@ -65,9 +66,8 @@
     \draw (vlan1-dhcp) to[out=90,in=-90] (ns);
     
     \scoped[on background layer]
-    \shade[top color=white,bottom color=yellow!30,shading angle=-45]
-    (0,0) to[bend left=8,rounded corners=2ex] ++(-0.3,-5) to[bend left=5]
-    ++(7,0) -- ++(0,5) -- cycle;
+    \shade[top color=white,bottom color=yellow!30,shading angle=-45,rounded corners=2ex]
+    (0,0) to[bend left=8] ++(-0.3,-5) to[bend left=5] ++(7,0) -- ++(0,5) -- cycle;
   \end{scope}
 
   %% Virtual Router
@@ -94,11 +94,10 @@
 
     \draw (vlan1-router) to[out=90,in=-90] (qr);
     \draw (br-ex-router) to[out=90,in=0] (gw);
-    
+
     \scoped[on background layer]
-    \shade[top color=white,bottom color=yellow!30,shading angle=-45]
-    (0,0) to[bend left=8,rounded corners=2ex] ++(-0.3,-5) to[bend left=5]
-    ++(7,0) -- ++(0,5) -- cycle;
+    \shade[top color=white,bottom color=yellow!30,shading angle=-45,rounded corners=2ex]
+    (0,0) to[bend left=8] ++(-0.3,-5) to[bend left=5] ++(7,0) -- ++(0,5) -- cycle;
   \end{scope}
 
   %% Virtual Router 2
@@ -107,9 +106,8 @@
     shift={(6.2,-1.5)},scale=0.3,
     out-interface/.append style={scale=0.8},
     ]
-    \shade[top color=white,bottom color=yellow!30,shading angle=-45]
-    (0,0) to[bend left=8,rounded corners=2ex] ++(-0.3,-5) to[bend left=5]
-    ++(7,0) -- ++(0,5) -- cycle;
+    \shade[rounded corners=2ex,top color=white,bottom color=yellow!30,shading angle=-45]
+    (0,0) to[bend left=8] ++(-0.3,-5) to[bend left=5] ++(7,0) -- ++(0,5) -- cycle;
 
     \draw[rounded corners=2ex,line width=1pt,densely dotted]
     (0,0) to[bend left=8]
