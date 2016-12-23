@@ -1,7 +1,141 @@
 % \beginpgfgraphicnamed{controller}
 \begin{tikzpicture}
-  
-  \draw[help lines] (0,0) grid (3,2);
+  [connector/.append style={draw,scale=0.4}]
 
+  %\draw[help lines] (-1,0) grid (9,-5);
+  %\clip (-0.5,0) rectangle (10,-5.5);
+  %\scoped[on background layer] \clip (-0.5,0) rectangle (7,-5.5);
+
+  %% Controller Node
+  \draw[rounded corners=2ex,line width=2pt]
+  (0,0) to[bend left=8] ++(-0.3,-5) to[bend left=5]
+  node[pos=0.22,sloped,out-interface,above=-1pt](em1){em1}
+  node[pos=0.55,sloped,out-interface,above=-1pt](em2){em2}
+  node[nodename,sloped,thin,pos=0.85] {Controller}
+  ++(8,0);
+
+  %% bridges
+  \draw[bridge] (1,-3) -- +(right:2cm);
+  \draw[preaction={draw,line width=5pt,black,densely dashed},draw,line width=2pt,white] (4,-3.5) -- +(right:2cm);
+  \path (1,-3) -- 
+  node[connector,pos=.2](vlan1-ext){}
+  node[connector,pos=.6](vlan1-dhcp){}
+  node[connector,pos=.8](vlan1-router){}
+  node[pos=1,anchor=north east,inner sep=0pt,yshift=-3pt,scale=0.7]{brq\uuid}
+  +(right:2cm);
+  \path (4,-3.5) --
+  node[connector,pos=.25](br-ex){}
+  node[connector,pos=.5](br-ex-router){}
+  node[connector,pos=.75](br-ex-router2){}
+  node[pos=1,anchor=north east,inner sep=0pt,yshift=-3pt,scale=0.7]{br-ex}
+  +(right:2cm);
+
+  %% Interfaces contours
+  \draw[line width=2pt,line cap=butt,rounded corners=0.5ex]
+  (em1.south west) -- (em1.north west) -- (em1.north east) -- (em1.south east);
+  \draw[line width=1pt,line cap=butt,rounded corners=0.5ex,densely dotted]
+  (em2.south west) -- (em2.north west) -- (em2.north east) -- (em2.south east);
+
+       
+  %% em1.vlan1 vlan interface
+  \begin{pgfonlayer}{my background} % Not 'background' because of the shading
+    \node[vlan-interface,above left=-0.2ex of em1.40,anchor=south east,scale=0.6](em1-vlan1){@1203};
+  \end{pgfonlayer}
+
+  %% Connections
+  \draw (em1-vlan1) to[out=90,in=-90] (vlan1-ext);
+  \draw[dotted,thick] (em2) to[out=90,in=-90] (br-ex);
+
+
+  %% DHCP
+  \begin{scope}[
+    shift={(0.7,-0.5)},scale=0.3,
+    out-interface/.append style={scale=0.8},
+    ]
+    \draw[rounded corners=2ex,line width=2pt]
+    (0,0) to[bend left=8] ++(-0.3,-5) to[bend left=5]
+    node[pos=0.5,out-interface,above=-1pt,sloped](ns){ns}
+    ++(7,0) -- ++(0,5) --
+    node[nodename,pos=0.9,thin,rotate=5] {DHCP}
+    cycle;
+
+    \draw[line width=2pt,line cap=butt,rounded corners=0.5ex]
+    (ns.south west) -- (ns.north west) -- (ns.north east) -- (ns.south east);
+
+    \draw (vlan1-dhcp) to[out=90,in=-90] (ns);
+    
+    \scoped[on background layer]
+    \shade[top color=white,bottom color=yellow!30,shading angle=-45]
+    (0,0) to[bend left=8,rounded corners=2ex] ++(-0.3,-5) to[bend left=5]
+    ++(7,0) -- ++(0,5) -- cycle;
+  \end{scope}
+
+  %% Virtual Router
+  \begin{scope}[
+    shift={(3.5,-0.5)},scale=0.3,
+    out-interface/.append style={scale=0.8},
+    ]
+    \draw[rounded corners=2ex,line width=2pt]
+    (0,0) to[bend left=8] ++(-0.3,-5) to[bend left=5]
+    node[pos=0.5,out-interface,above=-1pt,sloped](qr){qr}
+    ++(7,0) --
+    node[pos=0.6,out-interface,inner xsep=0pt,left=-1pt](gw){gw}
+    ++(0,5) --
+    cycle;
+
+    \node[nodename,rotate=5] at (1.3,0) {Router}; 
+
+    \draw[line width=2pt,line cap=butt,rounded corners=0.5ex]
+    (gw.south east) -- ([xshift=-2pt]gw.south west) -- ([xshift=-2pt]gw.north west) -- (gw.north east)
+    (qr.south west) -- (qr.north west) -- (qr.north east) -- (qr.south east);
+
+    \node[iptables] at (2,-1.5) (iptables-router) {IPtables};
+    \node[iptables] at (3.5,-2.5) (routes-router) {Routes};
+
+    \draw (vlan1-router) to[out=90,in=-90] (qr);
+    \draw (br-ex-router) to[out=90,in=0] (gw);
+    
+    \scoped[on background layer]
+    \shade[top color=white,bottom color=yellow!30,shading angle=-45]
+    (0,0) to[bend left=8,rounded corners=2ex] ++(-0.3,-5) to[bend left=5]
+    ++(7,0) -- ++(0,5) -- cycle;
+  \end{scope}
+
+  %% Virtual Router 2
+  \begin{pgfonlayer}{background}
+  \begin{scope}[
+    shift={(6.2,-1.5)},scale=0.3,
+    out-interface/.append style={scale=0.8},
+    ]
+    \shade[top color=white,bottom color=yellow!30,shading angle=-45]
+    (0,0) to[bend left=8,rounded corners=2ex] ++(-0.3,-5) to[bend left=5]
+    ++(7,0) -- ++(0,5) -- cycle;
+
+    \draw[rounded corners=2ex,line width=1pt,densely dotted]
+    (0,0) to[bend left=8]
+    node[pos=0.5,out-interface,inner xsep=1pt,right=-0.7pt,rotate=-3](gw2){gw}
+    ++(-0.3,-5) to[bend left=5]
+    node[pos=0.5,out-interface,above=-1pt,sloped](qr2){qr}
+    ++(7,0) -- ++(0,5) --
+    cycle;
+
+    \node[nodename,rotate=5,right] at (0,0) {Router'}; 
+    
+    \draw[line width=1pt,line cap=butt,rounded corners=0.5ex,densely dotted]
+    (gw2.north west) -- (gw2.north east) -- (gw2.south east) -- (gw2.south west)
+    (qr2.south west) -- (qr2.north west) -- (qr2.north east) -- (qr2.south east);
+
+    \draw[dotted,thick] (br-ex-router2) to[out=90,in=180] (gw2);
+    
+  \end{scope}
+  \end{pgfonlayer}
+
+  %% Shading 
+  \scoped[on background layer]
+  \shade[opacity=0.5,top color=white,bottom color=yellow!40,shading angle=-45]
+  (0,0) to[bend left=8,rounded corners=2ex] ++(-0.3,-5) to[bend left=5]
+  ++(8,0) -- ++(1,2) -- ++(0,3) -- cycle;
+
+  
 \end{tikzpicture}
 % \endpgfgraphicnamed

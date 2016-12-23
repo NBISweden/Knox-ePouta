@@ -70,8 +70,7 @@ parameter must be substituted with \emph{description} by the reader.
 
 \begin{figure}[ht]%!b
   \centering
-  \tikz\draw circle(2cm) node{wow...impressive!};
-  %\input{img/controller}
+  \input{img/controller}
   \caption{Connectivity on the controller}
   \label{figure:connectivity:controller}
 \end{figure}
@@ -160,7 +159,9 @@ interface.
 \begin{figure}[ht]%!b
   \centering
   \input{img/compute-node}
-  \caption{Connectivity on the compute nodes}
+  \caption{Connectivity on the compute nodes. VLAN encapsulation
+    ensures that VMs from different projects do not ``see'' each
+    other, even when belonging to the same IP range.}
   \label{figure:connectivity:compute:nodes}
 \end{figure}
 
