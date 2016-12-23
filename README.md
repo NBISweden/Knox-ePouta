@@ -1,4 +1,4 @@
-# Sucessful cross-border use of secure cloud
+# Successful cross-border use of secure cloud
 
 When a cluster runs at full capacity, all the newly scheduled jobs
 have to wait. In case this happens often, it is necessary to scale up
