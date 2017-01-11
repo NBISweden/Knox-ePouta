@@ -9,7 +9,7 @@
   coordinate[pos=0.25] (vm2-epouta)
   coordinate[pos=0.5]  (vm3-epouta)
   coordinate[pos=0.75] (dhcp-epouta)
-  ++(1.5,-5) to
+  ++(-0.5,-5) to
   node[pos=0.3,link] (link) {1 Gb/s}
   coordinate[pos=0.7] (router)
   coordinate[pos=0.87] (dhcp-knox)
@@ -19,9 +19,9 @@
   coordinate[pos=1]    (vm1-knox)
   coordinate[pos=0.75] (vm2-knox)
   coordinate[pos=0.5]  (vm3-knox)
-  ++(-0.5,5);
+  ++(1.5,5);
 
-  \path[every pin/.style={vm},pin distance=2ex,every pin edge/.style={thick,bend left=10,auto}]
+  \path[every pin/.style={vm},pin distance=2ex,every pin edge/.style={thick,bend right=10,auto}]
   % 
   (vm1-epouta)  node[connector,pin=right:{VM$_1$\nodepart{two}10.101.0.21}] {}
   (vm2-epouta)  node[connector,pin=right:{VM$_2$\nodepart{two}10.101.0.22}] {}
@@ -37,29 +37,26 @@
   ;
 
 
-  \path[name path=border] (link) -- ++(120:65mm) node[right=6ex,pos=0.5](fin){Finland} node[left=4ex,pos=0.4](swe){Sweden};
-  \path [name path=limit] (vm1-epouta) -- (vm1-knox);
-  \path [name intersections={of=border and limit, by=t},] (link) -- (t);
+  \path[name path=border] (link) -- ++(100:65mm) node[right=6ex,pos=0.5](fin){Finland} node[left=4ex,pos=0.4](swe){Sweden};
+  \path[name path=limit] (vm1-epouta) -- (vm1-knox);
+  \path[name intersections={of=border and limit, by=t}] (link) -- (t);
 
   %% Extend a bit
   \path (link) coordinate(b);
-  \path (b) ++(right:35mm) coordinate(b-l);
-  \path (b) ++(left:65mm) coordinate(b-r);
-  \path (t) ++(right:65mm) coordinate(t-l);
-  \path (t) ++(left:35mm) coordinate(t-r);
-  
-
+  \path (b) ++(right:45mm) coordinate(b-r) ++(0,5) coordinate(t-r);
+  \path (b) ++(left:60mm)  coordinate(b-l) ++(0,5) coordinate(t-l);
  
   \begin{pgfonlayer}{my background}
-     % \draw (-3,0) rectangle +(10,-5);
-     % \foreach \n in {t,t-l,t-r,b,b-l,b-r}{ \node[circle] at (\n){\n}; }
-    \clip (3,0) rectangle +(-10,-5);
+    %\draw[red] (b-r) -- (t-r) -- (t-l) -- (b-l);
+    \clip (b-r) -- (t-r) -- (t-l) -- (b-l);
 
-    \shade[left color=blue!20,right color=white]%
+    %% Swedish shade
+    \shade[right color=blue!20,left color=white]%
     (b) decorate[decoration={snake,segment length=6ex, amplitude=0.5ex}]{ -- (t) }
     decorate[decoration=lineto] { -- (t-l) -- (b-l) -- cycle };
 
-    \shade[right color=yellow!50,left color=white]%
+    %% Finnish shade
+    \shade[left color=yellow!50,right color=white]%
     (b) decorate[decoration={snake,segment length=6ex, amplitude=0.5ex}]{ -- (t) }
     decorate[decoration=lineto] { -- (t-r) -- (b-r) -- cycle };
   \end{pgfonlayer}
