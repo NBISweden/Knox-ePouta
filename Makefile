@@ -27,13 +27,13 @@ e:
 _build:
 	@mkdir -p $@
 
-_build/$(TARGET).pdf: $(TARGET).tex _build $(SOURCES) 
+_build/$(TARGET).pdf: $(TARGET).tex _build $(SOURCES) #settings/tryggve.bst
 	@echo Compiling $(TARGET).tex
 	@$(LATEX) $(FLAGS) -output-directory=$(@D) $< $(REDIRECT)
 
 force: _build
 	@echo "Compiling $(TARGET).tex [forcing]"
-	@$(LATEX) $(FLAGS) -output-directory=$(@D) $(TARGET).tex $(REDIRECT)
+	@$(LATEX) $(FLAGS) -output-directory=$< $(TARGET).tex $(REDIRECT)
 
 final: $(TARGET).tex _build $(SOURCES) bib
 	@echo "Second compilation"
@@ -49,6 +49,10 @@ _build/$(TARGET).bbl: misc/references.bib _build _build/$(TARGET).aux
 _build/$(TARGET).aux: _build/$(TARGET).pdf
 bib: _build/$(TARGET).bbl
 
+settings/tryggve.bst: settings/tryggve.dbj _build
+	@echo "Creating the Bib style file"
+	@$(LATEX) -output-directory=_build $< $(REDIRECT)
+	@mv _build/tryggve.bst $@
 
 # =============================================================================
 # PICTURES
@@ -81,4 +85,5 @@ clean: cleantilde
 
 cleanall: cleantilde
 	@rm -rf _build
+	@rm -f settings/tryggve.bst
 
