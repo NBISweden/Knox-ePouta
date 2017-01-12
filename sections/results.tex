@@ -44,8 +44,8 @@ knox            & 3               & 0                 \\
 knox2-epouta1   & 2               & 1                 \\
 knox1-epouta2   & 1               & 2                 \\
 epouta          & 0               & 3                 \\\hhline{-||-||-}
-epouta1-knox2 * & 1               & 2                 \\
-epouta2-knox1 * & 2               & 1                 \\\hhline{-||-||-}
+epouta1-knox2 * & 2               & 1                 \\
+epouta2-knox1 * & 1               & 2                 \\\hhline{-||-||-}
 \multicolumn{3}{l}{\scriptsize * ePouta nodes have higher priority than Knox nodes}\\
 \end{tabular}
 \caption{Slurm Partitions}
@@ -95,8 +95,15 @@ epouta2-knox1 & \leftpointingfinger & 11m 13s \\\hhline{*{3}{=}}
 Since we know that the node in ePouta are technically superior to the
 ones in Knox (\ie better hardware), we can observe that the
 Knox-ePouta connection across borders does not influence much the
-computations. Moreover, the first compute node on the slurm partition
-appears to \emph{not} matter.
+computations. The first compute node on the slurm partition appears to
+\emph{not} matter either.
+%
+Recall that we initially want to test whether this architecture is
+viable. Now that we notice it is, albeit with a small slowdown, we did
+not investigate further the reasons for such differences, often
+neglectable, pointed out in Table~\ref{experiments:CAW+WGS} with a
+\leftpointingfinger\ symbol.
+%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{NFS stress test}
@@ -223,7 +230,7 @@ The last test is to make three connections, pairwise between one node
 from Knox and one from ePouta, and run similar iPerf commands as above
 (See Table~\ref{experiments:iperf:tests}).
 
-\begin{table}[hb]%!b
+\begin{table}[htb]%!b
 \centering
 \begin{tabular}{|r||c||c|}\hhline{~||-||-}
 \multicolumn{1}{c||}{Connection} & Sender         & Receiver\\\hhline{=::=::=}

@@ -12,32 +12,48 @@ This is an interesting alternative to buying more hardware, because we
 stress-tested the network and disc access and we noticed that the
 performance degradation is close to neglectable.
 %
-Moreover, we ran realistic pipelines on non-sensitive --but real--
-data successfully using compute resources that stretch across national
+We show that the use of dedicated network together with a secure cloud
+infrastructure allows running analyses on sensitive data (such as
+genomic or health data).
+%
+We ran realistic pipelines on non-sensitive --but real-- data
+successfully using compute resources that stretch across national
 borders.
 %
 
 \paragraph{Future Work.}
-%
-It is probably possible to tweak the NFS settings, or the TCP settings
-in the kernel, to gain even further performance.
 %
 It would be interesting to scale up the solution to \emph{many} nodes
 in ePouta and \emph{some} nodes in Knox, to see
 %how much the link can be shared.
 at which point the communication link gets saturated (and vice-versa).
 %
-Furthermore, it is worth updating the Slurm and NFS solutions with
-other tools, to improve disk access, such as (i)~the use object
-storage or (ii)~the use a separate disk volume attached to the storage
-VM, rather than an ephemeral disk on file (\ie the default in
-\codeline{libvirt}).
+The network link is therefore a key component of the current
+architecture.
+%
+Scaling up that aspect need not be linear. We see such a setup as
+palliating a shortage of resources at a compute center, on either end
+of the link. These situations should not happen often, so we feel it
+is acceptable to have some small latency, rather than waiting for
+local resources to be freed for a user's computations to take place.
 
-Regarding the network implementation, broadcast traffic is still
-forwarded to all interfaces on VLAN 1203 and therefore to all VMs. An
-improvment would be to use OpenVSwitch to learn about MAC addresses
-and skip physical nodes that don't host any VMs on that project. That
-will improve \emph{east-west} traffic. Another alternative is to
-distribute the router using DVR, which is however not available when
-using the Linux Bridge mechanism.
+%
+Finally, regarding the implementation of the setup,
+%
+it is probably possible to tweak the NFS settings, or the TCP settings
+in the kernel, to gain even further performance.
+%
+Moreover, it is worth updating altogether the Slurm and NFS solutions
+with more recent tools, that could improve job scheduling and disk
+access, such as (i)~the use object storage or (ii)~the use a separate
+disk volume attached to the storage VM, rather than an ephemeral disk
+on file (\ie the default in \codeline{libvirt}).
+%
+On the network side, broadcast traffic is still forwarded to all
+interfaces on VLAN 1203 and therefore to all VMs. An improvment would
+be to use OpenVSwitch to learn about MAC addresses and skip physical
+nodes that do not host any VM for the given project. That will improve
+\emph{east-west} traffic. Another alternative is to distribute the
+router using DVR, which is however not available when using the Linux
+Bridge mechanism.
 
