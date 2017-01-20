@@ -22,7 +22,7 @@ exception of the virtual router. The DHCP server on Knox
 * the set of VMs on Knox range from `10.101.128.1` to `10.101.128.254`.
 
 <p align="center">
-<img width="100%" src="./img/overview.png" title="Overview of the resources" alt="Overview" />
+<img width="100%" src="./img/overview.jpg" title="Overview of the resources" alt="Overview" />
 </p>
 
 # The Virtual Router and DHCP server, <i>on Knox</i>
