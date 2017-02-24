@@ -51,12 +51,12 @@
     \clip (b-r) -- (t-r) -- (t-l) -- (b-l);
 
     %% Swedish shade
-    \shade[right color=blue!20,left color=white]%
+    \shade[right color=yellow!50,left color=white]%
     (b) decorate[decoration={snake,segment length=6ex, amplitude=0.5ex}]{ -- (t) }
     decorate[decoration=lineto] { -- (t-l) -- (b-l) -- cycle };
 
     %% Finnish shade
-    \shade[left color=yellow!50,right color=white]%
+    \shade[left color=blue!20,right color=white]%
     (b) decorate[decoration={snake,segment length=6ex, amplitude=0.5ex}]{ -- (t) }
     decorate[decoration=lineto] { -- (t-r) -- (b-r) -- cycle };
   \end{pgfonlayer}

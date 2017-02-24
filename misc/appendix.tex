@@ -1,4 +1,4 @@
-\section{Complete SOB results}
+\subsection{Complete SOB results}
 \label{appendix:SOB}
 
 We report, in the tables below, the writing times for each test from
@@ -64,7 +64,7 @@ the closest first decimal).%
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Pitfalls and Caveats with Neutron Linux Bridges}
+\subsection{Pitfalls and Caveats with Neutron Linux Bridges}
 \label{appendix:secgroups}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -78,7 +78,7 @@ implemented. This involves low-level details that are relevant to
 understand pitfalls in connecting the VMs from different clouds
 together.
 
-When we display the \kw{FORWARD} chain, we see that openstack adds a
+When we display the \kw{FORWARD} chain, we see that OpenStack adds a
 ``relay'' chain, named \kw{neutron-linuxbri-FORWARD}.
 
 \codeblock{iptables-forward.sh}
@@ -118,18 +118,18 @@ MAC address of the bridge might flicker between the ones from the
 added interfaces. Moreover, in another scenario where the VM network
 is augmented with another local network, say \ip{192.168.0.0/24}, the
 traffic would be filtered by the source chain. This is relevant in
-case we want to implement on openstack installation inside VMs (such
-as Mosler, or the so-called \emph{Triple-O}: Openstack on Openstack).
+case we want to implement on OpenStack installation inside VMs (such
+as Mosler, or the so-called \emph{Triple-O}: OpenStack on OpenStack).
 
 Back to the outgoing chain, after checking the allowed IP/MAC pair
-(which can be updated through some neutron commands), it checks for
+(which can be updated through some Neutron commands), it checks for
 established connections, or drops them if they are invalid. In other
 cases, the filtering continues onto a \emph{fallback chain} which
 simply drops that traffic.
 
 \codeblock{iptables-neutron-sg-output.sh}
 
-Finally, we observe that the openstack security rules, which we added
+Finally, we observe that the OpenStack security rules, which we added
 in Neutron, end up in the \emph{incoming chain} (which name starts
 with \emph{neutron-linuxbri-\textbf{i}}). The DHCP traffic is allowed,
 along with \kw{ping} and \kw{tcp} traffic (on all ports), from the IP

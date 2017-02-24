@@ -4,7 +4,7 @@
 %% ====================================================================
 
 This section describes the tests we ran in order to test the
-limitations of the Knox-ePouta connection presented in
+limitations of the Knox--ePouta connection presented in
 Section~\ref{section:method}.
 %
 The set of VMs stretches across Sweden and Finland. The VMs are
@@ -36,7 +36,7 @@ matters: we therefore added two more paritions, marked with * in
 Table~\ref{experiments:slurm:partitions}, where the ePouta nodes are
 effectively given a~higher priority.
 
-\begin{table}[ht]%[!b]
+\begin{table}%[ht]%[!b]
 \centering
 \begin{tabular}{|r||c||c|}\hhline{-||-||-}
 Partition       & \#nodes on Knox & \#nodes on ePouta \\\hhline{=::=::=}
@@ -62,7 +62,7 @@ non-sensitive data sample.
 
 \codeblock{caw-wgs.run.sh}
 
-\begin{table}[ht]%[!b]
+\begin{table}%[ht]%[!b]
 \begin{minipage}{0.5\linewidth}
 \centering
 \begin{tabular}{|l|rr|}\hhline{===}
@@ -92,11 +92,11 @@ epouta2-knox1 & \leftpointingfinger & 11m 13s \\\hhline{*{3}{=}}
 \label{experiments:CAW+WGS}
 \end{table}
 
-Since we know that the node in ePouta are technically superior to the
+Since we know that the nodes in ePouta are technically superior to the
 ones in Knox (\ie better hardware), we can observe that the
-Knox-ePouta connection across borders does not influence much the
-computations. The first compute node on the slurm partition appears to
-\emph{not} matter either.
+Knox--ePouta connection across national borders does not influence
+much the computations. The first compute node on the Slurm partition
+appears to \emph{not} matter either.
 %
 Recall that we initially want to test whether this architecture is
 viable. Now that we notice it is, albeit with a small slowdown, we did
@@ -109,7 +109,7 @@ neglectable, pointed out in Table~\ref{experiments:CAW+WGS} with a
 \subsection{NFS stress test}
 \label{experiments:NFS}
 
-We suspected the network file system (NFS) to be a bottleneck in the
+We suspected the Network File System (NFS) to be a bottleneck in the
 previous workflows, since they require a lot of disk access (and
 comparatively not so much computing power). So we stress-tested NFS by
 writing files from the compute nodes onto an NFS-shared location --the
@@ -118,11 +118,12 @@ storage node-- using
 %
 We used the following tests:
 
+\smallskip%
 \begin{dazenumerate}
 %
 \item\label{experiments:SOB:test:big}%
   Write a 10GB file in chunks of 8MB. Basic test of write I/O
-  bandwidth.  For this kind of test it is important that the file is
+  bandwidth. For this kind of test it is important that the file is
   substantially larger than the main memory of the machine. If the
   file is 2GB and main memory is 1GB then up to 50\% of the file could
   be cached by the operating system and the reported write bandwidth
@@ -152,6 +153,7 @@ We used the following tests:
   % 
 \end{dazenumerate}
 
+\smallskip%
 We wrote a script which, given a set of VMs, connects via \texttt{ssh}
 to the VMs (in the specified order) and runs a SOB test on each VM in
 parallel.
@@ -176,7 +178,7 @@ reading time.
 The numbers in MB/s indicate the bandwidth (rounded to the closest
 first decimal).
 
-\begin{table}[!ht]%[!b]
+\begin{table}%[!ht]%[!b]
 \resultpartition%
 {{ePouta3}{ePouta2}{epouta1}}%
 {{ 527 }{ 19.4   }{ 399 }{ 25.7   }{ 363 }{ 28.2   }}%
@@ -214,7 +216,7 @@ Finally, we test the network link between the VMs.
 %
 The first test consists in opening 10 connections between
 \texttt{epouta1} and \texttt{knox1} and holding them during 60
-seconds.  One machine acts as the server, and the other one connects
+seconds. One machine acts as the server, and the other one connects
 to it, as a sender as well as a receiver. We used iPerf~\cite{iperf}
 with the following commands:
 
@@ -230,7 +232,7 @@ The last test is to make three connections, pairwise between one node
 from Knox and one from ePouta, and run similar iPerf commands as above
 (See Table~\ref{experiments:iperf:tests}).
 
-\begin{table}[htb]%!b
+\begin{table}%[htb]%!b
 \centering
 \begin{tabular}{|r||c||c|}\hhline{~||-||-}
 \multicolumn{1}{c||}{Connection} & Sender         & Receiver\\\hhline{=::=::=}

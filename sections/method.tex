@@ -18,32 +18,38 @@ in extending the set of VMs with external ones running in another
 cluster, and in our case, the extra cluster is located in another
 country.
 
-\begin{figure}[!b]
+CSC's secure computing environment~\cite{epouta}, named \emph{ePouta},
+provides users with an IaaS (\emph{Infrastucture as a Service}) cloud,
+\ie with virtual hardware resources they can set up as they
+prefer. Users also connect through a dedicated network connection so
+that the virtual resources use the users' network address space and
+settings.
+
+\begin{figure*}%[!b]
   \centering
   \input{img/overview}
   \caption{Overview of the project resources}
   \label{figure:overview}
-\end{figure}
+\end{figure*}
 
 We build a temporary cluster in Sweden, which we refer to as
-\emph{Knox}, and use the CSC ePouta cloud infrastructure~\cite{epouta}
-in Finland, hereinafter refered to as \emph{ePouta}, to extend a
-project running on Knox. As a first step, we isolate the project from
-any other project, but do not encrypt the communications, \ie the
-environment manipulates non-sensitive data.
+\emph{Knox}, and use the ePouta cloud infrastructure in Finland, to
+extend a project running on Knox. As a first step, we isolate the
+project from any other project, but do not encrypt the communications,
+\ie the environment manipulates non-sensitive data.
 %
 The VMs infrastructure is shaped as in
 Figure~\ref{figure:overview}. We boot on Knox:
 \begin{itemize}
-\item a Virtual Router,
-\item a DHCP server, providing network settings to the Knox VMs,
+\item a virtual router,
+\item a DHCP server, providing network settings to Knox VMs,
 \item 3 VMs for computations
 \item a storage node
 \item a \emph{supernode} where we connect and run the tests
 \end{itemize}
 On ePouta, we boot:
 \begin{itemize}
-\item a DHCP server, providing network settings to the ePouta VMs,
+\item a DHCP server, providing network settings to ePouta VMs,
 \item 3 VMs for computations
 \end{itemize}
 
@@ -118,8 +124,8 @@ in the same country.
 Computations are actually running slightly faster in Finland, since
 the hardware in ePouta is better than the one in Knox.
 %
-It is probably possible to fine-tune kernel settings
-to get even further performance and a seamless connection.
+It is probably possible to fine-tune the kernel settings to get even
+better performance and seamless connection.
 %
 The remaining step dealing with sensitive data can thus be ignored.
 %

@@ -1,4 +1,4 @@
-# Create a veth pair for external access to the virtual router
+# Create a veth pair for external access of virtual router
 $ ip link add gw type veth peer name mm
 
 # Add the gw interface to the virtual router

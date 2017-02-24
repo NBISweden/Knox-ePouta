@@ -1,15 +1,15 @@
 %% ====================================================================
-\section{Implementation using Openstack}
+\section{Implementation using OpenStack}
 \label{section:implementation}
 
 In this section, we present how we implemented the method from
-Section~\ref{section:method}, using two Openstack environments.
+Section~\ref{section:method}, using two OpenStack environments.
 %
 The openstack version in place in both Knox and ePouta is
 \href{http://docs.openstack.org/liberty/install-guide-ubuntu/}{Liberty}.
 %
 % This section is included in the paper for the readers that intend to
-% reproduce the results using two Openstack environments.
+% reproduce the results using two OpenStack environments.
 %
 You can refer to the
 \href{https://github.com/NBISweden/Knox-ePouta}{NBIS GitHub
@@ -28,7 +28,7 @@ between the VMs.
 %
 We split the latter IP address range in two disjoint parts: VMs on
 ePouta use the lower part of the range, while VMs on Knox use the
-higher part. The exception of the virtual router.
+higher part. The exception is the virtual router.
 %
 The DHCP server on Knox (resp. ePouta) provides network information
 for the VMs on Knox (resp. ePouta).
@@ -39,23 +39,23 @@ We give the following IPs to the different components:
 \item the Virtual Router at \ip{10.101.0.1} (on Knox),
 \item the Knox DHCP server is at \ip{10.101.128.0},
 \item the ePouta DHCP server is at \ip{10.101.0.3},
-\item the set of VMs on ePouta range from \ip{10.101.0.4} to \ip{10.101.127.255},% and
-\item the set of VMs on Knox range from \ip{10.101.128.1} to \ip{10.101.128.254}.
+\item the set of VMs on ePouta\\ranging from \ip{10.101.0.4} to \ip{10.101.127.255},% and
+\item the set of VMs on Knox\\ranging from \ip{10.101.128.1} to \ip{10.101.128.254}.
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{The Virtual Router and DHCP server, on Knox}
+\subsection{Virtual Router and DHCP server, \emph{on Knox}}
 \label{section:implementation:virtual:router}
 \label{section:implementation:dhcp:server:knox}
 
-Openstack uses the network namespace capabilities of the Linux kernel,
+OpenStack uses the network namespace capabilities of the Linux kernel,
 in order to isolate routes, firewall rules and interfaces from the
 root namespace.
 %
 This is where the virtual router and the dhcp servers live, each in
 its own namespace.
 %
-Moreover, we use the Neutron Linux Bridge driver in Openstack,
+Moreover, we use the Neutron Linux Bridge driver in OpenStack,
 configured to encapsulate ethernet communications with VLAN.
 %
 In this setup, we choose the VLAN tag 1203.
@@ -76,22 +76,22 @@ parameter must be substituted with \emph{description} by the reader.
 \end{figure}
 
 
-The following neutron openstack commands must be run on Knox
+The following Neutron OpenStack commands must be run on Knox
 \codeline{controller} to create the environment on Knox side.
 %
 Essentially,
 \begin{dazenumerate}
-\item we include the credentials to connect to Knox's Openstack,
+\item we include the credentials to connect to Knox's OpenStack,
 \item we create the virtual router,
 \item we instantiate a physical network with VLAN tag 1203,
-\item we specify the above IP range from \ip{10.101.128.0} to
-  \ip{10.101.255.254}, where the gateway is \ip{10.101.0.1}, and
+\item we specify the above IP range\\from \ip{10.101.128.0} to
+  \ip{10.101.255.254},\\where the gateway is \ip{10.101.0.1}, and
 \item we add an interface to the router to access that network.
 \end{dazenumerate}
 
 \codeblock{neutron-commands-knox.sh}
 
-We show now the underlying components that the neutron driver created
+We show now the underlying components that the Neutron driver created
 with the above commands.
 %   , \ie network namespaces, bridges, and veth
 % pairs dedicated to the \ip{10.101.0.0/16} network.
@@ -100,37 +100,40 @@ First of all, we show
 %\codeline{ip netns} shows
 the two newly created
 namespaces %, \codeline{qrouter-\uuid} and \codeline{qdhcp-\uuid},
-for the virtual router and the dhcp server. % respectively.
+for the virtual router and the DHCP server. % respectively.
 
 \codeblock{ip-netns.sh}
 
 Both the virtual router and the DHCP server are connected to the root
-namespace via 2 tap interfaces, added to a common bridge. Openstack
+namespace via 2 tap interfaces, added to a common bridge. OpenStack
 also created a VLAN interface (with tag 1203) on that bridge for the
 \ip{10.101.0.0/16} network.
 %
-The neutron driver actually created veth pairs, where one end is moved
+The Neutron driver actually created veth pairs, where one end is moved
 to a network namespace, and the other end (the \codeline{tap}
 interface) is still in the root namespace. The end in the router
 namespace is of the form \texttt{qr-\textless{}...\textgreater{}} and
-the one in the dhcp namespace is of the form
+the one in the DHCP namespace is of the form
 \texttt{ns-\textless{}...\textgreater{}}. The other end of the veth
-pairs, in the root namespace, is added to a linux bridge. Openstack
-creates a linux bridge per project.%
+pairs, in the root namespace, is added to a Linux bridge. OpenStack
+creates a Linux bridge per project.%
 \footnote{%
-  We think we found a problem with MAC addresses on the linux bridge
+  We think we found a problem with MAC addresses on the Linux bridge
   in Ubuntu: The tap interface connected to the virtual router is
   learned on the wrong port of the bridge. Moreover, the MAC address
   of the bridge itself is by construction the lowest one of all its
-  interfaces (unless fixed at creation). Updating the neutron driver
+  interfaces (unless fixed at creation). Updating the Neutron driver
   for fixing the bridge's MAC address at creation was out-of-scope for
   that project. Instead, we opted for the following quickfix: We
   disabled the MAC learning algorithm of the bridge, and made it
   behave like a hub (and not a virtual switch).
   %
   The following command (as root) provides a solution (albeit
-  non-optimal): \codeline{bridge-ageing.sh}
+  non-optimal): 
+  %\codeblock{bridge-ageing.sh}
+  \codeline{brctl setageing brq\uuid\ 0}\\
   %
+  \noindent%
   We don't recall that it was necessary on CentOS. 
   % 
 }
@@ -142,7 +145,7 @@ creates a linux bridge per project.%
 
 \codeblock{bridge.sh}
 
-% The dhcp namespace isolates a \texttt{dnsmasq} process, while the
+% The DHCP namespace isolates a \texttt{dnsmasq} process, while the
 % other namespace isolates routes and IPtables rules for the virtual router.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -158,9 +161,9 @@ Figure~\ref{figure:connectivity:compute:nodes}.
 \codeblock{bridge-cn.sh}
 
 A kernel setting is used to force IPtables to filter traffic on the
-bridge. This is the way Openstack enforces security groups and in
-particular ensures some address spoofing protections. These rules can
-be slightly manipulated by updating the neutron port settings.
+bridge. This is the way OpenStack enforces security groups and in
+particular ensures some address spoofing protection. These rules can
+be slightly manipulated by updating the Neutron port settings.
 %
 It is relevant in our case, because this led to a slew of connection
 issues, whether in between VMs from the same cloud or across
@@ -185,7 +188,7 @@ All VMs have a default route to the virtual router. Therefore,
 external connectivity is adjusted in the virtual router's namespace
 (on Knox).
 %
-Openstack usually creates a veth pair, where one end is a
+OpenStack usually creates a veth pair, where one end is a
 \emph{gateway} interface added to the virtual router, and the router
 translates the source address (\emph{source NATing} or \emph{SNAT}),
 using IPTables, for outgoing traffic over that interface. Traffic to
@@ -198,9 +201,10 @@ added to an \emph{external} bridge, which already forwards traffic to
 the host's external interface. That way, all virtual routers, also
 potentially connected to that bridge, have external connectivity.
 %
-However, in our case, we did not need to use this (classic) openstack
-setup. We instead used a single veth pair (denoted
-\codeline{gw~{\veth}~mm}), along with another \emph{local} network
+However, in our case, we did not need to use this (classic) OpenStack
+setup. We instead used a single veth pair%
+%(denoted \codeline{gw~{\veth}~mm})%
+, along with another \emph{local} network
 \ip{10.5.0.0/24}. The \codeline{gw} end belongs to the virtual router
 and has the IP \ip{10.5.0.2}, while \codeline{mm} has \ip{10.5.0.1}.
 %
@@ -208,11 +212,11 @@ On the controller:
 
 \codeblock{gw-mm.sh}
 
-Inside the Virtual router:
+Inside the virtual router:
 
 \codeblock{gw-mm-vr.sh}
 
-The routes in the Virtual Router are so far:
+The routes in the virtual router are so far:
 
 \codeblock{routes-vr.sh}
 
@@ -232,7 +236,7 @@ Finally, for external connectivity, it is necessary to \emph{source
 \subsection{Settings on ePouta}
 \label{section:implementation:epouta}
 
-The network settings to boot VMs on ePouta is prepared similarly to
+The network settings to boot VMs on ePouta are prepared similarly to
 Section~\ref{section:implementation:dhcp:server:knox}.
 %
 It is however necessary to adjust the parameters, in order to make the

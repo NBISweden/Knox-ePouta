@@ -1,20 +1,23 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[%
 %a4paper,10pt,journal]{settings/IEEEtran}
-a4paper]{article}
+%a4paper]{article}
+%sigconf,review]{settings/acmart}
+sigconf]{settings/acmart}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \input{settings/main}
-\input{misc/title}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{document}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% -------------------------------------
-\maketitle
+\input{misc/title}
 \input{misc/abstract}
+\maketitle
+
 %% -------------------------------------
+
 \input{sections/introduction}
 \input{sections/method}
 \input{sections/results}
@@ -22,15 +25,18 @@ a4paper]{article}
 \input{sections/conclusion}
 
 %% -------------------------------------
-\nocite{*} % Remove this for your own citations
+\appendix
+\section{Appendices}
+\input{misc/appendix.tex}
+
+%% -------------------------------------
+%\nocite{*} % Remove this for your own citations
 %\bibliographystyle{settings/tryggve}
 \bibliographystyle{plain}
 %\bibliographystyle{unsrt}
+%\bibliographystyle{settings/ACM-Reference-Format}
 \bibliography{misc/references}
 
-%% -------------------------------------
-\vfill\eject\appendix
-\input{misc/appendix.tex}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \end{document}
