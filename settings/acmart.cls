@@ -40,6 +40,10 @@
 \ProvidesClass{settings/acmart}
 [2017/02/15 v1.30 Typesetting articles for Association of
 Computing Machinery]
+%
+\newif\ifanonymize
+\anonymizefalse
+%
 \def\@classname{settings/acmart}
 \RequirePackage{xkeyval}
 \define@choicekey*+{settings/acmart.cls}{format}[\ACM@format\ACM@format@nr]{%
@@ -108,6 +112,10 @@ Computing Machinery]
 \DeclareOptionX{12pt}{\edef\ACM@fontsize{\CurrentOption}}
 \DeclareOptionX{draft}{\PassOptionsToClass{\CurrentOption}{amsart}}
 \DeclareOptionX{*}{\PassOptionsToClass{\CurrentOption}{amsart}}
+%
+\DeclareOption{anonymize}{ \anonymizetrue }
+%
+\ProcessOptions
 \ProcessOptionsX
 \ClassInfo{\@classname}{Using format \ACM@format, number \ACM@format@nr}
 \newif\if@ACM@manuscript

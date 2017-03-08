@@ -1,0 +1,20 @@
+\ifanonymize
+  %
+  \newlength{\anonymHeight}%
+  \newlength{\anonymWidth}%
+  %
+  \newcommand{\anonymize}[1]{
+    \makeatletter
+    \settoheight{\anonymHeight}{\hbox{H}}%
+    \settowidth{\anonymWidth}{\hbox{#1}}%
+    % \typeout{\the\anonymWidth}
+    % \typeout{\the\anonymHeight}
+    % \typeout{#1}      
+    \protect\rule[0pt]{\the\anonymWidth}{\the\anonymHeight}%
+    \makeatother
+  }
+  \let\oldemail=\email
+  \def\email#1{\oldemail{some.email@some.server}}
+\else
+  \newcommand{\anonymize}[1]{#1}
+\fi

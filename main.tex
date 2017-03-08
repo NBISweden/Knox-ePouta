@@ -3,10 +3,19 @@
 %a4paper,10pt,journal]{settings/IEEEtran}
 %a4paper]{article}
 %sigconf,review]{settings/acmart}
+anonymize,%
+%anonymous,%
 sigconf]{settings/acmart}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \input{settings/main}
+
+\setcopyright{rightsretained}
+\acmConference[SC'17]{Supercomputing (the International Conference for High Performance Computing, Networking, Storage and Analysis)}{November 12-17, 2017}{Denver, CO, USA}
+%\acmDOI{10.1145/nnnnnnn.nnnnnnn}
+%\acmISBN{123-4567-24-567/08/06}
+\acmYear{2017}
+\copyrightyear{2017}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{document}
@@ -26,17 +35,15 @@ sigconf]{settings/acmart}
 
 %% -------------------------------------
 \appendix
-\section{Appendices}
 \input{misc/appendix.tex}
 
 %% -------------------------------------
 %\nocite{*} % Remove this for your own citations
 %\bibliographystyle{settings/tryggve}
-\bibliographystyle{plain}
+%\bibliographystyle{plain}
 %\bibliographystyle{unsrt}
-%\bibliographystyle{settings/ACM-Reference-Format}
+\bibliographystyle{settings/ACM-Reference-Format}
 \bibliography{misc/references}
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \end{document}
